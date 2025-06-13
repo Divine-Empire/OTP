@@ -30,6 +30,22 @@ const SheetOverlay = React.forwardRef<
 ))
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
+// VisuallyHidden component for accessibility
+const VisuallyHidden = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement>
+>(({ className, ...props }, ref) => (
+  <span
+    ref={ref}
+    className={cn(
+      "absolute h-px w-px p-0 -m-px overflow-hidden whitespace-nowrap border-0",
+      className
+    )}
+    {...props}
+  />
+))
+VisuallyHidden.displayName = "VisuallyHidden"
+
 const sheetVariants = cva(
   "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
   {
@@ -137,4 +153,5 @@ export {
   SheetFooter,
   SheetTitle,
   SheetDescription,
+  VisuallyHidden,
 }

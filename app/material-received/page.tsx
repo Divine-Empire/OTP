@@ -31,7 +31,8 @@ export default function CheckInventoryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState(null)
-
+  const [receivedDate, setReceivedDate] = useState("")
+  const [receivingStatus, setReceivingStatus] = useState("")
   // Fetch data from Google Sheets using the same approach as TrackerPendingTable
   // Fixed fetchOrders function with correct row index calculation
   const fetchOrders = async () => {
@@ -58,9 +59,9 @@ export default function CheckInventoryPage() {
             const actualRowIndex = index + 2;
             
             // Column AH (index 33) - inventory status
-            const hasColumnAH = row.c[33] && row.c[33].v !== null && row.c[33].v !== "";
+            const hasColumnAH = row.c[38] && row.c[38].v !== null && row.c[38].v !== "";
             // Column AI (index 34) - inventory remarks
-            const isColumnAIEmpty = !row.c[34] || row.c[34].v === null || row.c[34].v === "";
+            const isColumnAIEmpty = !row.c[39] || row.c[39].v === null || row.c[39].v === "";
             
             // For pending orders: show rows where AH has data but AI is empty
             if (hasColumnAH && isColumnAIEmpty) {
@@ -160,9 +161,9 @@ const fetchProcessedOrders = async () => {
           const actualRowIndex = index + 2;
           
           // Column AH (index 33) - inventory status
-          const hasColumnAH = row.c[33] && row.c[33].v !== null && row.c[33].v !== "";
+          const hasColumnAH = row.c[38] && row.c[38].v !== null && row.c[38].v !== "";
           // Column AI (index 34) - inventory remarks
-          const hasColumnAI = row.c[34] && row.c[34].v !== null && row.c[34].v !== "";
+          const hasColumnAI = row.c[39] && row.c[39].v !== null && row.c[39].v !== "";
           
           // For processed orders: show rows where both AH and AI have data
           if (hasColumnAH && hasColumnAI) {
@@ -212,100 +213,70 @@ const fetchProcessedOrders = async () => {
 // Update order status by finding the correct row that matches the company name in column B
 // Update order status by finding the correct row that matches the order ID in column B
 const updateOrderStatus = async (order, inventoryData) => {
-  try {
-    console.log(`Updating order for company: ${order.companyName}`)
-    console.log(`Looking for Order No.: ${order.id}`)
-    console.log(`Order details:`, order)
-    
-    const formData = new FormData()
-    formData.append('sheetName', SHEET_NAME)
-    formData.append('action', 'updateByOrderNoInColumnB')
-    formData.append('orderNo', order.id)
-    
-    // Create a sparse array to update only specific columns
-    const rowData = new Array(40).fill('') // Make sure array is large enough for all columns
-
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    
-    // Update columns:
-    // AH (index 33) - inventory status (should preserve existing value)
-    // AI (index 34) - inventory remarks
-    // AJ (index 35) - processed date
-    
-    // Keep existing inventory status (column AH)
-    if (order.inventoryStatus) {
-      rowData[33] = order.inventoryStatus;
-    }
-    
-    // Set processed date (column AJ)
-    rowData[34] = formattedDate;
-    rowData[36] = inventoryData.availabilityStatus // Column R (index 17)
-    
-    // Update inventory remarks (column AI) based on availability status
-    if (inventoryData.availabilityStatus === 'Available') {
-      rowData[37] = inventoryData.remarks || '';
-    } 
-    else if (inventoryData.availabilityStatus === 'Not Available') {
-      rowData[37] = inventoryData.remarks || '';
-    } 
-    else if (inventoryData.availabilityStatus === 'Partial') {
-      rowData[37] = inventoryData.partialDetails || '';
-    }
-    
-    formData.append('rowData', JSON.stringify(rowData))
-    
-    console.log('Sending data to Apps Script:', {
-      sheetName: SHEET_NAME,
-      orderNo: order.id,
-      rowData: rowData,
-      availabilityStatus: inventoryData.availabilityStatus
-    })
-    
-    const updateResponse = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'cors',
-      body: formData
-    })
-    
-    console.log('Response status:', updateResponse.status)
-    
-    if (!updateResponse.ok) {
-      throw new Error(`HTTP error! status: ${updateResponse.status}`)
-    }
-    
-    let result
     try {
-      const responseText = await updateResponse.text()
-      console.log('Raw response:', responseText)
-      result = JSON.parse(responseText)
-    } catch (parseError) {
-      console.log('Response parsing failed, but request might be successful')
-      result = { success: true }
+      const formData = new FormData()
+      formData.append('sheetName', SHEET_NAME)
+      formData.append('action', 'updateByOrderNoInColumnB')
+      formData.append('orderNo', order.id)
+      
+      // Create a sparse array to update only specific columns
+      const rowData = new Array(40).fill('') // Make sure array is large enough for all columns
+  
+      const today = new Date();
+      const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      
+      // Update columns:
+      // AN (index 39) - processed date (formattedDate)
+      // AO (index 40) - received date (inventoryData.receivedDate)
+      // AP (index 41) - receiving status (inventoryData.receivingStatus)
+      
+      // Set processed date (column AN)
+      rowData[39] = formattedDate;
+      // Set received date (column AO)
+      rowData[41] = inventoryData.receivedDate;
+      // Set receiving status (column AP)
+      rowData[42] = inventoryData.receivingStatus;
+      // Set remarks (column AQ)
+    //   rowData[41] = inventoryData.remarks || '';
+      
+      formData.append('rowData', JSON.stringify(rowData))
+      
+      const updateResponse = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'cors',
+        body: formData
+      })
+      
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}`)
+      }
+      
+      let result
+      try {
+        result = await updateResponse.json()
+      } catch (parseError) {
+        result = { success: true }
+      }
+      
+      if (result.success !== false) {
+        await fetchOrders()
+        return true
+      } else {
+        throw new Error(result.error || 'Update failed')
+      }
+      
+    } catch (err) {
+      console.error('Error updating order:', err)
+      setError(err.message)
+      return false
     }
-    
-    console.log('Parsed result:', result)
-    
-    if (result.success !== false) {
-      await fetchOrders()
-      return true
-    } else {
-      throw new Error(result.error || 'Update failed')
-    }
-    
-  } catch (err) {
-    console.error('Error updating order:', err)
-    setError(err.message)
-    return false
   }
-}
 
   const handleProcess = (order) => {
     setSelectedOrder(order)
-    setAvailabilityStatus("")
-    setRemarks("")
-    setPartialDetails("")
-    setUnavailableItems([])
+    setReceivedDate("")
+    setReceivingStatus("")
+    // setRemarks("")
     setIsDialogOpen(true)
   }
 
@@ -324,23 +295,24 @@ const updateOrderStatus = async (order, inventoryData) => {
   }
 
   const handleSubmit = async () => {
-    if (!selectedOrder || !availabilityStatus) return
-
+    if (!selectedOrder || !receivedDate || !receivingStatus) return
+  
     const inventoryData = {
-      availabilityStatus,
+      receivedDate,
+      receivingStatus,
       remarks,
-      partialDetails: availabilityStatus === "Partial" ? partialDetails : "",
-      unavailableItems:
-        availabilityStatus === "Not Available" || availabilityStatus === "Partial" ? unavailableItems : [],
       processedAt: new Date().toISOString(),
       processedBy: "Current User",
     }
-
+  
     const success = await updateOrderStatus(selectedOrder, inventoryData)
     
     if (success) {
       setIsDialogOpen(false)
       setSelectedOrder(null)
+      setReceivedDate("")
+      setReceivingStatus("")
+      setRemarks("")
       // Show success message
       alert(`Order ${selectedOrder.id} has been updated successfully.`)
     }
@@ -401,7 +373,7 @@ const updateOrderStatus = async (order, inventoryData) => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Check Inventory</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Material Received</h1>
             <p className="text-muted-foreground">Verify item availability for orders from Google Sheets</p>
             <p className="text-sm text-gray-500">Sheet: {SHEET_NAME} | Total Orders: {orders.length}</p>
           </div>
@@ -420,7 +392,7 @@ const updateOrderStatus = async (order, inventoryData) => {
           <TabsContent value="pending" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pending Inventory Check</CardTitle>
+                <CardTitle>Pending Material Received</CardTitle>
                 <CardDescription>Orders from Google Sheets waiting for inventory verification</CardDescription>
               </CardHeader>
               <CardContent>
@@ -445,7 +417,7 @@ const updateOrderStatus = async (order, inventoryData) => {
                     <TableBody>
                       {pendingOrders.map((order) => (
                         <TableRow key={order.rowIndex}>
-                          <TableCell>
+                            <TableCell>
                             <Button size="sm" onClick={() => handleProcess(order)}>
                               Process
                             </Button>
@@ -567,154 +539,72 @@ const updateOrderStatus = async (order, inventoryData) => {
         </Tabs>
 
         {/* Process Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Check Inventory</DialogTitle>
-              <DialogDescription>Verify item availability for the order</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="orderNo">Order No.</Label>
-                <Input id="orderNo" value={selectedOrder?.id || ''} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name</Label>
-                <Input id="companyName" value={selectedOrder?.companyName || ''} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="availability">Availability Status *</Label>
-                <Select value={availabilityStatus} onValueChange={setAvailabilityStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Available">Available</SelectItem>
-                    <SelectItem value="Not Available">Not Available</SelectItem>
-                    <SelectItem value="Partial">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+   {/* Process Dialog */}
+<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>Material Received</DialogTitle>
+      <DialogDescription>Verify material receipt for the order</DialogDescription>
+    </DialogHeader>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="orderNo">Order No.</Label>
+        <Input id="orderNo" value={selectedOrder?.id || ''} disabled />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="companyName">Company Name</Label>
+        <Input id="companyName" value={selectedOrder?.companyName || ''} disabled />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="receivedDate">Received Date *</Label>
+        <Input 
+          id="receivedDate" 
+          type="date" 
+          value={receivedDate}
+          onChange={(e) => setReceivedDate(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="receivingStatus">Receiving Status *</Label>
+        <Select 
+          value={receivingStatus} 
+          onValueChange={setReceivingStatus}
+          required
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Yes">Yes</SelectItem>
+            <SelectItem value="No">No</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-              {availabilityStatus === "Available" && (
-                <div className="space-y-2">
-                  <Label htmlFor="remarks">Remarks</Label>
-                  <Textarea
-                    id="remarks"
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
-                    placeholder="Enter any remarks..."
-                  />
-                </div>
-              )}
+      {/* <div className="space-y-2">
+        <Label htmlFor="remarks">Remarks</Label>
+        <Textarea
+          id="remarks"
+          value={remarks}
+          onChange={(e) => setRemarks(e.target.value)}
+          placeholder="Enter any remarks..."
+        />
+      </div> */}
 
-              {availabilityStatus === "Partial" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="partialDetails">Remarks</Label>
-                    <Textarea
-                      id="partialDetails"
-                      value={partialDetails}
-                      onChange={(e) => setPartialDetails(e.target.value)}
-                      placeholder="Enter partial availability details..."
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    {/* <div className="flex items-center justify-between">
-                      <Label>Unavailable Items</Label>
-                      <Button type="button" size="sm" onClick={addUnavailableItem}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Item
-                      </Button>
-                    </div> */}
-                    {unavailableItems.map((item, index) => (
-                      <div key={index} className="flex gap-2 items-end">
-                        <div className="flex-1">
-                          <Label htmlFor={`itemName-${index}`}>Item Name</Label>
-                          <Input
-                            id={`itemName-${index}`}
-                            value={item.name}
-                            onChange={(e) => updateUnavailableItem(index, "name", e.target.value)}
-                            placeholder="Enter item name"
-                          />
-                        </div>
-                        <div className="w-24">
-                          <Label htmlFor={`qty-${index}`}>QTY</Label>
-                          <Input
-                            id={`qty-${index}`}
-                            type="number"
-                            value={item.qty}
-                            onChange={(e) => updateUnavailableItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-                            placeholder="0"
-                          />
-                        </div>
-                        <Button type="button" size="sm" variant="outline" onClick={() => removeUnavailableItem(index)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {availabilityStatus === "Not Available" && (
-                <div className="space-y-4">
-                  {/* <div className="flex items-center justify-between">
-                    <Label>Unavailable Items</Label>
-                    <Button type="button" size="sm" onClick={addUnavailableItem}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Item
-                    </Button>
-                  </div> */}
-                  {/* {unavailableItems.map((item, index) => (
-                    <div key={index} className="flex gap-2 items-end">
-                      <div className="flex-1">
-                        <Label htmlFor={`itemName-${index}`}>Item Name</Label>
-                        <Input
-                          id={`itemName-${index}`}
-                          value={item.name}
-                          onChange={(e) => updateUnavailableItem(index, "name", e.target.value)}
-                          placeholder="Enter item name"
-                        />
-                      </div>
-                      <div className="w-24">
-                        <Label htmlFor={`qty-${index}`}>QTY</Label>
-                        <Input
-                          id={`qty-${index}`}
-                          type="number"
-                          value={item.qty}
-                          onChange={(e) => updateUnavailableItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-                          placeholder="0"
-                        />
-                      </div>
-                      <Button type="button" size="sm" variant="outline" onClick={() => removeUnavailableItem(index)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))} */}
-                 <div className="space-y-2">
-      <Label htmlFor="notAvailableRemarks">Remarks *</Label>
-      <Textarea
-        id="notAvailableRemarks"
-        value={remarks}
-        onChange={(e) => setRemarks(e.target.value)}
-        placeholder="Enter remarks for unavailable items..."
-      />
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} disabled={!receivedDate || !receivingStatus}>
+          Submit
+        </Button>
+      </div>
     </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSubmit} disabled={!availabilityStatus}>
-                  Submit
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+  </DialogContent>
+</Dialog>
 
         {/* View Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
@@ -755,7 +645,7 @@ const updateOrderStatus = async (order, inventoryData) => {
                     <p className="text-sm">{viewOrder.paymentMode}</p>
                   </div>
                 </div>
-                {(viewOrder.statusR || viewOrder.inventoryStatus) && (
+                {/* {(viewOrder.statusR || viewOrder.inventoryStatus) && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Availability Status</Label>
@@ -766,7 +656,7 @@ const updateOrderStatus = async (order, inventoryData) => {
                       <p className="text-sm">{viewOrder.inventoryRemarks || 'N/A'}</p>
                     </div>
                   </div>
-                )}
+                )} */}
                 {(viewOrder.processedDate || viewOrder.timestamp) && (
                   <div>
                     <Label>Processed Date</Label>

@@ -28,6 +28,7 @@ const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, step: "dashboard" },
   { href: "/order-acceptable", label: "Order Acceptable", icon: ClipboardCheck, step: "order-acceptable" },
   { href: "/check-inventory", label: "Check Inventory", icon: Package, step: "check-inventory" },
+  { href: "/material-received", label: "Material Received", icon: Package, step: "material-received" },
   { href: "/senior-approval", label: "Senior Approval", icon: UserCheck, step: "senior-approval" },
   { href: "/disp-form", label: "DISP Form", icon: FileText, step: "disp-form" },
   { href: "/make-invoice", label: "Make Invoice", icon: Receipt, step: "make-invoice" },
