@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Eye, Plus, Trash2, RefreshCw } from "lucide-react"
 import { stringify } from "querystring"
+import { useAuth } from "@/components/auth-provider"
+
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec'
 const SHEET_ID = '1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA'
@@ -31,9 +33,9 @@ export default function CheckInventoryPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState(null)
+  const { user: currentUser } = useAuth()
 
-  // Fetch data from Google Sheets using the same approach as TrackerPendingTable
-  // Fixed fetchOrders function with correct row index calculation
+  // Fetch data from Google Sheets based on BG not null and BH null
   const fetchOrders = async () => {
     setLoading(true)
     setError(null)
@@ -57,28 +59,28 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 2;
             
-            // Column AH (index 33) - inventory status
-            const hasColumnAH = row.c[33] && row.c[33].v !== null && row.c[33].v !== "";
-            // Column AI (index 34) - inventory remarks
-            const isColumnAIEmpty = !row.c[34] || row.c[34].v === null || row.c[34].v === "";
+            // Column BG (index 57) - inventory status
+            const hasColumnBG = row.c[58] && row.c[58].v !== null && row.c[58].v !== "";
+            // Column BH (index 58) - inventory remarks
+            const isColumnBHEmpty = !row.c[59] || row.c[59].v === null || row.c[59].v === "";
             
-            // For pending orders: show rows where AH has data but AI is empty
-            if (hasColumnAH && isColumnAIEmpty) {
+            // For pending orders: show rows where BG has data but BH is empty
+            if (hasColumnBG && isColumnBHEmpty) {
               const order = {
                 rowIndex: actualRowIndex,
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-                companyName: row.c[2] ? row.c[2].v : "",
-                contactPerson: row.c[3] ? row.c[3].v : "",
-                contactNumber: row.c[4] ? row.c[4].v : "",
-                poNumber: row.c[5] ? row.c[5].v : "",
-                paymentMode: row.c[6] ? row.c[6].v : "",
-                paymentTerms: row.c[7] ? row.c[7].v : "",
-                quantity: row.c[8] ? row.c[8].v : "",
-                transportMode: row.c[9] ? row.c[9].v : "",
-                destination: row.c[10] ? row.c[10].v : "",
-                inventoryStatus: row.c[33] ? row.c[33].v : null, // Column AH
-                inventoryRemarks: row.c[34] ? row.c[34].v : "", // Column AI
-                processedDate: row.c[35] ? row.c[35].v : "", // Column AJ
+                companyName: row.c[3] ? row.c[3].v : "",
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                contactNumber: row.c[5] ? row.c[5].v : "",
+                poNumber: row.c[35] ? row.c[35].v : "",
+                paymentMode: row.c[8] ? row.c[8].v : "",
+                paymentTerms: row.c[9] ? row.c[9].v : "",
+                quantity: row.c[55] ? row.c[55].v : "",
+                transportMode: row.c[32] ? row.c[32].v : "",
+                destination: row.c[34] ? row.c[34].v : "",
+                inventoryStatus: row.c[58] ? row.c[58].v : null, // Column BG
+                inventoryRemarks: row.c[59] ? row.c[59].v : "", // Column BH
+                processedDate: row.c[60] ? row.c[60].v : "", // Column BI
                 fullRowData: row.c
               }
               
@@ -97,209 +99,198 @@ export default function CheckInventoryPage() {
       setLoading(false)
     }
   }
-  
 
-// Helper function to format date from Google Sheets format
-const formatGoogleSheetsDate = (dateValue) => {
-  if (!dateValue) return "";
-  
-  // Check if it's in the Google Sheets Date format like "Date(2025,5,10)"
-  if (typeof dateValue === 'string' && dateValue.includes('Date(')) {
-    const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
-    if (match) {
-      const year = parseInt(match[1]);
-      const month = parseInt(match[2]); // Google Sheets months are 0-based
-      const day = parseInt(match[3]);
-      
-      // Create date and format as dd/mm/yyyy
-      const date = new Date(year, month, day);
-      const formattedDay = String(date.getDate()).padStart(2, '0');
-      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
-      const formattedYear = date.getFullYear();
-      
-      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+  // Helper function to format date from Google Sheets format
+  const formatGoogleSheetsDate = (dateValue) => {
+    if (!dateValue) return "";
+    
+    if (typeof dateValue === 'string' && dateValue.includes('Date(')) {
+      const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
+      if (match) {
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]);
+        const day = parseInt(match[3]);
+        
+        const date = new Date(year, month, day);
+        const formattedDay = String(date.getDate()).padStart(2, '0');
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      }
     }
-  }
-  
-  // If it's already a regular date string, try to parse and format it
-  try {
-    const date = new Date(dateValue);
-    if (!isNaN(date.getTime())) {
-      const formattedDay = String(date.getDate()).padStart(2, '0');
-      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
-      const formattedYear = date.getFullYear();
-      
-      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+    
+    try {
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        const formattedDay = String(date.getDate()).padStart(2, '0');
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      }
+    } catch (e) {
+      console.error('Error parsing date:', e);
     }
-  } catch (e) {
-    console.error('Error parsing date:', e);
-  }
-  
-  // Return original value if can't parse
-  return dateValue;
-};
+    
+    return dateValue;
+  };
 
-// Fetch processed orders (where both Q and R have data)
-const fetchProcessedOrders = async () => {
-  try {
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
-    const response = await fetch(sheetUrl)
-    const text = await response.text()
-    
-    const jsonStart = text.indexOf('{')
-    const jsonEnd = text.lastIndexOf('}') + 1
-    const jsonData = text.substring(jsonStart, jsonEnd)
-    
-    const data = JSON.parse(jsonData)
-    
-    if (data && data.table && data.table.rows) {
-      const processedOrdersData = []
+  // Fetch processed orders (where both BG and BH have data)
+  const fetchProcessedOrders = async () => {
+    try {
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const response = await fetch(sheetUrl)
+      const text = await response.text()
       
-      data.table.rows.slice(6).forEach((row, index) => {
-        if (row.c) {
-          const actualRowIndex = index + 2;
-          
-          // Column AH (index 33) - inventory status
-          const hasColumnAH = row.c[33] && row.c[33].v !== null && row.c[33].v !== "";
-          // Column AI (index 34) - inventory remarks
-          const hasColumnAI = row.c[34] && row.c[34].v !== null && row.c[34].v !== "";
-          
-          // For processed orders: show rows where both AH and AI have data
-          if (hasColumnAH && hasColumnAI) {
-            const processedOrder = {
-              rowIndex: actualRowIndex,
-              timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
-              orderNo: row.c[1] ? row.c[1].v : "",
-              companyName: row.c[2] ? row.c[2].v : "",
-              contactPerson: row.c[3] ? row.c[3].v : "",
-              contactNumber: row.c[4] ? row.c[4].v : "",
-              billingAddress: row.c[5] ? row.c[5].v : "",
-              shippingAddress: row.c[6] ? row.c[6].v : "",
-              paymentMode: row.c[7] ? row.c[7].v : "",
-              paymentTerms: row.c[8] ? row.c[8].v : "",
-              orderReceivedQty: row.c[9] ? row.c[9].v : "",
-              transportMode: row.c[10] ? row.c[10].v : "",
-              freightType: row.c[11] ? row.c[11].v : "",
-              destination: row.c[12] ? row.c[12].v : "",
-              poNumber: row.c[13] ? row.c[13].v : "",
-              quotationCopy: row.c[14] ? row.c[14].v : "",
-              acceptanceCopy: row.c[15] ? row.c[15].v : "",
-              inventoryStatus: row.c[33] ? row.c[33].v : "", // Column AH
-              inventoryRemarks: row.c[34] ? row.c[34].v : "", // Column AI
-              processedDate: row.c[35] ? row.c[35].v : "", // Column AJ
-              fullRowData: row.c
-            }
+      const jsonStart = text.indexOf('{')
+      const jsonEnd = text.lastIndexOf('}') + 1
+      const jsonData = text.substring(jsonStart, jsonEnd)
+      
+      const data = JSON.parse(jsonData)
+      
+      if (data && data.table && data.table.rows) {
+        const processedOrdersData = []
+        
+        data.table.rows.slice(6).forEach((row, index) => {
+          if (row.c) {
+            const actualRowIndex = index + 2;
             
-            processedOrdersData.push(processedOrder)
+            // Column BG (index 57) - inventory status
+            const hasColumnBG = row.c[58] && row.c[58].v !== null && row.c[58].v !== "";
+            // Column BH (index 58) - inventory remarks
+            const hasColumnBH = row.c[59] && row.c[59].v !== null && row.c[59].v !== "";
+            
+            // For processed orders: show rows where both BG and BH have data
+            if (hasColumnBG && hasColumnBH) {
+              const processedOrder = {
+                rowIndex: actualRowIndex,
+                timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
+                orderNo: row.c[1] ? row.c[1].v : "",
+                companyName: row.c[2] ? row.c[2].v : "",
+                contactPerson: row.c[3] ? row.c[3].v : "",
+                contactNumber: row.c[4] ? row.c[4].v : "",
+                billingAddress: row.c[5] ? row.c[5].v : "",
+                shippingAddress: row.c[6] ? row.c[6].v : "",
+                paymentMode: row.c[7] ? row.c[7].v : "",
+                paymentTerms: row.c[8] ? row.c[8].v : "",
+                orderReceivedQty: row.c[9] ? row.c[9].v : "",
+                transportMode: row.c[10] ? row.c[10].v : "",
+                freightType: row.c[11] ? row.c[11].v : "",
+                destination: row.c[12] ? row.c[12].v : "",
+                poNumber: row.c[13] ? row.c[13].v : "",
+                quotationCopy: row.c[61] ? row.c[61].v : "",
+                acceptanceCopy: row.c[62] ? row.c[62].v : "",
+                inventoryStatus: row.c[58] ? row.c[58].v : "", // Column BG
+                inventoryRemarks: row.c[59] ? row.c[59].v : "", // Column BH
+                processedDate: row.c[60] ? row.c[60].v : "", // Column BI
+                fullRowData: row.c
+              }
+              
+              processedOrdersData.push(processedOrder)
+            }
           }
-        }
-      })
-      
-      return processedOrdersData
+        })
+        
+        return processedOrdersData
+      }
+      return []
+    } catch (err) {
+      console.error("Error fetching processed orders data:", err)
+      return []
     }
-    return []
-  } catch (err) {
-    console.error("Error fetching processed orders data:", err)
-    return []
   }
-}
 
   useEffect(() => {
     fetchOrders()
   }, [])
 
-  // Update order status using your existing Apps Script - only update columns R and S
-// Update order status by finding the correct row that matches the company name in column B
-// Update order status by finding the correct row that matches the order ID in column B
-const updateOrderStatus = async (order, inventoryData) => {
-  try {
-    console.log(`Updating order for company: ${order.companyName}`)
-    console.log(`Looking for Order No.: ${order.id}`)
-    console.log(`Order details:`, order)
-    
-    const formData = new FormData()
-    formData.append('sheetName', SHEET_NAME)
-    formData.append('action', 'updateByOrderNoInColumnB')
-    formData.append('orderNo', order.id)
-    
-    // Create a sparse array to update only specific columns
-    const rowData = new Array(40).fill('') // Make sure array is large enough for all columns
-
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    
-    // Update columns:
-    // AH (index 33) - inventory status (should preserve existing value)
-    // AI (index 34) - inventory remarks
-    // AJ (index 35) - processed date
-    
-    // Keep existing inventory status (column AH)
-    if (order.inventoryStatus) {
-      rowData[33] = order.inventoryStatus;
-    }
-    
-    // Set processed date (column AJ)
-    rowData[34] = formattedDate;
-    rowData[36] = inventoryData.availabilityStatus // Column R (index 17)
-    
-    // Update inventory remarks (column AI) based on availability status
-    if (inventoryData.availabilityStatus === 'Available') {
-      rowData[37] = inventoryData.remarks || '';
-    } 
-    else if (inventoryData.availabilityStatus === 'Not Available') {
-      rowData[37] = inventoryData.remarks || '';
-    } 
-    else if (inventoryData.availabilityStatus === 'Partial') {
-      rowData[37] = inventoryData.partialDetails || '';
-    }
-    
-    formData.append('rowData', JSON.stringify(rowData))
-    
-    console.log('Sending data to Apps Script:', {
-      sheetName: SHEET_NAME,
-      orderNo: order.id,
-      rowData: rowData,
-      availabilityStatus: inventoryData.availabilityStatus
-    })
-    
-    const updateResponse = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'cors',
-      body: formData
-    })
-    
-    console.log('Response status:', updateResponse.status)
-    
-    if (!updateResponse.ok) {
-      throw new Error(`HTTP error! status: ${updateResponse.status}`)
-    }
-    
-    let result
+  // Update order status by finding the correct row that matches the order ID in column B
+  const updateOrderStatus = async (order, inventoryData) => {
     try {
-      const responseText = await updateResponse.text()
-      console.log('Raw response:', responseText)
-      result = JSON.parse(responseText)
-    } catch (parseError) {
-      console.log('Response parsing failed, but request might be successful')
-      result = { success: true }
+      console.log(`Updating order for company: ${order.companyName}`)
+      console.log(`Looking for Order No.: ${order.id}`)
+      console.log(`Order details:`, order)
+      
+      const formData = new FormData()
+      formData.append('sheetName', SHEET_NAME)
+      formData.append('action', 'updateByOrderNoInColumnB')
+      formData.append('orderNo', order.id)
+      
+      // Create a sparse array to update only specific columns
+      const rowData = new Array(62).fill('') // Make sure array is large enough for all columns
+  
+      const today = new Date();
+      const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+      
+      // Correct column indices:
+      // BG is column 57 (index 57 in 0-based array)
+      // BH is column 58 (index 58)
+      // BI is column 59 (index 59)
+      
+      // Set inventory status (column BG - index 57)
+      rowData[61] = inventoryData.availabilityStatus;
+      
+      // Set processed date (column BI - index 59)
+      rowData[59] = formattedDate;
+      
+      // Update inventory remarks (column BH - index 58) based on availability status
+      if (inventoryData.availabilityStatus === 'Available') {
+        rowData[62] = inventoryData.remarks || '';
+      } 
+      else if (inventoryData.availabilityStatus === 'Not Available') {
+        rowData[62] = inventoryData.remarks || '';
+      } 
+      else if (inventoryData.availabilityStatus === 'Partial') {
+        rowData[62] = inventoryData.partialDetails || '';
+      }
+      
+      formData.append('rowData', JSON.stringify(rowData))
+      
+      console.log('Sending data to Apps Script:', {
+        sheetName: SHEET_NAME,
+        orderNo: order.id,
+        rowData: rowData,
+        availabilityStatus: inventoryData.availabilityStatus
+      })
+      
+      const updateResponse = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'cors',
+        body: formData
+      })
+      
+      console.log('Response status:', updateResponse.status)
+      
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}`)
+      }
+      
+      let result
+      try {
+        const responseText = await updateResponse.text()
+        console.log('Raw response:', responseText)
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        console.log('Response parsing failed, but request might be successful')
+        result = { success: true }
+      }
+      
+      console.log('Parsed result:', result)
+      
+      if (result.success !== false) {
+        await fetchOrders()
+        return true
+      } else {
+        throw new Error(result.error || 'Update failed')
+      }
+      
+    } catch (err) {
+      console.error('Error updating order:', err)
+      setError(err.message)
+      return false
     }
-    
-    console.log('Parsed result:', result)
-    
-    if (result.success !== false) {
-      await fetchOrders()
-      return true
-    } else {
-      throw new Error(result.error || 'Update failed')
-    }
-    
-  } catch (err) {
-    console.error('Error updating order:', err)
-    setError(err.message)
-    return false
   }
-}
-
   const handleProcess = (order) => {
     setSelectedOrder(order)
     setAvailabilityStatus("")
@@ -436,7 +427,7 @@ const updateOrderStatus = async (order, inventoryData) => {
                         <TableHead>PO Number</TableHead>
                         <TableHead>Payment Mode</TableHead>
                         <TableHead>Payment Terms</TableHead>
-                        <TableHead>Quantity</TableHead>
+                        <TableHead>Is Order Acceptable</TableHead>
                         <TableHead>Transport Mode</TableHead>
                         <TableHead>Destination</TableHead>
                         {/* <TableHead>Actions</TableHead> */}
@@ -512,8 +503,8 @@ const updateOrderStatus = async (order, inventoryData) => {
                           <TableHead>Freight Type</TableHead>
                           <TableHead>Destination</TableHead>
                           <TableHead>PO Number</TableHead>
-                          <TableHead>Quotation Copy</TableHead>
-                          <TableHead>Acceptance Copy (Purchase Order Only)</TableHead>
+                          <TableHead>Availability Status</TableHead>
+                          <TableHead>Remarks</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
@@ -708,9 +699,9 @@ const updateOrderStatus = async (order, inventoryData) => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!availabilityStatus}>
-                  Submit
-                </Button>
+                <Button onClick={handleSubmit} disabled={!availabilityStatus || currentUser?.role === "user"}>
+              Submit
+            </Button>
               </div>
             </div>
           </DialogContent>

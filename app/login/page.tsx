@@ -113,12 +113,12 @@ export default function LoginPage() {
               {isSubmitting ? "Signing In..." : "Sign In"}
             </Button>
           </form>
-          <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+          {/* <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
             <p className="font-medium mb-2">Demo Credentials:</p>
             <p>Admin: admin / admin123</p>
             <p>User1: user1 / user123</p>
             <p>User2: user2 / user456</p>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>

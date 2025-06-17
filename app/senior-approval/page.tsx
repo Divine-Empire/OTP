@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Eye } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
+
 
 export default function SeniorApprovalPage() {
   // const { orders, updateOrder } = useData()
@@ -23,6 +25,7 @@ export default function SeniorApprovalPage() {
   const [orders, setOrders] = useState([])
 const [loading, setLoading] = useState(true)
 const [error, setError] = useState(null)
+const { user: currentUser } = useAuth()
 
   // Filter orders based on status
 // Filter orders based on status
@@ -67,27 +70,27 @@ const fetchOrders = async () => {
           const actualRowIndex = index + 2;
           
           // Column AR (index 43) - senior approval status
-          const hasColumnAR = row.c[43] && row.c[43].v !== null && row.c[43].v !== "";
+          const hasColumnAR = row.c[67] && row.c[67].v !== null && row.c[67].v !== "";
           // Column AS (index 44) - approval date
-          const isColumnASEmpty = !row.c[44] || row.c[44].v === null || row.c[44].v === "";
+          const isColumnASEmpty = !row.c[68] || row.c[68].v === null || row.c[68].v === "";
           
           // For pending orders: show rows where AR has data but AS is empty
           if (hasColumnAR && isColumnASEmpty) {
             const order = {
               rowIndex: actualRowIndex,
               id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-              companyName: row.c[2] ? row.c[2].v : "",
-              contactPerson: row.c[3] ? row.c[3].v : "",
-              contactNumber: row.c[4] ? row.c[4].v : "",
-              poNumber: row.c[5] ? row.c[5].v : "",
-              paymentMode: row.c[6] ? row.c[6].v : "",
-              paymentTerms: row.c[7] ? row.c[7].v : "",
-              quantity: row.c[8] ? row.c[8].v : "",
-              transportMode: row.c[9] ? row.c[9].v : "",
-              destination: row.c[10] ? row.c[10].v : "",
-              approvalStatus: row.c[43] ? row.c[43].v : null, // Column AR
-              approvalDate: row.c[44] ? row.c[44].v : "", // Column AS
-              approvedBy: row.c[45] ? row.c[45].v : "", // Column AT
+              companyName: row.c[3] ? row.c[3].v : "",
+              contactPerson: row.c[4] ? row.c[4].v : "",
+              contactNumber: row.c[5] ? row.c[5].v : "",
+              poNumber: row.c[35] ? row.c[35].v : "",
+              paymentMode: row.c[8] ? row.c[8].v : "",
+              paymentTerms: row.c[9] ? row.c[9].v : "",
+              quantity: row.c[40] ? row.c[40].v : "",
+              transportMode: row.c[32] ? row.c[32].v : "",
+              destination: row.c[34] ? row.c[34].v : "",
+              approvalStatus: row.c[67] ? row.c[67].v : null, // Column AR
+              approvalDate: row.c[68] ? row.c[68].v : "", // Column AS
+              approvedBy: row.c[69] ? row.c[69].v : "", // Column AT
               fullRowData: row.c
             }
             
@@ -131,9 +134,9 @@ const fetchProcessedOrders = async () => {
           const actualRowIndex = index + 2;
           
           // Column AR (index 43) - senior approval status
-          const hasColumnAR = row.c[43] && row.c[43].v !== null && row.c[43].v !== "";
+          const hasColumnAR = row.c[67] && row.c[67].v !== null && row.c[67].v !== "";
           // Column AS (index 44) - approval date
-          const hasColumnAS = row.c[44] && row.c[44].v !== null && row.c[44].v !== "";
+          const hasColumnAS = row.c[68] && row.c[68].v !== null && row.c[68].v !== "";
           
           // For processed orders: show rows where both AR and AS have data
           if (hasColumnAR && hasColumnAS) {
@@ -141,18 +144,19 @@ const fetchProcessedOrders = async () => {
               rowIndex: actualRowIndex,
               timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
               orderNo: row.c[1] ? row.c[1].v : "",
-              companyName: row.c[2] ? row.c[2].v : "",
-              contactPerson: row.c[3] ? row.c[3].v : "",
-              contactNumber: row.c[4] ? row.c[4].v : "",
-              poNumber: row.c[5] ? row.c[5].v : "",
-              paymentMode: row.c[6] ? row.c[6].v : "",
-              paymentTerms: row.c[7] ? row.c[7].v : "",
-              quantity: row.c[8] ? row.c[8].v : "",
-              transportMode: row.c[9] ? row.c[9].v : "",
-              destination: row.c[10] ? row.c[10].v : "",
-              approvalStatus: row.c[43] ? row.c[43].v : "", // Column AR
-              approvalDate: row.c[44] ? row.c[44].v : "", // Column AS
-              approvedBy: row.c[45] ? row.c[45].v : "", // Column AT
+              companyName: row.c[3] ? row.c[3].v : "",
+              contactPerson: row.c[4] ? row.c[4].v : "",
+              contactNumber: row.c[5] ? row.c[5].v : "",
+              poNumber: row.c[35] ? row.c[35].v : "",
+              paymentMode: row.c[8] ? row.c[8].v : "",
+              paymentTerms: row.c[9] ? row.c[9].v : "",
+              quantity: row.c[40] ? row.c[40].v : "",
+              transportMode: row.c[32] ? row.c[32].v : "",
+              destination: row.c[34] ? row.c[34].v : "",
+              amount: row.c[41] ? row.c[41].v : "",
+              approvalStatus: row.c[67] ? row.c[67].v : "", // Column AR
+              approvalDate: row.c[68] ? row.c[68].v : "", // Column AS
+              approvedBy: row.c[70] ? row.c[70].v : "", // Column AT
               fullRowData: row.c
             }
             
@@ -206,7 +210,7 @@ const updateOrderStatus = async (order, approvalData) => {
     formData.append('action', 'updateByOrderNoInColumnB')
     formData.append('orderNo', order.id)
     
-    const rowData = new Array(50).fill('')
+    const rowData = new Array(70).fill('')
 
     const today = new Date();
     const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
@@ -222,10 +226,10 @@ const updateOrderStatus = async (order, approvalData) => {
     }
     
     // Set approval date (column AS)
-    rowData[44] = formattedDate;
+    rowData[68] = formattedDate;
     
     // Set approved by (column AT)
-    rowData[46] = approvalData.approvedBy;
+    rowData[70] = approvalData.approvedBy;
     
     formData.append('rowData', JSON.stringify(rowData))
     
@@ -301,7 +305,6 @@ const updateOrderStatus = async (order, approvalData) => {
           <p className="text-muted-foreground">Review and approve orders after inventory check</p>
         </div>
 
-        // Replace your existing Tabs section with this fixed version:
 
 <Tabs defaultValue="pending" className="space-y-4">
   <TabsList>
@@ -366,7 +369,7 @@ const updateOrderStatus = async (order, approvalData) => {
                     <TableCell>{order.quantity}</TableCell>
                     <TableCell>{order.transportMode}</TableCell>
                     <TableCell>{order.destination}</TableCell>
-                    <TableCell>₹{order.amount ? order.amount.toLocaleString() : 'N/A'}</TableCell>
+                    <TableCell>₹{order.amount}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -501,7 +504,7 @@ const updateOrderStatus = async (order, approvalData) => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!approvalStatus}>
+                <Button onClick={handleSubmit} disabled={!approvalStatus || currentUser?.role === "user"}>
                   Submit
                 </Button>
               </div>

@@ -32,11 +32,11 @@ const menuItems = [
   { href: "/senior-approval", label: "Senior Approval", icon: UserCheck, step: "senior-approval" },
   { href: "/disp-form", label: "DISP Form", icon: FileText, step: "disp-form" },
   { href: "/make-invoice", label: "Make Invoice", icon: Receipt, step: "make-invoice" },
-  { href: "/make-pi", label: "Make PI", icon: FileSpreadsheet, step: "make-pi" },
+  // { href: "/make-pi", label: "Make PI", icon: FileSpreadsheet, step: "make-pi" },
   { href: "/warehouse", label: "Warehouse", icon: Warehouse, step: "warehouse" },
   { href: "/warehouse-material", label: "Warehouse (Material RCVD)", icon: PackageCheck, step: "warehouse-material" },
   { href: "/calibration", label: "Calibration Certificate", icon: Award, step: "calibration" },
-  { href: "/service-intimation", label: "Service Intimation", icon: Bell, step: "service-intimation" },
+  // { href: "/service-intimation", label: "Service Intimation", icon: Bell, step: "service-intimation" },
   { href: "/settings", label: "Settings", icon: Settings, step: "settings" },
 ]
 
@@ -51,12 +51,13 @@ export function Sidebar() {
   })
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white border-r border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">OTP System</h2>
+    // <div className="flex flex-col h-full from-blue-50 to-purple-500 border-r border-gray-200">
+    <div className="flex flex-col h-full border-r border-gray-200">
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-b from-blue-50 to-purple-50 ">
+        <h2 className="text-lg font-semibold text-purple-600">OTP System</h2>
         <p className="text-sm text-gray-600">Order To Payment</p>
       </div>
-      <ScrollArea className="flex-1 px-3">
+      <ScrollArea className="flex-1 px-3 bg-gradient-to-b from-blue-50 to-purple-50 ">
         <div className="space-y-1 py-4">
           {filteredMenuItems.map((item) => {
             const Icon = item.icon
@@ -67,7 +68,7 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-gray-100 ${
-                  isActive ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700" : "text-gray-700"
+                  isActive ? "bg-gradient-to-b from-blue-50 to-purple-100  text-blue-700 border-r-2 border-blue-700" : "text-gray-700"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -77,7 +78,7 @@ export function Sidebar() {
           })}
         </div>
       </ScrollArea>
-      <div className="p-3 border-t border-gray-200">
+      <div className="p-3 border-t border-gray-200 bg-gradient-to-b from-blue-50 to-purple-50 ">
         <div className="flex items-center gap-3 px-3 py-2 text-sm">
           <div className="flex-1">
             <p className="font-medium text-gray-900">{user?.fullName}</p>

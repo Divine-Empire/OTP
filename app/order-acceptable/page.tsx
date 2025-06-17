@@ -14,6 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Eye, RefreshCw } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
+
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec'
 const SHEET_ID = '1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA'
@@ -41,6 +43,7 @@ export default function OrderAcceptablePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState(null)
+const { user: currentUser } = useAuth()
 
   // Fetch data from Google Sheets - condition: column Q is not null and column R is null
   const fetchOrders = async () => {
@@ -67,8 +70,8 @@ export default function OrderAcceptablePage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             // Condition: column Q is not null and column R is null
-            const hasColumnQ = row.c[27] && row.c[27].v !== null && row.c[27].v !== ""; // Column Q (index 16)
-            const isColumnREmpty = !row.c[28] || row.c[28].v === null || row.c[28].v === ""; // Column R (index 17)
+            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== ""; // Column Q (index 16)
+            const isColumnREmpty = !row.c[53] || row.c[53].v === null || row.c[53].v === ""; // Column R (index 17)
             
             if (hasColumnQ && isColumnREmpty) {
               // Calculate correct row index
@@ -87,21 +90,21 @@ export default function OrderAcceptablePage() {
                 paymentMode: row.c[8] ? row.c[8].v : "", // Column I
                 paymentTerms: row.c[9] ? row.c[9].v : "", // Column J
                 orderReceivedQty: row.c[10] ? row.c[10].v : "", // Column K
-                transportMode: row.c[11] ? row.c[11].v : "", // Column L
-                freightType: row.c[12] ? row.c[12].v : "", // Column M
-                destination: row.c[13] ? row.c[13].v : "", // Column N
-                poNumber: row.c[14] ? row.c[14].v : "", // Column O
-                quotationCopy: row.c[15] ? row.c[15].v : "", // Column P
-                acceptanceCopy: row.c[16] ? row.c[16].v : "", // Column Q
-                offerShow: row.c[17] ? row.c[17].v : "", // Column R
-                conveyedForRegistration: row.c[18] ? row.c[18].v : "", // Column S
-                qtyAmount: row.c[19] ? row.c[19].v : "", // Column T
-                quantityDelivered: row.c[20] ? row.c[20].v : "", // Column U
-                orderCancel: row.c[21] ? row.c[21].v : "", // Column V
-                pendingQty: row.c[22] ? row.c[22].v : "", // Column W
-                materialReturn: row.c[23] ? row.c[23].v : "", // Column X
+                transportMode: row.c[32] ? row.c[32].v : "", // Column L
+                freightType: row.c[33] ? row.c[33].v : "", // Column M
+                destination: row.c[34] ? row.c[34].v : "", // Column N
+                poNumber: row.c[35] ? row.c[35].v : "", // Column O
+                quotationCopy: row.c[36] ? row.c[36].v : "", // Column P
+                acceptanceCopy: row.c[37] ? row.c[37].v : "", // Column Q
+                offerShow: row.c[38] ? row.c[38].v : "", // Column R
+                conveyedForRegistration: row.c[39] ? row.c[39].v : "", // Column S
+                qtyAmount: row.c[40] ? row.c[40].v : "", // Column T
+                quantityDelivered: row.c[43] ? row.c[43].v : "", // Column U
+                orderCancel: row.c[44] ? row.c[44].v : "", // Column V
+                pendingQty: row.c[45] ? row.c[45].v : "", // Column W
+                materialReturn: row.c[47] ? row.c[47].v : "", // Column X
                 status: row.c[24] ? row.c[24].v : "pending", // Column Y
-                completeDate: row.c[25] ? row.c[25].v : "", // Column Z
+                completeDate: row.c[51] ? row.c[51].v : "", // Column Z
                 // Keep the old field names for backward compatibility in dialog
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 fullRowData: row.c
@@ -181,8 +184,8 @@ export default function OrderAcceptablePage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             // Show rows where both column Q and R have data
-            const hasColumnQ = row.c[27] && row.c[27].v !== null && row.c[27].v !== ""; // Column Q (index 16)
-            const hasColumnR = row.c[28] && row.c[28].v !== null && row.c[28].v !== ""; // Column R (index 17)
+            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== ""; // Column Q (index 16)
+            const hasColumnR = row.c[53] && row.c[53].v !== null && row.c[53].v !== ""; // Column R (index 17)
             
             if (hasColumnQ && hasColumnR) {
               const actualRowIndex = index + 7;
@@ -217,9 +220,9 @@ export default function OrderAcceptablePage() {
                 status: row.c[24] ? row.c[24].v : "", // Column Y
                 completeDate: row.c[25] ? row.c[25].v : "", // Column Z
                 // Additional columns AE, AF, AG (indices 30, 31, 32)
-                isOrderAcceptable: row.c[30] ? row.c[30].v : "", // Column AE
-                orderAcceptanceChecklist: row.c[31] ? row.c[31].v : "", // Column AF
-                remarks: row.c[32] ? row.c[32].v : "", // Column AG
+                isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column AE
+                orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column AF
+                remarks: row.c[57] ? row.c[57].v : "", // Column AG
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : "",
                 fullRowData: row.c
@@ -277,24 +280,24 @@ export default function OrderAcceptablePage() {
       formData.append('orderNo', order.id) // This will search in column B
       
       // Create a sparse array to update only specific columns
-      const rowData = new Array(30).fill('') // Create array with 30 empty strings
+      const rowData = new Array(57).fill('') // Create array with 30 empty strings
 
       // Add today's date to column R (index 17)
       const today = new Date();
       const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-      rowData[28] = formattedDate; // Column R
+      rowData[53] = formattedDate; // Column R
       
       // Add acceptance status to column S (index 18)
-      rowData[30] = acceptanceData.isAcceptable; // Column S
+      rowData[55] = acceptanceData.isAcceptable; // Column S
       
       if (acceptanceData.isAcceptable === 'Yes') {
         // If Yes, add checklist items to column T (index 19)
         const checklistText = acceptanceData.checklist.join(', ');
-        rowData[31] = checklistText; // Column T
+        rowData[56] = checklistText; // Column T
       }
       
       // Always add remarks to column U (index 20) regardless of acceptance status
-      rowData[32] = acceptanceData.remarks || ''; // Column U
+      rowData[57] = acceptanceData.remarks || ''; // Column U
       
       formData.append('rowData', JSON.stringify(rowData))
       
@@ -441,7 +444,7 @@ export default function OrderAcceptablePage() {
                         <TableHead>Shipping Address</TableHead>
                         <TableHead>Payment Mode</TableHead>
                         <TableHead>Payment Terms (In Days)</TableHead>
-                        <TableHead>Order Received Qty</TableHead>
+                        <TableHead>Reference No.</TableHead>
                         <TableHead>Transport Mode</TableHead>
                         <TableHead>Freight Type</TableHead>
                         <TableHead>Destination</TableHead>
@@ -705,7 +708,7 @@ export default function OrderAcceptablePage() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!isAcceptable}>
+                <Button onClick={handleSubmit} disabled={!isAcceptable || currentUser?.role === "user"}>
                   Submit
                 </Button>
               </div>

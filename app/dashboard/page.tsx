@@ -50,9 +50,9 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gradient-to-b from-blue-50 to-purple-50">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-purple-700">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your order to payment system</p>
         </div>
 

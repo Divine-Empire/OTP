@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Eye, Plus, Trash2, RefreshCw } from "lucide-react"
 import { stringify } from "querystring"
+import { useAuth } from "@/components/auth-provider"
+
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec'
 const SHEET_ID = '1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA'
@@ -33,6 +35,8 @@ export default function CheckInventoryPage() {
   const [viewOrder, setViewOrder] = useState(null)
   const [receivedDate, setReceivedDate] = useState("")
   const [receivingStatus, setReceivingStatus] = useState("")
+  const { user: currentUser } = useAuth()
+
   // Fetch data from Google Sheets using the same approach as TrackerPendingTable
   // Fixed fetchOrders function with correct row index calculation
   const fetchOrders = async () => {
@@ -58,28 +62,28 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 2;
             
-            // Column AH (index 33) - inventory status
-            const hasColumnAH = row.c[38] && row.c[38].v !== null && row.c[38].v !== "";
-            // Column AI (index 34) - inventory remarks
-            const isColumnAIEmpty = !row.c[39] || row.c[39].v === null || row.c[39].v === "";
+            // Column BL (index 63) - inventory status
+            const hasColumnBL = row.c[63] && row.c[63].v !== null && row.c[63].v !== "";
+            // Column BM (index 64) - inventory remarks
+            const isColumnBMEmpty = !row.c[64] || row.c[64].v === null || row.c[64].v === "";
             
-            // For pending orders: show rows where AH has data but AI is empty
-            if (hasColumnAH && isColumnAIEmpty) {
+            // For pending orders: show rows where BL has data but BM is empty
+            if (hasColumnBL && isColumnBMEmpty) {
               const order = {
                 rowIndex: actualRowIndex,
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-                companyName: row.c[2] ? row.c[2].v : "",
-                contactPerson: row.c[3] ? row.c[3].v : "",
-                contactNumber: row.c[4] ? row.c[4].v : "",
-                poNumber: row.c[5] ? row.c[5].v : "",
-                paymentMode: row.c[6] ? row.c[6].v : "",
-                paymentTerms: row.c[7] ? row.c[7].v : "",
-                quantity: row.c[8] ? row.c[8].v : "",
-                transportMode: row.c[9] ? row.c[9].v : "",
-                destination: row.c[10] ? row.c[10].v : "",
-                inventoryStatus: row.c[33] ? row.c[33].v : null, // Column AH
-                inventoryRemarks: row.c[34] ? row.c[34].v : "", // Column AI
-                processedDate: row.c[35] ? row.c[35].v : "", // Column AJ
+                companyName: row.c[3] ? row.c[3].v : "",
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                contactNumber: row.c[5] ? row.c[5].v : "",
+                poNumber: row.c[35] ? row.c[35].v : "",
+                paymentMode: row.c[8] ? row.c[8].v : "",
+                paymentTerms: row.c[9] ? row.c[9].v : "",
+                quantity: row.c[40] ? row.c[40].v : "",
+                transportMode: row.c[61] ? row.c[61].v : "",
+                destination: row.c[62] ? row.c[62].v : "",
+                inventoryStatus: row.c[63] ? row.c[63].v : null, // Column BL
+                inventoryRemarks: row.c[64] ? row.c[64].v : "", // Column BM
+                processedDate: row.c[65] ? row.c[65].v : "", // Column BN
                 fullRowData: row.c
               }
               
@@ -161,9 +165,9 @@ const fetchProcessedOrders = async () => {
           const actualRowIndex = index + 2;
           
           // Column AH (index 33) - inventory status
-          const hasColumnAH = row.c[38] && row.c[38].v !== null && row.c[38].v !== "";
+          const hasColumnAH = row.c[63] && row.c[63].v !== null && row.c[63].v !== "";
           // Column AI (index 34) - inventory remarks
-          const hasColumnAI = row.c[39] && row.c[39].v !== null && row.c[39].v !== "";
+          const hasColumnAI = row.c[64] && row.c[64].v !== null && row.c[64].v !== "";
           
           // For processed orders: show rows where both AH and AI have data
           if (hasColumnAH && hasColumnAI) {
@@ -171,20 +175,20 @@ const fetchProcessedOrders = async () => {
               rowIndex: actualRowIndex,
               timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
               orderNo: row.c[1] ? row.c[1].v : "",
-              companyName: row.c[2] ? row.c[2].v : "",
-              contactPerson: row.c[3] ? row.c[3].v : "",
-              contactNumber: row.c[4] ? row.c[4].v : "",
-              billingAddress: row.c[5] ? row.c[5].v : "",
-              shippingAddress: row.c[6] ? row.c[6].v : "",
-              paymentMode: row.c[7] ? row.c[7].v : "",
-              paymentTerms: row.c[8] ? row.c[8].v : "",
-              orderReceivedQty: row.c[9] ? row.c[9].v : "",
-              transportMode: row.c[10] ? row.c[10].v : "",
-              freightType: row.c[11] ? row.c[11].v : "",
-              destination: row.c[12] ? row.c[12].v : "",
-              poNumber: row.c[13] ? row.c[13].v : "",
-              quotationCopy: row.c[14] ? row.c[14].v : "",
-              acceptanceCopy: row.c[15] ? row.c[15].v : "",
+              companyName: row.c[3] ? row.c[3].v : "",
+              contactPerson: row.c[4] ? row.c[4].v : "",
+              contactNumber: row.c[5] ? row.c[5].v : "",
+              billingAddress: row.c[6] ? row.c[6].v : "",
+              shippingAddress: row.c[7] ? row.c[7].v : "",
+              paymentMode: row.c[8] ? row.c[8].v : "",
+              paymentTerms: row.c[9] ? row.c[9].v : "",
+              orderReceivedQty: row.c[11] ? row.c[11].v : "",
+              transportMode: row.c[32] ? row.c[32].v : "",
+              freightType: row.c[33] ? row.c[33].v : "",
+              destination: row.c[34] ? row.c[34].v : "",
+              poNumber: row.c[35] ? row.c[35].v : "",
+              quotationCopy: row.c[36] ? row.c[36].v : "",
+              acceptanceCopy: row.c[37] ? row.c[37].v : "",
               inventoryStatus: row.c[33] ? row.c[33].v : "", // Column AH
               inventoryRemarks: row.c[34] ? row.c[34].v : "", // Column AI
               processedDate: row.c[35] ? row.c[35].v : "", // Column AJ
@@ -211,66 +215,93 @@ const fetchProcessedOrders = async () => {
 
   // Update order status using your existing Apps Script - only update columns R and S
 // Update order status by finding the correct row that matches the company name in column B
-// Update order status by finding the correct row that matches the order ID in column B
 const updateOrderStatus = async (order, inventoryData) => {
-    try {
-      const formData = new FormData()
-      formData.append('sheetName', SHEET_NAME)
-      formData.append('action', 'updateByOrderNoInColumnB')
-      formData.append('orderNo', order.id)
-      
-      // Create a sparse array to update only specific columns
-      const rowData = new Array(40).fill('') // Make sure array is large enough for all columns
-  
-      const today = new Date();
-      const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-      
-      // Update columns:
-      // AN (index 39) - processed date (formattedDate)
-      // AO (index 40) - received date (inventoryData.receivedDate)
-      // AP (index 41) - receiving status (inventoryData.receivingStatus)
-      
-      // Set processed date (column AN)
-      rowData[39] = formattedDate;
-      // Set received date (column AO)
-      rowData[41] = inventoryData.receivedDate;
-      // Set receiving status (column AP)
-      rowData[42] = inventoryData.receivingStatus;
-      // Set remarks (column AQ)
-    //   rowData[41] = inventoryData.remarks || '';
-      
-      formData.append('rowData', JSON.stringify(rowData))
-      
-      const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'cors',
-        body: formData
-      })
-      
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
-      }
-      
-      let result
-      try {
-        result = await updateResponse.json()
-      } catch (parseError) {
-        result = { success: true }
-      }
-      
-      if (result.success !== false) {
-        await fetchOrders()
-        return true
-      } else {
-        throw new Error(result.error || 'Update failed')
-      }
-      
-    } catch (err) {
-      console.error('Error updating order:', err)
-      setError(err.message)
-      return false
+  try {
+    const formData = new FormData()
+    formData.append('sheetName', SHEET_NAME)
+    formData.append('action', 'updateByOrderNoInColumnB')
+    formData.append('orderNo', order.id)
+    
+    // Create a sparse array to update only specific columns
+    const rowData = new Array(66).fill('') // Make sure array is large enough for all columns
+
+    const today = new Date();
+    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+    
+    // Correct column indices for ORDER-DISPATCH sheet:
+    // BL (index 63) - inventory status (we'll use for received status)
+    // BM (index 64) - inventory remarks
+    // BN (index 65) - processed date
+    
+    // Set received status (column BL - index 63)
+    // rowData[63] = inventoryData.receivingStatus || "Received";
+    
+    // Set processed date (column BN - index 65)
+    rowData[64] = formattedDate;
+    
+    // Set received date (column BM - index 64)
+    rowData[66] = inventoryData.receivedDate;
+    
+    // Set remarks if any
+    if (inventoryData.remarks) {
+      rowData[66] = inventoryData.remarks;
     }
+    
+    formData.append('rowData', JSON.stringify(rowData))
+    
+    const updateResponse = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      body: formData
+    })
+    
+    if (!updateResponse.ok) {
+      throw new Error(`HTTP error! status: ${updateResponse.status}`)
+    }
+    
+    let result
+    try {
+      result = await updateResponse.json()
+    } catch (parseError) {
+      result = { success: true }
+    }
+    
+    if (result.success !== false) {
+      await fetchOrders()
+      return true
+    } else {
+      throw new Error(result.error || 'Update failed')
+    }
+    
+  } catch (err) {
+    console.error('Error updating order:', err)
+    setError(err.message)
+    return false
   }
+}
+
+const handleSubmit = async () => {
+if (!selectedOrder || !receivedDate) return
+
+const inventoryData = {
+  receivedDate,
+  receivingStatus: "Received", // Default status
+  remarks,
+  processedAt: new Date().toISOString(),
+  processedBy: currentUser?.name || "Unknown User",
+}
+
+const success = await updateOrderStatus(selectedOrder, inventoryData)
+
+if (success) {
+  setIsDialogOpen(false)
+  setSelectedOrder(null)
+  setReceivedDate("")
+  setRemarks("")
+  // Show success message
+  alert(`Order ${selectedOrder.id} has been updated successfully.`)
+}
+}
 
   const handleProcess = (order) => {
     setSelectedOrder(order)
@@ -294,29 +325,29 @@ const updateOrderStatus = async (order, inventoryData) => {
     setUnavailableItems(updated)
   }
 
-  const handleSubmit = async () => {
-    if (!selectedOrder || !receivedDate || !receivingStatus) return
+  // const handleSubmit = async () => {
+  //   if (!selectedOrder || !receivedDate || !receivingStatus) return
   
-    const inventoryData = {
-      receivedDate,
-      receivingStatus,
-      remarks,
-      processedAt: new Date().toISOString(),
-      processedBy: "Current User",
-    }
+  //   const inventoryData = {
+  //     receivedDate,
+  //     receivingStatus,
+  //     remarks,
+  //     processedAt: new Date().toISOString(),
+  //     processedBy: "Current User",
+  //   }
   
-    const success = await updateOrderStatus(selectedOrder, inventoryData)
+  //   const success = await updateOrderStatus(selectedOrder, inventoryData)
     
-    if (success) {
-      setIsDialogOpen(false)
-      setSelectedOrder(null)
-      setReceivedDate("")
-      setReceivingStatus("")
-      setRemarks("")
-      // Show success message
-      alert(`Order ${selectedOrder.id} has been updated successfully.`)
-    }
-  }
+  //   if (success) {
+  //     setIsDialogOpen(false)
+  //     setSelectedOrder(null)
+  //     setReceivedDate("")
+  //     setReceivingStatus("")
+  //     setRemarks("")
+  //     // Show success message
+  //     alert(`Order ${selectedOrder.id} has been updated successfully.`)
+  //   }
+  // }
 
   const handleView = (order) => {
     setViewOrder(order)
@@ -409,8 +440,8 @@ const updateOrderStatus = async (order, inventoryData) => {
                         <TableHead>Payment Mode</TableHead>
                         <TableHead>Payment Terms</TableHead>
                         <TableHead>Quantity</TableHead>
-                        <TableHead>Transport Mode</TableHead>
-                        <TableHead>Destination</TableHead>
+                        <TableHead>Availability Status</TableHead>
+                        <TableHead>Remarks</TableHead>
                         {/* <TableHead>Actions</TableHead> */}
                       </TableRow>
                     </TableHeader>
@@ -479,7 +510,7 @@ const updateOrderStatus = async (order, inventoryData) => {
                           <TableHead>Shipping Address</TableHead>
                           <TableHead>Payment Mode</TableHead>
                           <TableHead>Payment Terms (In Days)</TableHead>
-                          <TableHead>Order Received Qty</TableHead>
+                          <TableHead>Email</TableHead>
                           <TableHead>Transport Mode</TableHead>
                           <TableHead>Freight Type</TableHead>
                           <TableHead>Destination</TableHead>
@@ -540,7 +571,7 @@ const updateOrderStatus = async (order, inventoryData) => {
 
         {/* Process Dialog */}
    {/* Process Dialog */}
-<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
   <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
     <DialogHeader>
       <DialogTitle>Material Received</DialogTitle>
@@ -567,23 +598,6 @@ const updateOrderStatus = async (order, inventoryData) => {
         />
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="receivingStatus">Receiving Status *</Label>
-        <Select 
-          value={receivingStatus} 
-          onValueChange={setReceivingStatus}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Yes">Yes</SelectItem>
-            <SelectItem value="No">No</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* <div className="space-y-2">
         <Label htmlFor="remarks">Remarks</Label>
         <Textarea
@@ -598,7 +612,7 @@ const updateOrderStatus = async (order, inventoryData) => {
         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!receivedDate || !receivingStatus}>
+        <Button onClick={handleSubmit} disabled={!receivedDate || currentUser?.role === "user"}>
           Submit
         </Button>
       </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
-import { useData } from "@/components/data-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,8 +13,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Eye, Plus, Trash2, RefreshCw } from "lucide-react"
 
+const convertFileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = (error) => reject(error)
+  })
+}
+
 export default function DispFormPage() {
-  // const { orders, updateOrder } = useData()
   const [selectedOrder, setSelectedOrder] = useState<string>("")
   const [calibrationRequired, setCalibrationRequired] = useState<string>("")
   const [calibrationType, setCalibrationType] = useState<string>("")
@@ -24,153 +31,123 @@ export default function DispFormPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState<any>(null)
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState<any[]>([])
+  const [processedOrders, setProcessedOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
+  const [processedLoading, setProcessedLoading] = useState(false)
+  const [ewayBillDetails, setEwayBillDetails] = useState<string>("")
+  const [ewayBillAttachment, setEwayBillAttachment] = useState<File | null>(null)
+  const [srnNumber, setSrnNumber] = useState<string>("")
+  const [srnNumberAttachment, setSrnNumberAttachment] = useState<File | null>(null)
+  const [paymentAttachment, setPaymentAttachment] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [remarks, setRemarks] = useState<string>("")
 
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec'
-const SHEET_ID = '1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA'
-const SHEET_NAME = 'ORDER-DISPATCH'
+  const APPS_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+  const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
+  const SHEET_NAME = "ORDER-DISPATCH"
 
-  const pendingOrders = orders.filter((order) => order.status === "senior-approved")
-  const processedOrders = orders.filter((order) => order.dispatchData)
+  const fetchAllOrders = async () => {
+    setLoading(true)
+    setError(null)
 
+    try {
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const response = await fetch(sheetUrl)
+      const text = await response.text()
 
-// Fetch data from Google Sheets - condition: column Q is not null and column R is null
-const fetchOrders = async () => {
-  setLoading(true)
-  setError(null)
-  
-  try {
-    // Fetch the entire sheet using Google Sheets API directly
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
-    const response = await fetch(sheetUrl)
-    const text = await response.text()
-    
-    // Extract the JSON part from the response
-    const jsonStart = text.indexOf('{')
-    const jsonEnd = text.lastIndexOf('}') + 1
-    const jsonData = text.substring(jsonStart, jsonEnd)
-    
-    const data = JSON.parse(jsonData)
-    
-    // Process the orders data
-    if (data && data.table && data.table.rows) {
-      const ordersData = []
-      
-      data.table.rows.slice(6).forEach((row, index) => {
-        if (row.c) {
-          // Condition: column Q is not null and column R is null (adjust column indexes as needed)
-          const hasColumnQ = row.c[27] && row.c[27].v !== null && row.c[27].v !== "";
-          const isColumnREmpty = !row.c[28] || row.c[28].v === null || row.c[28].v === "";
-          
-          if (hasColumnQ && isColumnREmpty) {
-            const actualRowIndex = index + 2;
-            
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}") + 1
+      const jsonData = text.substring(jsonStart, jsonEnd)
+
+      const data = JSON.parse(jsonData)
+
+      if (data && data.table && data.table.rows) {
+        const pendingData: any[] = []
+        const processedData: any[] = []
+
+        data.table.rows.slice(6).forEach((row, index) => {
+          if (row.c) {
+            const actualRowIndex = index + 2
+            const statusColumn = row.c[49] ? row.c[49].v?.toString().toLowerCase() : "" // Column AX (index 49)
+
             const order = {
               rowIndex: actualRowIndex,
               id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
               companyName: row.c[3] ? row.c[3].v : "",
               contactPerson: row.c[4] ? row.c[4].v : "",
               contactNumber: row.c[5] ? row.c[5].v : "",
-              poNumber: row.c[14] ? row.c[14].v : "",
+              poNumber: row.c[35] ? row.c[35].v : "",
               paymentMode: row.c[8] ? row.c[8].v : "",
               paymentTerms: row.c[9] ? row.c[9].v : "",
-              quantity: row.c[10] ? row.c[10].v : "",
-              transportMode: row.c[11] ? row.c[11].v : "",
-              destination: row.c[13] ? row.c[13].v : "",
-              amount: row.c[12] ? parseFloat(row.c[12].v) || 0 : 0,
-              status: "senior-approved",
-              fullRowData: row.c
+              quantity: row.c[41] ? row.c[41].v : "",
+              transportMode: row.c[32] ? row.c[32].v : "",
+              destination: row.c[32] ? row.c[32].v : "",
+              amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
+              status: statusColumn === "completed" ? "dispatch-processed" : "senior-approved",
+              fullRowData: row.c,
             }
-            
-            ordersData.push(order)
-          }
-        }
-      })
-      
-      setOrders(ordersData)
-    }
-  } catch (err) {
-    console.error("Error fetching orders data:", err)
-    setError(err.message)
-    setOrders([])
-  } finally {
-    setLoading(false)
-  }
-}
 
-// For processed orders
-const fetchProcessedOrders = async () => {
-  try {
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
-    const response = await fetch(sheetUrl)
-    const text = await response.text()
-    
-    const jsonStart = text.indexOf('{')
-    const jsonEnd = text.lastIndexOf('}') + 1
-    const jsonData = text.substring(jsonStart, jsonEnd)
-    
-    const data = JSON.parse(jsonData)
-    
-    if (data && data.table && data.table.rows) {
-      const processedOrdersData = []
-      
-      data.table.rows.slice(6).forEach((row, index) => {
-        if (row.c) {
-          // Show rows where both column Q and R have data
-          const hasColumnQ = row.c[27] && row.c[27].v !== null && row.c[27].v !== "";
-          const hasColumnR = row.c[28] && row.c[28].v !== null && row.c[28].v !== "";
-          
-          if (hasColumnQ && hasColumnR) {
-            const actualRowIndex = index + 2;
-            
-            const processedOrder = {
-              rowIndex: actualRowIndex,
-              id: row.c[1] ? row.c[1].v : "",
-              companyName: row.c[3] ? row.c[3].v : "",
-              contactPerson: row.c[4] ? row.c[4].v : "",
-              contactNumber: row.c[5] ? row.c[5].v : "",
-              poNumber: row.c[14] ? row.c[14].v : "",
-              paymentMode: row.c[8] ? row.c[8].v : "",
-              paymentTerms: row.c[9] ? row.c[9].v : "",
-              quantity: row.c[10] ? row.c[10].v : "",
-              transportMode: row.c[11] ? row.c[11].v : "",
-              destination: row.c[13] ? row.c[13].v : "",
-              amount: row.c[12] ? parseFloat(row.c[12].v) || 0 : 0,
-              status: "dispatch-processed",
-              dispatchData: {
-                calibrationRequired: row.c[28] ? row.c[28].v : "",
-                calibrationType: row.c[29] ? row.c[29].v : "",
-                installationRequired: row.c[30] ? row.c[30].v : "",
-                items: row.c[31] ? JSON.parse(row.c[31].v) : [],
-                processedAt: row.c[32] ? row.c[32].v : "",
-              },
-              fullRowData: row.c
+            if (statusColumn === "pending") {
+              pendingData.push(order)
+            } else if (statusColumn === "completed") {
+              processedData.push(order)
             }
-            
-            processedOrdersData.push(processedOrder)
           }
-        }
-      })
-      
-      return processedOrdersData
+        })
+
+        setOrders(pendingData)
+        setProcessedOrders(processedData)
+      }
+    } catch (err: any) {
+      console.error("Error fetching orders data:", err)
+      setError(err.message)
+      setOrders([])
+      setProcessedOrders([])
+    } finally {
+      setLoading(false)
     }
-    return []
-  } catch (err) {
-    console.error("Error fetching processed orders data:", err)
-    return []
   }
-}
+
+  useEffect(() => {
+    fetchAllOrders()
+  }, [])
 
   const handleProcess = (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId)
+    if (!order) return
+
     setSelectedOrder(orderId)
     setCalibrationRequired("")
     setCalibrationType("")
     setInstallationRequired("")
-    setItems([])
+    
+    // Extract items from the order data (columns M to AF)
+    const extractedItems: Array<{ name: string; qty: number }> = []
+    for (let i = 12; i <= 31; i += 2) { // Columns M (12) to AF (31)
+      const nameCol = order.fullRowData[i]
+      const qtyCol = order.fullRowData[i + 1]
+      
+      if (nameCol && nameCol.v && nameCol.v.toString().trim() !== "") {
+        extractedItems.push({
+          name: nameCol.v.toString(),
+          qty: qtyCol ? Number(qtyCol.v) || 0 : 0
+        })
+      }
+    }
+    
+    setItems(extractedItems)
+    setEwayBillDetails("")
+    setEwayBillAttachment(null)
+    setSrnNumber("")
+    setSrnNumberAttachment(null)
+    setPaymentAttachment(null)
     setIsDialogOpen(true)
+    setRemarks("") // Add this line
   }
+
 
   const addItem = () => {
     setItems([...items, { name: "", qty: 0 }])
@@ -186,102 +163,164 @@ const fetchProcessedOrders = async () => {
     setItems(updated)
   }
 
-// Replace the existing useEffect with:
-useEffect(() => {
-  fetchOrders()
-}, [])
-
-// Update the processed orders handler
-const handleProcessedTabClick = async () => {
-  setProcessedLoading(true)
-  const processed = await fetchProcessedOrders()
-  setProcessedOrders(processed)
-  setProcessedLoading(false)
-}
-
-// Update the order status update function
-const updateOrderStatus = async (order, dispatchData) => {
-  try {
-    const formData = new FormData()
-    formData.append('sheetName', SHEET_NAME)
-    formData.append('action', 'updateByOrderNoInColumnB')
-    formData.append('orderNo', order.id)
-    
-    const rowData = new Array(30).fill('')
-    
-    // Add today's date to column R (index 17)
-    const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    rowData[28] = formattedDate; // Column R
-    
-    // Add dispatch data to columns S, T, U, etc.
-    rowData[29] = dispatchData.calibrationRequired; // Column S
-    rowData[30] = dispatchData.calibrationType || ''; // Column T
-    rowData[31] = dispatchData.installationRequired; // Column U
-    rowData[32] = JSON.stringify(dispatchData.items); // Column V
-    
-    formData.append('rowData', JSON.stringify(rowData))
-    
-    const updateResponse = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'cors',
-      body: formData
-    })
-    
-    if (!updateResponse.ok) {
-      throw new Error(`HTTP error! status: ${updateResponse.status}`)
-    }
-    
-    let result
+  const updateOrderStatus = async (order: any, dispatchData: any) => {
     try {
-      const responseText = await updateResponse.text()
-      result = JSON.parse(responseText)
-    } catch (parseError) {
-      result = { success: true }
-    }
-    
-    if (result.success !== false) {
-      await fetchOrders()
-      return true
-    } else {
-      throw new Error(result.error || 'Update failed')
-    }
-    
-  } catch (err) {
-    console.error('Error updating order:', err)
-    setError(err.message)
-    return false
-  }
-}
-
-// Update handleSubmit to use the new update function
-const handleSubmit = async () => {
-  if (!selectedOrder || !calibrationRequired || !installationRequired) return
-
-  const order = orders.find(o => o.id === selectedOrder)
-  if (!order) return
-
-  const dispatchData = {
-    calibrationRequired,
-    calibrationType: calibrationRequired === "YES" ? calibrationType : "",
-    installationRequired,
-    items,
-    processedAt: new Date().toISOString(),
-  }
-
-  const success = await updateOrderStatus(order, dispatchData)
+      setUploading(true)
   
-  if (success) {
-    setIsDialogOpen(false)
-    setSelectedOrder("")
-    // Show success message
-    alert(`Order ${selectedOrder} dispatch form has been processed successfully`)
+      const formData = new FormData()
+      formData.append("sheetName", "DISPATCH-DELIVERY")
+      formData.append("action", "updateByOrderNoInColumnB")
+      formData.append("orderNo", order.id)
+  
+      // Handle file uploads (same as before)
+      if (ewayBillAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(ewayBillAttachment)
+          formData.append("ewayBillFile", base64Data)
+          formData.append("ewayBillFileName", ewayBillAttachment.name)
+          formData.append("ewayBillMimeType", ewayBillAttachment.type)
+        } catch (error) {
+          console.error("Error converting Eway Bill file:", error)
+        }
+      }
+  
+      if (srnNumberAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(srnNumberAttachment)
+          formData.append("srnFile", base64Data)
+          formData.append("srnFileName", srnNumberAttachment.name)
+          formData.append("srnMimeType", srnNumberAttachment.type)
+        } catch (error) {
+          console.error("Error converting SRN file:", error)
+        }
+      }
+  
+      if (paymentAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(paymentAttachment)
+          formData.append("paymentFile", base64Data)
+          formData.append("paymentFileName", paymentAttachment.name)
+          formData.append("paymentMimeType", paymentAttachment.type)
+        } catch (error) {
+          console.error("Error converting Payment file:", error)
+        }
+      }
+  
+      const rowData = new Array(50).fill("")
+  
+      // Add today's date
+      const today = new Date()
+      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+  
+      // Map data to columns
+      rowData[22] = dispatchData.calibrationRequired // Column X
+      rowData[23] = dispatchData.calibrationType || "" // Column Y
+      rowData[24] = dispatchData.installationRequired // Column Z
+      rowData[25] = dispatchData.ewayBillDetails // Column AB
+      rowData[27] = dispatchData.srnNumber // Column AC
+      // In the updateOrderStatus function, add this line before formData.append("rowData", ...)
+rowData[61] = dispatchData.remarks || "" // Column BI (index 61)
+  
+      // Process items array to handle empty quantities
+      const processedItems = dispatchData.items.map((item: any) => ({
+        name: item.name || "",
+        qty: item.qty || 0 // Default to 0 if qty is not provided
+      }))
+  
+      // Assign items to separate columns
+      // Let's assume we have columns AA (26) to AZ (51) available for items
+      // We'll use pairs of columns: AA for item name, AB for quantity, AC for next item, etc.
+      let columnIndex = 30; // Starting from column AA (index 30)
+      
+      processedItems.forEach((item: any) => {
+        if (columnIndex + 1 < rowData.length) { // Ensure we don't exceed array bounds
+          rowData[columnIndex] = item.name;     // Item name
+          rowData[columnIndex + 1] = item.qty;  // Item quantity
+          columnIndex += 2;                     // Move to next pair of columns
+        }
+      });
+  
+      formData.append("rowData", JSON.stringify(rowData))
+  
+      const updateResponse = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        body: formData,
+      })
+  
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}`)
+      }
+  
+      let result
+      try {
+        const responseText = await updateResponse.text()
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        result = { success: true }
+      }
+  
+      if (result.success !== false) {
+        await fetchAllOrders()
+        return { success: true, fileUrls: result.fileUrls }
+      } else {
+        throw new Error(result.error || "Update failed")
+      }
+    } catch (err: any) {
+      console.error("Error updating order:", err)
+      setError(err.message)
+      return { success: false, error: err.message }
+    } finally {
+      setUploading(false)
+    }
   }
-}
+
+  const handleSubmit = async () => {
+    if (!selectedOrder || !calibrationRequired || !installationRequired) return
+
+    const order = orders.find((o: any) => o.id === selectedOrder)
+    if (!order) return
+
+    const dispatchData = {
+      calibrationRequired,
+      calibrationType: calibrationRequired === "YES" ? calibrationType : "",
+      installationRequired,
+      items,
+      ewayBillDetails,
+      srnNumber,
+      remarks, // Add this line
+      processedAt: new Date().toISOString(),
+    }
+
+    const result = await updateOrderStatus(order, dispatchData)
+
+    if (result.success) {
+      setIsDialogOpen(false)
+      setSelectedOrder("")
+      let message = `Order ${selectedOrder} dispatch form has been processed successfully`
+      if (result.fileUrls) {
+        message += "\n\nFiles uploaded to Google Drive:"
+        if (result.fileUrls.ewayBillUrl) message += "\n- Eway Bill attachment"
+        if (result.fileUrls.srnUrl) message += "\n- SRN Number attachment"
+        if (result.fileUrls.paymentUrl) message += "\n- Payment attachment"
+      }
+      alert(message)
+    } else {
+      alert(`Error processing order: ${result.error}`)
+    }
+  }
 
   const handleView = (order: any) => {
     setViewOrder(order)
     setViewDialogOpen(true)
+  }
+
+  const handleRefresh = async () => {
+    setLoading(true)
+    setProcessedLoading(true)
+    await fetchAllOrders()
+    setLoading(false)
+    setProcessedLoading(false)
   }
 
   if (loading) {
@@ -302,7 +341,7 @@ const handleSubmit = async () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600">Error Loading Data</h1>
             <p className="text-muted-foreground mt-2">{error}</p>
-            <Button onClick={fetchOrders} className="mt-4">
+            <Button onClick={fetchAllOrders} className="mt-4">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -315,14 +354,20 @@ const handleSubmit = async () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">DISP Form</h1>
-          <p className="text-muted-foreground">Process dispatch forms for approved orders</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">DISP Form</h1>
+            <p className="text-muted-foreground">Process dispatch forms for approved orders</p>
+          </div>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({orders.length})</TabsTrigger>
             <TabsTrigger value="history">History ({processedOrders.length})</TabsTrigger>
           </TabsList>
 
@@ -353,7 +398,7 @@ const handleSubmit = async () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pendingOrders.map((order) => (
+                      {orders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-medium">{order.id}</TableCell>
                           <TableCell>{order.companyName}</TableCell>
@@ -390,53 +435,59 @@ const handleSubmit = async () => {
                 <CardDescription>Previously processed dispatch forms</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Company Name</TableHead>
-                        <TableHead>Contact Person</TableHead>
-                        <TableHead>Contact Number</TableHead>
-                        <TableHead>PO Number</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Payment Terms</TableHead>
-                        <TableHead>Quantity</TableHead>
-                        <TableHead>Transport Mode</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {processedOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">{order.id}</TableCell>
-                          <TableCell>{order.companyName}</TableCell>
-                          <TableCell>{order.contactPerson}</TableCell>
-                          <TableCell>{order.contactNumber}</TableCell>
-                          <TableCell>{order.poNumber}</TableCell>
-                          <TableCell>{order.paymentMode}</TableCell>
-                          <TableCell>{order.paymentTerms}</TableCell>
-                          <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.transportMode}</TableCell>
-                          <TableCell>{order.destination}</TableCell>
-                          <TableCell>₹{order.amount.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge variant="default">{order.status}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button size="sm" variant="outline" onClick={() => handleView(order)}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                          </TableCell>
+                {processedLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order ID</TableHead>
+                          <TableHead>Company Name</TableHead>
+                          <TableHead>Contact Person</TableHead>
+                          <TableHead>Contact Number</TableHead>
+                          <TableHead>PO Number</TableHead>
+                          <TableHead>Payment Mode</TableHead>
+                          <TableHead>Payment Terms</TableHead>
+                          <TableHead>Quantity</TableHead>
+                          <TableHead>Transport Mode</TableHead>
+                          <TableHead>Destination</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {processedOrders.map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-medium">{order.id}</TableCell>
+                            <TableCell>{order.companyName}</TableCell>
+                            <TableCell>{order.contactPerson}</TableCell>
+                            <TableCell>{order.contactNumber}</TableCell>
+                            <TableCell>{order.poNumber}</TableCell>
+                            <TableCell>{order.paymentMode}</TableCell>
+                            <TableCell>{order.paymentTerms}</TableCell>
+                            <TableCell>{order.quantity}</TableCell>
+                            <TableCell>{order.transportMode}</TableCell>
+                            <TableCell>{order.destination}</TableCell>
+                            <TableCell>₹{order.amount.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Badge variant="default">{order.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button size="sm" variant="outline" onClick={() => handleView(order)}>
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -477,7 +528,7 @@ const handleSubmit = async () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="LAB">LAB</SelectItem>
-                      <SelectItem value="AUTO LEVEL">AUTO LEVEL</SelectItem>
+                      {/* <SelectItem value="AUTO LEVEL">AUTO LEVEL</SelectItem> */}
                       <SelectItem value="TOTAL STATION">TOTAL STATION</SelectItem>
                     </SelectContent>
                   </Select>
@@ -497,53 +548,131 @@ const handleSubmit = async () => {
                 </Select>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Items</Label>
-                  <Button type="button" size="sm" onClick={addItem}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Item
-                  </Button>
-                </div>
-                {items.map((item, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <Label htmlFor={`itemName-${index}`}>Item Name</Label>
-                      <Input
-                        id={`itemName-${index}`}
-                        value={item.name}
-                        onChange={(e) => updateItem(index, "name", e.target.value)}
-                        placeholder="Enter item name"
-                      />
-                    </div>
-                    <div className="w-24">
-                      <Label htmlFor={`qty-${index}`}>QTY</Label>
-                      <Input
-                        id={`qty-${index}`}
-                        type="number"
-                        value={item.qty}
-                        onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-                        placeholder="0"
-                      />
-                    </div>
-                    <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+              {/* Eway Bill Details */}
+              <div className="space-y-2">
+                <Label htmlFor="ewayBill">Eway Bill Details</Label>
+                <Input
+                  id="ewayBill"
+                  value={ewayBillDetails}
+                  onChange={(e) => setEwayBillDetails(e.target.value)}
+                  placeholder="Enter Eway Bill details"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="paymentDetails">Payment Details (Attachment) - In case of Advance</Label>
-                <Input id="paymentDetails" type="file" accept=".pdf,.doc,.docx,image/*" />
+                <Label htmlFor="ewayBillAttachment">Eway Bill Attachment</Label>
+                <Input
+                  id="ewayBillAttachment"
+                  type="file"
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={(e) => setEwayBillAttachment(e.target.files?.[0] || null)}
+                />
+                {ewayBillAttachment && (
+                  <p className="text-sm text-muted-foreground">Selected: {ewayBillAttachment.name}</p>
+                )}
               </div>
+
+              {/* SRN Number */}
+              <div className="space-y-2">
+                <Label htmlFor="srnNumber">SRN Number</Label>
+                <Input
+                  id="srnNumber"
+                  value={srnNumber}
+                  onChange={(e) => setSrnNumber(e.target.value)}
+                  placeholder="Enter SRN Number"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="srnNumberAttachment">SRN Number Attachment</Label>
+                <Input
+                  id="srnNumberAttachment"
+                  type="file"
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={(e) => setSrnNumberAttachment(e.target.files?.[0] || null)}
+                />
+                {srnNumberAttachment && (
+                  <p className="text-sm text-muted-foreground">Selected: {srnNumberAttachment.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Items (Max 15)</Label>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  onClick={addItem}
+                  disabled={items.length >= 15}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Item ({items.length}/15)
+                </Button>
+              </div>
+              {items.map((item, index) => (
+                <div key={index} className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Label htmlFor={`itemName-${index}`}>Item Name</Label>
+                    <Input
+                      id={`itemName-${index}`}
+                      value={item.name}
+                      onChange={(e) => updateItem(index, "name", e.target.value)}
+                      placeholder="Enter item name"
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Label htmlFor={`qty-${index}`}>QTY</Label>
+                    <Input
+                      id={`qty-${index}`}
+                      type="number"
+                      value={item.qty}
+                      onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentDetails">Payment Details (Attachment) - In case of Advance</Label>
+                <Input
+                  id="paymentDetails"
+                  type="file"
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={(e) => setPaymentAttachment(e.target.files?.[0] || null)}
+                />
+                {paymentAttachment && (
+                  <p className="text-sm text-muted-foreground">Selected: {paymentAttachment.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+  <Label htmlFor="remarks">Remarks</Label>
+  <Input
+    id="remarks"
+    value={remarks}
+    onChange={(e) => setRemarks(e.target.value)}
+    placeholder="Enter any additional remarks"
+  />
+</div>
 
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!calibrationRequired || !installationRequired}>
-                  Submit
+                <Button onClick={handleSubmit} disabled={!calibrationRequired || !installationRequired || uploading}>
+                  {uploading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
                 </Button>
               </div>
             </div>
