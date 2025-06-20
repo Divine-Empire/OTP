@@ -58,8 +58,8 @@ export default function CalibrationPage() {
           if (row.c) {
             const actualRowIndex = index + 2
             const xColumn = row.c[23] ? row.c[23].v : null // Column X (index 23)
-            const ckColumn = row.c[88] ? row.c[88].v : null // Column CK (index 88)
-            const clColumn = row.c[89] ? row.c[89].v : null // Column CL (index 89)
+            const ckColumn = row.c[87] ? row.c[87].v : null // Column CK (index 88)
+            const clColumn = row.c[88] ? row.c[88].v : null // Column CL (index 89)
 
             // Check if column X matches the calibration type and CK is not null and CL is null
             const isLabOrder = xColumn && xColumn.toLowerCase() === "lab" && ckColumn && !clColumn
@@ -81,7 +81,7 @@ export default function CalibrationPage() {
                 transportMode: row.c[11] ? row.c[11].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
-                invoiceNumber: row.c[66] ? row.c[66].v : "", // Column BO (invoice number)
+                invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
                 calibrationType: isLabOrder ? "LAB" : "TOTAL STATION", // Set based on column X value
                 columnXValue: xColumn, // Store original column X value for reference
                 fullRowData: row.c,
@@ -102,30 +102,59 @@ export default function CalibrationPage() {
     }
   }
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "N/A";
+    
+    // Handle Date() constructor format like "Date(2025,5,19)"
+    if (dateStr.startsWith("Date(")) {
+      try {
+        const parts = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (parts) {
+          const year = parseInt(parts[1]);
+          const month = parseInt(parts[2]);
+          const day = parseInt(parts[3]);
+          // Note: JavaScript months are 0-indexed (5 = June)
+          return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+        }
+      } catch (e) {
+        console.error("Error parsing Date() format:", e);
+      }
+    }
+    
+    // Handle ISO format like "2025-06-19"
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Handle other formats or return as-is if already formatted
+    return dateStr;
+  };
+
   const fetchHistoryOrders = async () => {
     setLoading(true)
     setError(null)
-  
+
     try {
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
-  
+
       const jsonStart = text.indexOf("{")
       const jsonEnd = text.lastIndexOf("}") + 1
       const jsonData = text.substring(jsonStart, jsonEnd)
-  
+
       const data = JSON.parse(jsonData)
-  
+
       if (data && data.table && data.table.rows) {
         const historyOrders: any[] = []
-  
+
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2
-            const ckColumn = row.c[88] ? row.c[88].v : null // Column CK (index 88)
-            const clColumn = row.c[89] ? row.c[89].v : null // Column CL (index 89)
-  
+            const ckColumn = row.c[87] ? row.c[87].v : null // Column CK (index 88)
+            const clColumn = row.c[88] ? row.c[88].v : null // Column CL (index 89)
+
             // Include all rows where CL is not null (processed)
             if (clColumn) {
               const order = {
@@ -143,15 +172,24 @@ export default function CalibrationPage() {
                 transportMode: row.c[11] ? row.c[11].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
-                invoiceNumber: row.c[66] ? row.c[66].v : "",
-                calibrationType: ckColumn || "UNKNOWN", // Default to UNKNOWN if not specified
+                invoiceNumber: row.c[65] ? row.c[65].v : "",
+                calibrationType: row.c[23] ? row.c[23].v : "", // Default to UNKNOWN if not specified
                 calibrationProcessedDate: clColumn,
                 fullRowData: row.c,
+                // Columns 91-97 data (indexes 90-96)
+                labCalibrationCertificate: row.c[90] ? row.c[90].v : "", // Column 91
+                stCalibrationCertificate: row.c[91] ? row.c[91].v : "", // Column 92
+                labCalibrationDate: row.c[92] ? row.c[92].v : "", // Column 93
+                stCalibrationDate: row.c[93] ? row.c[93].v : "", // Column 94
+                labCalibrationPeriod: row.c[94] ? row.c[94].v : "", // Column 95
+                stCalibrationPeriod: row.c[95] ? row.c[95].v : "", // Column 96
+                labDueDate: row.c[96] ? row.c[96].v : "", // Column 97
+                stDueDate: row.c[97] ? row.c[97].v : "", // Column 98
                 calibrationData: {
                   section: ckColumn || "UNKNOWN",
-                  calibrationDate: row.c[91] ? row.c[91].v : "",
-                  calibrationPeriod: row.c[92] ? row.c[92].v : "",
-                  dueDate: row.c[93] ? row.c[93].v : "",
+                  calibrationDate: row.c[89] ? row.c[89].v : "",
+                  calibrationPeriod: row.c[90] ? row.c[90].v : "",
+                  dueDate: row.c[91] ? row.c[91].v : "",
                   processedAt: clColumn,
                   processedBy: "Current User",
                 },
@@ -160,7 +198,7 @@ export default function CalibrationPage() {
             }
           }
         })
-  
+
         setHistoryOrders(historyOrders)
       }
     } catch (err: any) {
@@ -229,7 +267,7 @@ export default function CalibrationPage() {
       // Add today's date to CL column (index 89)
       const today = new Date()
       const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
-      rowData[89] = formattedDate
+      rowData[88] = formattedDate
 
       // Remove these lines - Apps Script handles calibration data placement
       // rowData[91] = calibrationDate // Column CN
@@ -348,7 +386,7 @@ export default function CalibrationPage() {
               <TableRow>
                 <TableHead>Order Number</TableHead>
                 <TableHead>Company Name</TableHead>
-                <TableHead>Bill Number</TableHead>
+                <TableHead>Invoice Number</TableHead>
                 <TableHead>Billing Address</TableHead>
                 <TableHead>Shipping Address</TableHead>
                 <TableHead>Transport Mode</TableHead>
@@ -382,12 +420,11 @@ export default function CalibrationPage() {
     </Card>
   )
 
-  
-  const renderHistoryTable = (title: string, description: string, section?: "LAB" | "TOTAL STATION") => (
+  const renderHistoryTable = () => (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle>Calibration History</CardTitle>
+        <CardDescription>All completed calibration certificates</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -397,41 +434,39 @@ export default function CalibrationPage() {
                 <TableHead>Order Number</TableHead>
                 <TableHead>Company Name</TableHead>
                 <TableHead>Calibration Type</TableHead>
-                <TableHead>Bill Number</TableHead>
-                <TableHead>Calibration Date</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Processed Date</TableHead>
+                <TableHead>Lab Calibration Certificate</TableHead>
+                <TableHead>ST Calibration Certificate</TableHead>
+                <TableHead>Lab Calibration Date</TableHead>
+                <TableHead>ST Calibration Date</TableHead>
+                <TableHead>Lab Calibration Period</TableHead>
+                <TableHead>ST Calibration Period</TableHead>
+                <TableHead>Lab Due Date</TableHead>
+                <TableHead>ST Due Date</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {historyOrders
-                .filter(order => !section || order.calibrationType === section)
-                .map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.companyName}</TableCell>
-                    <TableCell>{order.calibrationType || "UNKNOWN"}</TableCell>
-                    <TableCell>{order.invoiceNumber || "N/A"}</TableCell>
-                    <TableCell>
-                      {order.calibrationData?.calibrationDate
-                        ? new Date(order.calibrationData.calibrationDate).toLocaleDateString()
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {order.calibrationData?.dueDate
-                        ? new Date(order.calibrationData.dueDate).toLocaleDateString()
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>{order.calibrationProcessedDate}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => handleView(order)}>
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {historyOrders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell>{order.companyName}</TableCell>
+                  <TableCell>{order.calibrationType || "UNKNOWN"}</TableCell>
+                  <TableCell>{order.labCalibrationCertificate || "N/A"}</TableCell>
+                  <TableCell>{order.stCalibrationCertificate || "N/A"}</TableCell>
+                  <TableCell>{formatDate(order.labCalibrationDate) || "N/A"}</TableCell>
+      <TableCell>{formatDate(order.stCalibrationDate) || "N/A"}</TableCell>
+                  <TableCell>{order.labCalibrationPeriod || "N/A"}</TableCell>
+                  <TableCell>{order.stCalibrationPeriod || "N/A"}</TableCell>
+                  <TableCell>{order.labDueDate || "N/A"}</TableCell>
+                  <TableCell>{order.stDueDate || "N/A"}</TableCell>
+                  <TableCell>
+                    <Button size="sm" variant="outline" onClick={() => handleView(order)}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
@@ -509,23 +544,7 @@ export default function CalibrationPage() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            <Tabs defaultValue="LAB" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="LAB">LAB</TabsTrigger>
-                <TabsTrigger value="TOTAL STATION">TOTAL STATION</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="LAB">
-                {renderHistoryTable("LAB Calibration History", "Completed LAB calibration certificates", "LAB")}
-              </TabsContent>
-
-              <TabsContent value="TOTAL STATION">
-                {renderHistoryTable(
-                  "TOTAL STATION Calibration History",
-                  "Completed TOTAL STATION calibration certificates",
-                )}
-              </TabsContent>
-            </Tabs>
+            {renderHistoryTable()}
           </TabsContent>
         </Tabs>
 

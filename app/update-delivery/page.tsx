@@ -9,31 +9,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Eye, RefreshCw } from "lucide-react"
+import { Eye, RefreshCw, Upload } from "lucide-react"
 
-export default function WarehouseMaterialPage() {
+export default function DeliveryPage() {
   const { orders, updateOrder } = useData()
   const [selectedOrder, setSelectedOrder] = useState<string>("")
-  const [materialReceived, setMaterialReceived] = useState<string>("")
-  const [installationRequired, setInstallationRequired] = useState<string>("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState<any>(null)
-  const [transporterFollowup, setTransporterFollowup] = useState<string>("")
-
-  // New state for Google Sheets integration
   const [pendingOrders, setPendingOrders] = useState<any[]>([])
   const [historyOrders, setHistoryOrders] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
 
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
   const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
   const SHEET_NAME = "DISPATCH-DELIVERY"
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [deliveryPhoto, setDeliveryPhoto] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  // Delivery form fields
+  // const [deliveryPersonName, setDeliveryPersonName] = useState<string>("")
+  // const [deliveryPersonContact, setDeliveryPersonContact] = useState<string>("")
+  // const [deliveryDate, setDeliveryDate] = useState<string>("")
+  // const [deliveryTime, setDeliveryTime] = useState<string>("")
+  // const [receiverName, setReceiverName] = useState<string>("")
+  // const [receiverContact, setReceiverContact] = useState<string>("")
+  // const [deliveryRemarks, setDeliveryRemarks] = useState<string>("")
+  // const [deliveryStatus, setDeliveryStatus] = useState<string>("delivered")
 
   const fetchPendingOrders = async () => {
     setLoading(true)
@@ -56,11 +62,11 @@ export default function WarehouseMaterialPage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2
-            const ceColumn = row.c[81] ? row.c[81].v : null // Column CE (index 82)
-            const cfColumn = row.c[82] ? row.c[82].v : null // Column CF (index 83)
+            const buColumn = row.c[98] ? row.c[98].v : null // Column BU (warehouse processed)
+            const cvColumn = row.c[99] ? row.c[99].v : null // Column CV (delivery processed)
 
-            // Only include rows where CE is not null and CF is null
-            if (ceColumn && !cfColumn) {
+            // Only include rows where BU is not null (warehouse processed) and CV is null (delivery not processed)
+            if (buColumn && !cvColumn) {
               const order = {
                 rowIndex: actualRowIndex,
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
@@ -77,7 +83,7 @@ export default function WarehouseMaterialPage() {
                 destination: row.c[13] ? row.c[13].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
-                warehouseProcessedDate: ceColumn, // Column CE contains the warehouse processing date
+                warehouseProcessedDate: buColumn,
                 fullRowData: row.c,
               }
               pendingOrders.push(order)
@@ -117,11 +123,11 @@ export default function WarehouseMaterialPage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2
-            const ceColumn = row.c[81] ? row.c[81].v : null // Column CE (index 82)
-            const cfColumn = row.c[82] ? row.c[82].v : null // Column CF (index 83)
+            const buColumn = row.c[98] ? row.c[98].v : null // Column BU (warehouse processed)
+            const cvColumn = row.c[99] ? row.c[99].v : null // Column CV (delivery processed)
 
-            // Only include rows where both CE and CF are not null
-            if (ceColumn && cfColumn) {
+            // Only include rows where both BU and CV are not null
+            if (buColumn && cvColumn) {
               const order = {
                 rowIndex: actualRowIndex,
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
@@ -138,14 +144,11 @@ export default function WarehouseMaterialPage() {
                 destination: row.c[13] ? row.c[13].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
-                warehouseProcessedDate: ceColumn, // Column CE contains the warehouse processing date
-                materialProcessedDate: cfColumn, // Column CF contains the material processing date
+                warehouseProcessedDate: buColumn,
+                deliveryProcessedDate: row.c[101] ? row.c[101].v : "", // Column CV contains the delivery processing date
                 fullRowData: row.c,
-                materialRcvdData: {
-                  materialReceived: row.c[84] ? row.c[84].v : "", // Column CH (index 85)
-                  installationRequired: row.c[85] ? row.c[85].v : "", // Column CI (index 86)
-                  transporterFollowup: row.c[86] ? row.c[86].v : "", // Column CJ (index 87)
-                  processedAt: cfColumn,
+                deliveryData: {
+                  processedAt: cvColumn,
                   processedBy: "Current User",
                 },
               }
@@ -170,9 +173,18 @@ export default function WarehouseMaterialPage() {
     fetchHistoryOrders()
   }, [])
 
-  // Legacy orders from useData hook (keep for backward compatibility)
+  // Legacy orders from useData hook
   const legacyPendingOrders = orders.filter((order) => order.status === "warehouse-processed")
-  const legacyProcessedOrders = orders.filter((order) => order.materialRcvdData)
+  const legacyProcessedOrders = orders.filter((order) => order.deliveryData)
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
+  }
 
   const updateOrderStatus = async (order: any) => {
     try {
@@ -183,17 +195,34 @@ export default function WarehouseMaterialPage() {
       formData.append("action", "updateByOrderNoInColumnB")
       formData.append("orderNo", order.id)
 
-      const rowData = new Array(110).fill("")
+      // Handle delivery photo upload
+      if (deliveryPhoto) {
+        try {
+          const base64Data = await convertFileToBase64(deliveryPhoto)
+          formData.append("deliveryPhotoFile", base64Data)
+          formData.append("deliveryPhotoFileName", deliveryPhoto.name)
+          formData.append("deliveryPhotoMimeType", deliveryPhoto.type)
+        } catch (error) {
+          console.error("Error converting delivery photo:", error)
+        }
+      }
 
-      // Add today's date to CF column (index 83)
+      const rowData = new Array(110).fill("") // Array size to accommodate all columns
+
+      // Add today's date to CV column (index 100) - Column CV for delivery processed date
       const today = new Date()
       const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
-      rowData[82] = formattedDate
+      rowData[99] = formattedDate // Column CV (index 99)
 
-      // Add material data to columns CH onwards (indexes 85-87)
-      rowData[84] = materialReceived // Column CH
-      rowData[86] = installationRequired // Column CI
-      rowData[85] = transporterFollowup // Column CJ
+      // Add delivery data to columns CW to DD (indexes 100-107)
+      // rowData[100] = deliveryPersonName // Column CW
+      // rowData[101] = deliveryPersonContact // Column CX
+      // rowData[102] = deliveryDate // Column CY
+      // rowData[103] = deliveryTime // Column CZ
+      // rowData[104] = receiverName // Column DA
+      // rowData[105] = receiverContact // Column DB
+      // rowData[106] = deliveryRemarks // Column DC
+      // rowData[107] = deliveryStatus // Column DD
 
       formData.append("rowData", JSON.stringify(rowData))
 
@@ -218,7 +247,7 @@ export default function WarehouseMaterialPage() {
       if (result.success !== false) {
         await fetchPendingOrders()
         await fetchHistoryOrders()
-        return { success: true }
+        return { success: true, fileUrls: result.fileUrls }
       } else {
         throw new Error(result.error || "Update failed")
       }
@@ -233,29 +262,41 @@ export default function WarehouseMaterialPage() {
 
   const handleProcess = (orderId: string) => {
     setSelectedOrder(orderId)
-    setMaterialReceived("")
-    setInstallationRequired("")
-    setTransporterFollowup("")
+    setDeliveryPhoto(null)
+    // Reset delivery form fields
+    // setDeliveryPersonName("")
+    // setDeliveryPersonContact("")
+    // setDeliveryDate("")
+    // setDeliveryTime("")
+    // setReceiverName("")
+    // setReceiverContact("")
+    // setDeliveryRemarks("")
+    // setDeliveryStatus("delivered")
     setIsDialogOpen(true)
   }
 
   const handleSubmit = async () => {
-    if (!selectedOrder || !materialReceived || !installationRequired) return
+    if (!selectedOrder) return
 
     const order = pendingOrders.find((o) => o.id === selectedOrder)
     if (!order) {
       // Fallback to legacy orders
-      const materialRcvdData = {
-        materialReceived,
-        installationRequired,
+      const deliveryData = {
         processedAt: new Date().toISOString(),
         processedBy: "Current User",
-        transporterFollowup,
+        // deliveryPersonName,
+        // deliveryPersonContact,
+        // deliveryDate,
+        // deliveryTime,
+        // receiverName,
+        // receiverContact,
+        // deliveryRemarks,
+        // deliveryStatus,
       }
 
       updateOrder(selectedOrder, {
-        status: "material-received",
-        materialRcvdData,
+        status: "delivery-processed",
+        deliveryData,
       })
 
       setIsDialogOpen(false)
@@ -268,9 +309,13 @@ export default function WarehouseMaterialPage() {
     if (result.success) {
       setIsDialogOpen(false)
       setSelectedOrder("")
-      alert(`Material receipt processing for order ${selectedOrder} has been completed successfully`)
+      let message = `Delivery processing for order ${selectedOrder} has been completed successfully`
+      if (result.fileUrls && result.fileUrls.deliveryPhotoUrl) {
+        message += "\n\nDelivery photo uploaded to Google Drive"
+      }
+      alert(message)
     } else {
-      alert(`Error processing material receipt: ${result.error}`)
+      alert(`Error processing delivery operation: ${result.error}`)
     }
   }
 
@@ -317,8 +362,8 @@ export default function WarehouseMaterialPage() {
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Warehouse (Material RCVD)</h1>
-          <p className="text-muted-foreground">Confirm material receipt and installation requirements</p>
+          <h1 className="text-3xl font-bold tracking-tight">Delivery Management</h1>
+          <p className="text-muted-foreground">Manage delivery operations and documentation</p>
         </div>
 
         <Tabs defaultValue="pending" className="space-y-4">
@@ -330,8 +375,8 @@ export default function WarehouseMaterialPage() {
           <TabsContent value="pending" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pending Material Receipt</CardTitle>
-                <CardDescription>Orders waiting for material receipt confirmation</CardDescription>
+                <CardTitle>Pending Delivery Operations</CardTitle>
+                <CardDescription>Orders ready for delivery processing</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -341,10 +386,10 @@ export default function WarehouseMaterialPage() {
                         <TableHead>Order Number</TableHead>
                         <TableHead>Company Name</TableHead>
                         <TableHead>Invoice Number</TableHead>
-                        <TableHead>Billing Address</TableHead>
                         <TableHead>Shipping Address</TableHead>
                         <TableHead>Transport Mode</TableHead>
                         <TableHead>Destination</TableHead>
+                        <TableHead>Warehouse Processed</TableHead>
                         <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -354,13 +399,13 @@ export default function WarehouseMaterialPage() {
                           <TableCell className="font-medium">{order.id}</TableCell>
                           <TableCell>{order.companyName}</TableCell>
                           <TableCell>{order.invoiceNumber || "N/A"}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.billingAddress || "N/A"}</TableCell>
                           <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
                           <TableCell>{order.transportMode}</TableCell>
                           <TableCell>{order.destination}</TableCell>
+                          <TableCell>{order.warehouseProcessedDate}</TableCell>
                           <TableCell>
                             <Button size="sm" onClick={() => handleProcess(order.id)}>
-                              Process
+                              Process Delivery
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -375,8 +420,8 @@ export default function WarehouseMaterialPage() {
           <TabsContent value="history" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Material Receipt History</CardTitle>
-                <CardDescription>Previously processed material receipts</CardDescription>
+                <CardTitle>Delivery History</CardTitle>
+                <CardDescription>Previously processed delivery operations</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -386,11 +431,10 @@ export default function WarehouseMaterialPage() {
                         <TableHead>Order Number</TableHead>
                         <TableHead>Company Name</TableHead>
                         <TableHead>Invoice Number</TableHead>
-                        <TableHead>Billing Address</TableHead>
                         <TableHead>Shipping Address</TableHead>
                         <TableHead>Transport Mode</TableHead>
                         <TableHead>Destination</TableHead>
-                        <TableHead>Processed Date</TableHead>
+                        <TableHead>DN Image</TableHead>
                         <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -400,11 +444,24 @@ export default function WarehouseMaterialPage() {
                           <TableCell className="font-medium">{order.id}</TableCell>
                           <TableCell>{order.companyName}</TableCell>
                           <TableCell>{order.invoiceNumber || "N/A"}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.billingAddress || "N/A"}</TableCell>
                           <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
                           <TableCell>{order.transportMode}</TableCell>
                           <TableCell>{order.destination}</TableCell>
-                          <TableCell>{order.materialProcessedDate}</TableCell>
+                          {/* <TableCell>{order.deliveryProcessedDate}</TableCell> */}
+                          <TableCell>
+        {order.fullRowData?.[101]?.v ? (
+          <a 
+            href={order.fullRowData[101].v} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline"
+          >
+            View DN
+          </a>
+        ) : (
+          "N/A"
+        )}
+      </TableCell>
                           <TableCell>
                             <Button size="sm" variant="outline" onClick={() => handleView(order)}>
                               <Eye className="h-4 w-4 mr-1" />
@@ -423,61 +480,48 @@ export default function WarehouseMaterialPage() {
 
         {/* Process Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Material Receipt Confirmation</DialogTitle>
-              <DialogDescription>Confirm material receipt and installation requirements</DialogDescription>
+              <DialogTitle>Delivery Processing</DialogTitle>
+              <DialogDescription>Complete delivery documentation and enter delivery details</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="orderNumber">Order Number</Label>
                 <Input id="orderNumber" value={selectedOrder} disabled />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="materialRcvd">Material RCVD</Label>
-                <Select value={materialReceived} onValueChange={setMaterialReceived}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* File Upload Section */}
+              <div className="border-t pt-4">
+                <h4 className="font-medium mb-3">Delivery Photo Upload</h4>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryPhoto">Delivery Proof Photo</Label>
+                  <Input
+                    id="deliveryPhoto"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setDeliveryPhoto(e.target.files?.[0] || null)}
+                  />
+                  {deliveryPhoto && <p className="text-sm text-muted-foreground">Selected: {deliveryPhoto.name}</p>}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="installation">Installation Required</Label>
-                <Select value={installationRequired} onValueChange={setInstallationRequired}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YES">YES</SelectItem>
-                    <SelectItem value="NO">NO</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="transporterFollowup">Reason</Label>
-                <Input
-                  id="transporterFollowup"
-                  placeholder="Enter Reason details"
-                  value={transporterFollowup}
-                  onChange={(e) => setTransporterFollowup(e.target.value)}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
+
+              <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!materialReceived || !installationRequired || uploading}>
+                <Button onClick={handleSubmit} disabled={uploading}>
                   {uploading ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
+                      Processing...
                     </>
                   ) : (
-                    "Submit"
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Complete Delivery
+                    </>
                   )}
                 </Button>
               </div>
@@ -489,8 +533,8 @@ export default function WarehouseMaterialPage() {
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Material Receipt Details</DialogTitle>
-              <DialogDescription>View material receipt information</DialogDescription>
+              <DialogTitle>Delivery Details</DialogTitle>
+              <DialogDescription>View delivery operation details</DialogDescription>
             </DialogHeader>
             {viewOrder && (
               <div className="space-y-4">
@@ -506,7 +550,7 @@ export default function WarehouseMaterialPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Bill Number</Label>
+                    <Label>Invoice Number</Label>
                     <p className="text-sm">{viewOrder.invoiceNumber || "N/A"}</p>
                   </div>
                   <div>
@@ -516,30 +560,22 @@ export default function WarehouseMaterialPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Processed Date</Label>
-                    <p className="text-sm">{viewOrder.materialProcessedDate || "N/A"}</p>
+                    <Label>Warehouse Processed</Label>
+                    <p className="text-sm">{viewOrder.warehouseProcessedDate || "N/A"}</p>
                   </div>
                   <div>
-                    <Label>Destination</Label>
-                    <p className="text-sm">{viewOrder.destination}</p>
+                    <Label>Delivery Processed</Label>
+                    <p className="text-sm">{viewOrder.deliveryProcessedDate || "N/A"}</p>
                   </div>
                 </div>
-                {viewOrder.materialRcvdData && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Material Received</Label>
-                      <p className="text-sm">{viewOrder.materialRcvdData.materialReceived}</p>
-                    </div>
-                    <div>
-                      <Label>Installation Required</Label>
-                      <p className="text-sm">{viewOrder.materialRcvdData.installationRequired}</p>
-                    </div>
-                    <div>
-                      <Label>Reason</Label>
-                      <p className="text-sm">{viewOrder.materialRcvdData.transporterFollowup || "N/A"}</p>
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <Label>Shipping Address</Label>
+                  <p className="text-sm">{viewOrder.shippingAddress || "N/A"}</p>
+                </div>
+                <div>
+                  <Label>Destination</Label>
+                  <p className="text-sm">{viewOrder.destination}</p>
+                </div>
               </div>
             )}
           </DialogContent>

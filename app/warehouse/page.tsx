@@ -62,8 +62,8 @@ export default function WarehousePage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2
-            const btColumn = row.c[71] ? row.c[71].v : null // Column BT (index 71)
-            const buColumn = row.c[72] ? row.c[72].v : null // Column BU (index 72)
+            const btColumn = row.c[70] ? row.c[70].v : null // Column BT (index 71)
+            const buColumn = row.c[71] ? row.c[71].v : null // Column BU (index 72)
 
             // Only include rows where BT is not null and BU is null
             if (btColumn && !buColumn) {
@@ -82,7 +82,7 @@ export default function WarehousePage() {
                 transportMode: row.c[11] ? row.c[11].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
-                invoiceNumber: row.c[66] ? row.c[66].v : "", // Column BO (invoice number)
+                invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
                 fullRowData: row.c,
               }
               pendingOrders.push(order)
@@ -122,8 +122,8 @@ export default function WarehousePage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2
-            const btColumn = row.c[71] ? row.c[71].v : null // Column BT (index 71)
-            const buColumn = row.c[72] ? row.c[72].v : null // Column BU (index 72)
+            const btColumn = row.c[70] ? row.c[70].v : null // Column BT (index 71)
+            const buColumn = row.c[71] ? row.c[71].v : null // Column BU (index 72)
 
             // Only include rows where both BT and BU are not null
             if (btColumn && buColumn) {
@@ -142,7 +142,7 @@ export default function WarehousePage() {
                 transportMode: row.c[11] ? row.c[11].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
-                invoiceNumber: row.c[66] ? row.c[66].v : "", // Column BO (invoice number)
+                invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
                 warehouseProcessedDate: buColumn, // Column BU contains the warehouse processing date
                 fullRowData: row.c,
                 warehouseData: {
@@ -234,14 +234,14 @@ export default function WarehousePage() {
       // Add today's date to BU column (index 72)
       const today = new Date()
       const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
-      rowData[72] = formattedDate
+      rowData[71] = formattedDate
 
       // Add new warehouse data to columns BZ to CD (indexes 77-81)
-      rowData[77] = transporterName // Column BZ
-      rowData[78] = transporterContact // Column CA
-      rowData[79] = biltyNumber // Column CB
-      rowData[80] = totalCharges // Column CC
-      rowData[81] = warehouseRemarks // Column CD
+      rowData[76] = transporterName // Column BZ
+      rowData[77] = transporterContact // Column CA
+      rowData[78] = biltyNumber // Column CB
+      rowData[79] = totalCharges // Column CC
+      rowData[80] = warehouseRemarks // Column CD
 
       formData.append("rowData", JSON.stringify(rowData))
 
@@ -398,7 +398,7 @@ export default function WarehousePage() {
                       <TableRow>
                         <TableHead>Order Number</TableHead>
                         <TableHead>Company Name</TableHead>
-                        <TableHead>Bill Number</TableHead>
+                        <TableHead>Invoice Number</TableHead>
                         <TableHead>Billing Address</TableHead>
                         <TableHead>Shipping Address</TableHead>
                         <TableHead>Transport Mode</TableHead>
@@ -443,7 +443,7 @@ export default function WarehousePage() {
                       <TableRow>
                         <TableHead>Order Number</TableHead>
                         <TableHead>Company Name</TableHead>
-                        <TableHead>Bill Number</TableHead>
+                        <TableHead>Invoice Number</TableHead>
                         <TableHead>Billing Address</TableHead>
                         <TableHead>Shipping Address</TableHead>
                         <TableHead>Transport Mode</TableHead>

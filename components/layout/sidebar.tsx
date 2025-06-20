@@ -36,7 +36,7 @@ const menuItems = [
   { href: "/warehouse", label: "Warehouse", icon: Warehouse, step: "warehouse" },
   { href: "/warehouse-material", label: "Warehouse (Material RCVD)", icon: PackageCheck, step: "warehouse-material" },
   { href: "/calibration", label: "Calibration Certificate", icon: Award, step: "calibration" },
-  // { href: "/service-intimation", label: "Service Intimation", icon: Bell, step: "service-intimation" },
+  { href: "/update-delivery", label: "Update Delivery", icon: Bell, step: "update-delivery" },
   { href: "/settings", label: "Settings", icon: Settings, step: "settings" },
 ]
 

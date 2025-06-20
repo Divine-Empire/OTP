@@ -67,13 +67,22 @@ const fetchPendingOrders = async () => {
               companyName: row.c[3] ? row.c[3].v : "",
               contactPerson: row.c[4] ? row.c[4].v : "",
               contactNumber: row.c[5] ? row.c[5].v : "",
-              poNumber: row.c[14] ? row.c[14].v : "",
+              billingAddress: row.c[6] ? row.c[6].v : "", // Added billing address
+              shippingAddress: row.c[7] ? row.c[7].v : "", // Added shipping address
               paymentMode: row.c[8] ? row.c[8].v : "",
+              paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A", // Payment details logic
               paymentTerms: row.c[9] ? row.c[9].v : "",
               quantity: row.c[10] ? row.c[10].v : "",
               transportMode: row.c[11] ? row.c[11].v : "",
+              freightType: row.c[12] ? row.c[12].v : "", // Added freight type (assuming column 12)
               destination: row.c[13] ? row.c[13].v : "",
-              amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
+              poNumber: row.c[14] ? row.c[14].v : "",
+              amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0, // Adjusted amount column
+              seniorApproval: row.c[16] ? row.c[16].v : "Approved", // Added senior approval
+              totalQty: row.c[19] ? row.c[19].v : "", // Same as quantity for now
+              billingQty: row.c[10] ? row.c[10].v : "", // Same as quantity for now
+              quotationCopy: "Available", // Static for now, adjust based on your sheet structure
+              acceptanceCopy: "Available", // Static for now, adjust based on your sheet structure
               fullRowData: row.c,
             }
             pendingOrders.push(order)
@@ -124,21 +133,31 @@ const fetchHistoryOrders = async () => {
               companyName: row.c[3] ? row.c[3].v : "",
               contactPerson: row.c[4] ? row.c[4].v : "",
               contactNumber: row.c[5] ? row.c[5].v : "",
-              poNumber: row.c[14] ? row.c[14].v : "",
+              billingAddress: row.c[6] ? row.c[6].v : "", // Added billing address
+              shippingAddress: row.c[7] ? row.c[7].v : "", // Added shipping address
               paymentMode: row.c[8] ? row.c[8].v : "",
-              paymentTerms: row.c[9] ? row.c[9].v : "",
+              paymentDetails: row.c[8] === "Advance" ? "Attached" : "N/A", // Payment details for history
+              paymentTerms: row.c[10] ? row.c[10].v : "",
               quantity: row.c[10] ? row.c[10].v : "",
               transportMode: row.c[11] ? row.c[11].v : "",
+              freightType: row.c[12] ? row.c[12].v : "", // Added freight type
               destination: row.c[13] ? row.c[13].v : "",
-              amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
+              poNumber: row.c[14] ? row.c[14].v : "",
+              amount: row.c[15] ? Number.parseFloat(row.c[15].v) || 0 : 0, // Adjusted amount column
+              seniorApproval: row.c[16] ? row.c[16].v : "Approved", // Added senior approval
+              totalQty: row.c[60] ? row.c[60].v : "", // Same as quantity for now
+              billingQty: row.c[69] ? row.c[69].v : row.c[10] ? row.c[10].v : "", // Invoice qty or original qty
               invoiceDate: bkColumn, // Column BK contains the invoice date
-              invoiceNumber: row.c[66] ? row.c[66].v : "", // Column BO (invoice number)
+              invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
               invoiceQty: row.c[69] ? row.c[69].v : "", // Column BQ (quantity)
               fullRowData: row.c,
               invoiceData: {
-                invoiceNumber: row.c[66] ? row.c[66].v : "",
+                invoiceNumber: row.c[65] ? row.c[65].v : "",
                 qty: row.c[69] ? row.c[69].v : "",
                 processedAt: bkColumn
+              },
+              approvalData: {
+                approvedBy: row.c[16] ? row.c[16].v : "Approved" // Approval data
               }
             }
             historyOrders.push(order)
@@ -377,8 +396,8 @@ useEffect(() => {
                         <TableHead>Destination</TableHead>
                         <TableHead>PO Number</TableHead>
                         <TableHead>Senior Approval</TableHead>
-                        <TableHead>Total Qty</TableHead>
-                        <TableHead>Billing Qty</TableHead>
+                        {/* <TableHead>Total Qty</TableHead>
+                        <TableHead>Billing Qty</TableHead> */}
                         <TableHead>Quotation Copy</TableHead>
                         <TableHead>Acceptance Copy</TableHead>
                         <TableHead>Action</TableHead>
@@ -410,8 +429,8 @@ useEffect(() => {
                           <TableCell>
                             <Badge variant="default">{order.approvalData?.approvedBy || "Approved"}</Badge>
                           </TableCell>
-                          <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.quantity}</TableCell>
+                          {/* <TableCell>{order.quantity}</TableCell>
+                          <TableCell>{order.quantity}</TableCell> */}
                           <TableCell>
                             <Badge variant="outline">Available</Badge>
                           </TableCell>
