@@ -232,8 +232,11 @@ export default function WarehousePage() {
       const rowData = new Array(110).fill("") // Increased array size to accommodate new columns
 
       // Add today's date to BU column (index 72)
-      const today = new Date()
-      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      const today = new Date();
+
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       rowData[71] = formattedDate
 
       // Add new warehouse data to columns BZ to CD (indexes 77-81)

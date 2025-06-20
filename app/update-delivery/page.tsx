@@ -210,8 +210,11 @@ export default function DeliveryPage() {
       const rowData = new Array(110).fill("") // Array size to accommodate all columns
 
       // Add today's date to CV column (index 100) - Column CV for delivery processed date
-      const today = new Date()
-      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      const today = new Date();
+
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       rowData[99] = formattedDate // Column CV (index 99)
 
       // Add delivery data to columns CW to DD (indexes 100-107)

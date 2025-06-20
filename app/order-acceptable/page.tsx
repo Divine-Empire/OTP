@@ -285,10 +285,10 @@ const { user: currentUser } = useAuth()
       // Add today's date to column R (index 17)
       const today = new Date();
 
-      // Display: dd/mm/yyyy (for user or UI)
-      const displayDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
       
-      rowData[53] = displayDate; // Column R
+      rowData[53] = formattedDate; // Column R
       
       // Add acceptance status to column S (index 18)
       rowData[55] = acceptanceData.isAcceptable; // Column S
@@ -308,7 +308,7 @@ const { user: currentUser } = useAuth()
         sheetName: SHEET_NAME,
         orderNo: order.id,
         isAcceptable: acceptanceData.isAcceptable,
-        todayDate: displayDate,
+        todayDate: formattedDate,
         checklist: acceptanceData.checklist,
         remarks: acceptanceData.remarks
       })

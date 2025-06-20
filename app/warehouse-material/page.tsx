@@ -186,8 +186,11 @@ export default function WarehouseMaterialPage() {
       const rowData = new Array(110).fill("")
 
       // Add today's date to CF column (index 83)
-      const today = new Date()
-      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      const today = new Date();
+
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       rowData[82] = formattedDate
 
       // Add material data to columns CH onwards (indexes 85-87)

@@ -209,8 +209,11 @@ export default function DispFormPage() {
       const rowData = new Array(100).fill("") // Make sure this is large enough for all columns
 
       // Add today's date in column A (index 0)
-      const today = new Date()
-      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      const today = new Date();
+
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       rowData[0] = formattedDate
   
       // Add order number in column B (index 1)

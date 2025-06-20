@@ -230,8 +230,11 @@ useEffect(() => {
       const rowData = new Array(70).fill("")
   
       // Add today's date to BK column (index 62)
-      const today = new Date()
-      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      const today = new Date();
+
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       rowData[63] = formattedDate
   
       // Add invoice data to specific columns

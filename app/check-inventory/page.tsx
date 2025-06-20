@@ -219,12 +219,11 @@ export default function CheckInventoryPage() {
       
       // Create a sparse array to update only specific columns
       const rowData = new Array(62).fill('') // Make sure array is large enough for all columns
-  
       const today = new Date();
 
-// Display: dd/mm/yyyy (for user or UI)
-const displayDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
-
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       // Correct column indices:
       // BG is column 57 (index 57 in 0-based array)
       // BH is column 58 (index 58)
@@ -234,7 +233,7 @@ const displayDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullY
       rowData[61] = inventoryData.availabilityStatus;
       
       // Set processed date (column BI - index 59)
-      rowData[59] = displayDate;
+      rowData[59] = formattedDate;
       
       // Update inventory remarks (column BH - index 58) based on availability status
       if (inventoryData.availabilityStatus === 'Available') {

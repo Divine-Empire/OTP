@@ -213,7 +213,9 @@ const updateOrderStatus = async (order, approvalData) => {
     const rowData = new Array(70).fill('')
 
     const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+
+    const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                          `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
     
     // Update columns:
     // AR (index 43) - approval status (keep existing)

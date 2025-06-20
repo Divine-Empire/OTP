@@ -226,8 +226,10 @@ const updateOrderStatus = async (order, inventoryData) => {
     const rowData = new Array(66).fill('') // Make sure array is large enough for all columns
 
     const today = new Date();
-    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-    
+
+const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                      `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+
     // Correct column indices for ORDER-DISPATCH sheet:
     // BL (index 63) - inventory status (we'll use for received status)
     // BM (index 64) - inventory remarks

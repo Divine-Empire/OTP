@@ -265,8 +265,11 @@ export default function CalibrationPage() {
       const rowData = new Array(120).fill("")
 
       // Add today's date to CL column (index 89)
-      const today = new Date()
-      const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      const today = new Date();
+
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
       rowData[88] = formattedDate
 
       // Remove these lines - Apps Script handles calibration data placement
