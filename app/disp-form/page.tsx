@@ -169,7 +169,7 @@ export default function DispFormPage() {
   
       const formData = new FormData()
       formData.append("sheetName", "DISPATCH-DELIVERY")
-      formData.append("action", "updateByOrderNoInColumnB")
+      formData.append("action", "insert") // Changed to "insert" to always create new row
       formData.append("orderNo", order.id)
   
       // Handle file uploads (same as before)
@@ -206,41 +206,42 @@ export default function DispFormPage() {
         }
       }
   
-      const rowData = new Array(50).fill("")
-  
-      // Add today's date
+      const rowData = new Array(100).fill("") // Make sure this is large enough for all columns
+
+      // Add today's date in column A (index 0)
       const today = new Date()
       const formattedDate = `${String(today.getDate()).padStart(2, "0")}/${String(today.getMonth() + 1).padStart(2, "0")}/${today.getFullYear()}`
+      rowData[0] = formattedDate
   
-      // Map data to columns
+      // Add order number in column B (index 1)
+      rowData[1] = order.id
+  
+      // Map other data to columns
       rowData[22] = dispatchData.calibrationRequired // Column X
       rowData[23] = dispatchData.calibrationType || "" // Column Y
       rowData[24] = dispatchData.installationRequired // Column Z
       rowData[25] = dispatchData.ewayBillDetails // Column AB
       rowData[27] = dispatchData.srnNumber // Column AC
-      // In the updateOrderStatus function, add this line before formData.append("rowData", ...)
-rowData[61] = dispatchData.remarks || "" // Column BI (index 61)
+      rowData[61] = dispatchData.remarks || "" // Column BI (index 61)
   
-      // Process items array to handle empty quantities
+      // Process items array
       const processedItems = dispatchData.items.map((item: any) => ({
         name: item.name || "",
-        qty: item.qty || 0 // Default to 0 if qty is not provided
+        qty: item.qty || 0
       }))
   
-      // Assign items to separate columns
-      // Let's assume we have columns AA (26) to AZ (51) available for items
-      // We'll use pairs of columns: AA for item name, AB for quantity, AC for next item, etc.
-      let columnIndex = 30; // Starting from column AA (index 30)
-      
+      // Assign items to columns starting from AA (index 30)
+      let columnIndex = 30
       processedItems.forEach((item: any) => {
-        if (columnIndex + 1 < rowData.length) { // Ensure we don't exceed array bounds
-          rowData[columnIndex] = item.name;     // Item name
-          rowData[columnIndex + 1] = item.qty;  // Item quantity
-          columnIndex += 2;                     // Move to next pair of columns
+        if (columnIndex + 1 < rowData.length) {
+          rowData[columnIndex] = item.name
+          rowData[columnIndex + 1] = item.qty
+          columnIndex += 2
         }
-      });
+      })
   
       formData.append("rowData", JSON.stringify(rowData))
+  
   
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",

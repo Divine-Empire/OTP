@@ -442,7 +442,7 @@ export default function CalibrationPage() {
                 <TableHead>ST Calibration Period</TableHead>
                 <TableHead>Lab Due Date</TableHead>
                 <TableHead>ST Due Date</TableHead>
-                <TableHead>Action</TableHead>
+                {/* <TableHead>Action</TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -459,12 +459,12 @@ export default function CalibrationPage() {
                   <TableCell>{order.stCalibrationPeriod || "N/A"}</TableCell>
                   <TableCell>{order.labDueDate || "N/A"}</TableCell>
                   <TableCell>{order.stDueDate || "N/A"}</TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <Button size="sm" variant="outline" onClick={() => handleView(order)}>
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))}
             </TableBody>

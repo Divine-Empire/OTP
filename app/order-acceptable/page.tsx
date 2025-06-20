@@ -284,8 +284,11 @@ const { user: currentUser } = useAuth()
 
       // Add today's date to column R (index 17)
       const today = new Date();
-      const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-      rowData[53] = formattedDate; // Column R
+
+      // Display: dd/mm/yyyy (for user or UI)
+      const displayDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+      
+      rowData[53] = displayDate; // Column R
       
       // Add acceptance status to column S (index 18)
       rowData[55] = acceptanceData.isAcceptable; // Column S
@@ -305,7 +308,7 @@ const { user: currentUser } = useAuth()
         sheetName: SHEET_NAME,
         orderNo: order.id,
         isAcceptable: acceptanceData.isAcceptable,
-        todayDate: formattedDate,
+        todayDate: displayDate,
         checklist: acceptanceData.checklist,
         remarks: acceptanceData.remarks
       })
@@ -490,10 +493,16 @@ const { user: currentUser } = useAuth()
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={order.acceptanceCopy === "Available" ? "default" : "secondary"}>
-                              {order.acceptanceCopy || "N/A"}
-                            </Badge>
-                          </TableCell>
+  {order.acceptanceCopy && (order.acceptanceCopy.startsWith('http') || order.acceptanceCopy.startsWith('https')) ? (
+    <a href={order.acceptanceCopy} target="_blank" rel="noopener noreferrer">
+      <Badge variant="default">Link</Badge>
+    </a>
+  ) : (
+    <Badge variant="secondary">
+      {order.acceptanceCopy || "N/A"}
+    </Badge>
+  )}
+</TableCell>
                           <TableCell>{order.offerShow}</TableCell>
                           <TableCell>{order.conveyedForRegistration}</TableCell>
                           <TableCell>{order.qtyAmount}</TableCell>

@@ -221,8 +221,10 @@ export default function CheckInventoryPage() {
       const rowData = new Array(62).fill('') // Make sure array is large enough for all columns
   
       const today = new Date();
-      const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
-      
+
+// Display: dd/mm/yyyy (for user or UI)
+const displayDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+
       // Correct column indices:
       // BG is column 57 (index 57 in 0-based array)
       // BH is column 58 (index 58)
@@ -232,7 +234,7 @@ export default function CheckInventoryPage() {
       rowData[61] = inventoryData.availabilityStatus;
       
       // Set processed date (column BI - index 59)
-      rowData[59] = formattedDate;
+      rowData[59] = displayDate;
       
       // Update inventory remarks (column BH - index 58) based on availability status
       if (inventoryData.availabilityStatus === 'Available') {
@@ -506,7 +508,7 @@ export default function CheckInventoryPage() {
                           <TableHead>Availability Status</TableHead>
                           <TableHead>Remarks</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
+                          {/* <TableHead>Actions</TableHead> */}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -533,12 +535,12 @@ export default function CheckInventoryPage() {
                                 Completed
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            {/* <TableCell>
                               <Button size="sm" variant="outline" onClick={() => handleView(order)}>
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </Button>
-                            </TableCell>
+                            </TableCell> */}
                           </TableRow>
                         ))}
                         {processedOrders.length === 0 && (
