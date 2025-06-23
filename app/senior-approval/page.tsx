@@ -196,9 +196,9 @@ export default function SeniorApprovalPage() {
             const actualRowIndex = index + 7
 
             // Column BR (index 69) - senior approval status
-            const hasColumnBR = row.c[69] && row.c[69].v !== null && row.c[69].v !== ""
+            const hasColumnBR = row.c[74] && row.c[74].v !== null && row.c[74].v !== ""
             // Column BS (index 70) - approval date
-            const isColumnBSEmpty = !row.c[70] || row.c[70].v === null || row.c[70].v === ""
+            const isColumnBSEmpty = !row.c[75] || row.c[75].v === null || row.c[75].v === ""
 
             // For pending orders: show rows where BR has data but BS is empty
             if (hasColumnBR && isColumnBSEmpty) {
@@ -265,14 +265,14 @@ export default function SeniorApprovalPage() {
                 availabilityStatus: row.c[61] ? row.c[61].v : "", // Column BJ
                 availabilityRemarks: row.c[62] ? row.c[62].v : "", // Column BK
                 // BO column (index 66)
-                receivedDate: row.c[66] ? row.c[66].v : "", // Column BO
+                receivedDate: formatGoogleSheetsDate(row.c[73] ? row.c[73].v : ""), // Column BO
                 // Keep the old field names for backward compatibility in dialog
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[40] ? row.c[40].v : "",
-                approvalStatus: row.c[69] ? row.c[69].v : null, // Column BR
-                approvalDate: formatGoogleSheetsDate(row.c[70] ? row.c[70].v : ""), // Column BS
-                approvedBy: row.c[71] ? row.c[71].v : "", // Column BT
+                approvalStatus: row.c[74] ? row.c[74].v : null, // Column BR
+                approvalDate: formatGoogleSheetsDate(row.c[75] ? row.c[75].v : ""), // Column BS
+                approvedBy: row.c[76] ? row.c[76].v : "", // Column BT
                 fullRowData: row.c,
               }
 
@@ -395,9 +395,9 @@ export default function SeniorApprovalPage() {
             const actualRowIndex = index + 7
 
             // Column BR (index 69) - senior approval status
-            const hasColumnBR = row.c[69] && row.c[69].v !== null && row.c[69].v !== ""
+            const hasColumnBR = row.c[74] && row.c[74].v !== null && row.c[74].v !== ""
             // Column BS (index 70) - approval date
-            const hasColumnBS = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
+            const hasColumnBS = row.c[75] && row.c[75].v !== null && row.c[75].v !== ""
 
             // For processed orders: show rows where both BR and BS have data
             if (hasColumnBR && hasColumnBS) {
@@ -466,13 +466,13 @@ export default function SeniorApprovalPage() {
                 // BO column (index 66)
                 receivedDate: formatGoogleSheetsDate(row.c[66] ? row.c[66].v : ""), // Column BO
                 // BT column (index 71)
-                approvedName: row.c[70] ? row.c[70].v : "", // Column BT
+                approvedName: row.c[77] ? row.c[77].v : "", // Column BT
                 // Keep old field names for backward compatibility
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[40] ? row.c[40].v : "",
-                approvalStatus: row.c[69] ? row.c[69].v : "", // Column BR
-                approvalDate: formatGoogleSheetsDate(row.c[70] ? row.c[70].v : ""), // Column BS
-                approvedBy: row.c[71] ? row.c[71].v : "", // Column BT
+                approvalStatus: row.c[74] ? row.c[74].v : "", // Column BR
+                approvalDate: formatGoogleSheetsDate(row.c[75] ? row.c[75].v : ""), // Column BS
+                approvedBy: row.c[76] ? row.c[76].v : "", // Column BT
                 fullRowData: row.c,
               }
 
@@ -516,10 +516,10 @@ export default function SeniorApprovalPage() {
       // }
 
       // Set approval date (column BS)
-      rowData[68] = formattedDate
+      rowData[75] = formattedDate
 
       // Set approved by (column BT)
-      rowData[70] = approvalData.approvedBy
+      rowData[77] = approvalData.approvedBy
 
       formData.append("rowData", JSON.stringify(rowData))
 

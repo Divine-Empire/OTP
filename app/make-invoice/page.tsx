@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useData } from "@/components/data-provider"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,15 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Eye, Plus, Trash2, RefreshCw } from "lucide-react"
+import { RefreshCw, Search, Settings } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 export default function MakeInvoicePage() {
   const { orders, updateOrder } = useData()
@@ -25,162 +33,420 @@ export default function MakeInvoicePage() {
   const [historyOrders, setHistoryOrders] = useState<any[]>([])
   const [totalBillAmount, setTotalBillAmount] = useState<number>(0)
 
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
-const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
-const SHEET_NAME = "DISPATCH-DELIVERY"
+  const APPS_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+  const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
+  const SHEET_NAME = "DISPATCH-DELIVERY"
 
-const [loading, setLoading] = useState(false)
-const [error, setError] = useState<string | null>(null)
-const [invoiceAttachment, setInvoiceAttachment] = useState<File | null>(null)
-const [ewayBillAttachment, setEwayBillAttachment] = useState<File | null>(null)
-const [uploading, setUploading] = useState(false)
+  // Column definitions for Pending tab (B to BJ)
+  const pendingColumns = [
+    { key: "actions", label: "Actions", searchable: false },
+    { key: "orderNo", label: "Order No.", searchable: true },
+    { key: "quotationNo", label: "Quotation No.", searchable: true },
+    { key: "companyName", label: "Company Name", searchable: true },
+    { key: "contactPersonName", label: "Contact Person Name", searchable: true },
+    { key: "contactNumber", label: "Contact Number", searchable: true },
+    { key: "billingAddress", label: "Billing Address", searchable: true },
+    { key: "shippingAddress", label: "Shipping Address", searchable: true },
+    { key: "paymentMode", label: "Payment Mode", searchable: true },
+    { key: "quotationCopy", label: "Quotation Copy", searchable: true },
+    { key: "paymentTerms", label: "Payment Terms(In Days)", searchable: true },
+    { key: "transportMode", label: "Transport Mode", searchable: true },
+    { key: "freightType", label: "Freight Type", searchable: true },
+    { key: "destination", label: "Destination", searchable: true },
+    { key: "poNumber", label: "Po Number", searchable: true },
+    { key: "quotationCopy2", label: "Quotation Copy", searchable: true },
+    { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
+    { key: "offer", label: "Offer", searchable: true },
+    { key: "conveyedForRegistration", label: "Conveyed For Registration Form", searchable: true },
+    { key: "qty", label: "Qty", searchable: true },
+    { key: "amount", label: "Amount", searchable: true },
+    { key: "approvedName", label: "Approved Name", searchable: true },
+    { key: "calibrationCertRequired", label: "Calibration Certificate Required", searchable: true },
+    { key: "certificateCategory", label: "Certificate Category", searchable: true },
+    { key: "installationRequired", label: "Installation Required", searchable: true },
+    { key: "ewayBillDetails", label: "Eway Bill Details", searchable: true },
+    { key: "ewayBillAttachment", label: "Eway Bill Attachment", searchable: true },
+    { key: "srnNumber", label: "Srn Number", searchable: true },
+    { key: "srnNumberAttachment", label: "Srn Number Attachment", searchable: true },
+    { key: "attachment", label: "Attachment", searchable: true },
+    { key: "itemName1", label: "Item Name 1", searchable: true },
+    { key: "quantity1", label: "Quantity 1", searchable: true },
+    { key: "itemName2", label: "Item Name 2", searchable: true },
+    { key: "quantity2", label: "Quantity 2", searchable: true },
+    { key: "itemName3", label: "Item Name 3", searchable: true },
+    { key: "quantity3", label: "Quantity 3", searchable: true },
+    { key: "itemName4", label: "Item Name 4", searchable: true },
+    { key: "quantity4", label: "Quantity 4", searchable: true },
+    { key: "itemName5", label: "Item Name 5", searchable: true },
+    { key: "quantity5", label: "Quantity 5", searchable: true },
+    { key: "itemName6", label: "Item Name 6", searchable: true },
+    { key: "quantity6", label: "Quantity 6", searchable: true },
+    { key: "itemName7", label: "Item Name 7", searchable: true },
+    { key: "quantity7", label: "Quantity 7", searchable: true },
+    { key: "itemName8", label: "Item Name 8", searchable: true },
+    { key: "quantity8", label: "Quantity 8", searchable: true },
+    { key: "itemName9", label: "Item Name 9", searchable: true },
+    { key: "quantity9", label: "Quantity 9", searchable: true },
+    { key: "itemName10", label: "Item Name 10", searchable: true },
+    { key: "quantity10", label: "Quantity 10", searchable: true },
+    { key: "itemName11", label: "Item Name 11", searchable: true },
+    { key: "quantity11", label: "Quantity 11", searchable: true },
+    { key: "itemName12", label: "Item Name 12", searchable: true },
+    { key: "quantity12", label: "Quantity 12", searchable: true },
+    { key: "itemName13", label: "Item Name 13", searchable: true },
+    { key: "quantity13", label: "Quantity 13", searchable: true },
+    { key: "itemName14", label: "Item Name 14", searchable: true },
+    { key: "quantity14", label: "Quantity 14", searchable: true },
+    { key: "itemName15", label: "Item Name 15", searchable: true },
+    { key: "quantity15", label: "Quantity 15", searchable: true },
+    { key: "totalQty", label: "Total Qty", searchable: true },
+    { key: "remarks", label: "Remarks", searchable: true },
+  ]
 
-const fetchPendingOrders = async () => {
-  setLoading(true)
-  setError(null)
+  // Column definitions for History tab (includes BN to BR)
+  const historyColumns = [
+    ...pendingColumns.filter((col) => col.key !== "actions"),
+    { key: "invoiceNumber", label: "Invoice Number", searchable: true },
+    { key: "invoiceUpload", label: "Invoice Upload", searchable: true },
+    { key: "ewayBillUpload", label: "Eway Bill Upload", searchable: true },
+    { key: "totalQtyHistory", label: "Total Qty", searchable: true },
+    { key: "totalBillAmount", label: "Total Bill Amount", searchable: true },
+  ]
 
-  try {
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
-    const response = await fetch(sheetUrl)
-    const text = await response.text()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedColumn, setSelectedColumn] = useState("all")
+  const [visiblePendingColumns, setVisiblePendingColumns] = useState(
+    pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+  const [visibleHistoryColumns, setVisibleHistoryColumns] = useState(
+    historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
 
-    const jsonStart = text.indexOf("{")
-    const jsonEnd = text.lastIndexOf("}") + 1
-    const jsonData = text.substring(jsonStart, jsonEnd)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [invoiceAttachment, setInvoiceAttachment] = useState<File | null>(null)
+  const [ewayBillAttachment, setEwayBillAttachment] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
 
-    const data = JSON.parse(jsonData)
+  const fetchPendingOrders = async () => {
+    setLoading(true)
+    setError(null)
 
-    if (data && data.table && data.table.rows) {
-      const pendingOrders: any[] = []
+    try {
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const response = await fetch(sheetUrl)
+      const text = await response.text()
 
-      data.table.rows.slice(6).forEach((row, index) => {
-        if (row.c) {
-          const actualRowIndex = index + 2
-          const bjColumn = row.c[62] ? row.c[62].v : null // Column BJ (index 61)
-          const bkColumn = row.c[63] ? row.c[63].v : null // Column BK (index 62)
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}") + 1
+      const jsonData = text.substring(jsonStart, jsonEnd)
 
-          // Only include rows where BJ is not null and BK is null
-          if (bjColumn && !bkColumn) {
-            const order = {
-              rowIndex: actualRowIndex,
-              id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-              companyName: row.c[3] ? row.c[3].v : "",
-              contactPerson: row.c[4] ? row.c[4].v : "",
-              contactNumber: row.c[5] ? row.c[5].v : "",
-              billingAddress: row.c[6] ? row.c[6].v : "", // Added billing address
-              shippingAddress: row.c[7] ? row.c[7].v : "", // Added shipping address
-              paymentMode: row.c[8] ? row.c[8].v : "",
-              paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A", // Payment details logic
-              paymentTerms: row.c[9] ? row.c[9].v : "",
-              quantity: row.c[10] ? row.c[10].v : "",
-              transportMode: row.c[11] ? row.c[11].v : "",
-              freightType: row.c[12] ? row.c[12].v : "", // Added freight type (assuming column 12)
-              destination: row.c[13] ? row.c[13].v : "",
-              poNumber: row.c[14] ? row.c[14].v : "",
-              amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0, // Adjusted amount column
-              seniorApproval: row.c[16] ? row.c[16].v : "Approved", // Added senior approval
-              totalQty: row.c[19] ? row.c[19].v : "", // Same as quantity for now
-              billingQty: row.c[10] ? row.c[10].v : "", // Same as quantity for now
-              quotationCopy: "Available", // Static for now, adjust based on your sheet structure
-              acceptanceCopy: "Available", // Static for now, adjust based on your sheet structure
-              fullRowData: row.c,
-            }
-            pendingOrders.push(order)
-          }
-        }
-      })
+      const data = JSON.parse(jsonData)
 
-      setPendingOrders(pendingOrders)
-    }
-  } catch (err: any) {
-    console.error("Error fetching pending orders:", err)
-    setError(err.message)
-    setPendingOrders([])
-  } finally {
-    setLoading(false)
-  }
-}
+      if (data && data.table && data.table.rows) {
+        const pendingOrders: any[] = []
 
-const fetchHistoryOrders = async () => {
-  setLoading(true)
-  setError(null)
+        data.table.rows.slice(6).forEach((row, index) => {
+          if (row.c) {
+            const actualRowIndex = index + 2
+            const bjColumn = row.c[62] ? row.c[62].v : null // Column BJ (index 61)
+            const bkColumn = row.c[63] ? row.c[63].v : null // Column BK (index 62)
 
-  try {
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
-    const response = await fetch(sheetUrl)
-    const text = await response.text()
-
-    const jsonStart = text.indexOf("{")
-    const jsonEnd = text.lastIndexOf("}") + 1
-    const jsonData = text.substring(jsonStart, jsonEnd)
-
-    const data = JSON.parse(jsonData)
-
-    if (data && data.table && data.table.rows) {
-      const historyOrders: any[] = []
-
-      data.table.rows.slice(6).forEach((row, index) => {
-        if (row.c) {
-          const actualRowIndex = index + 2
-          const bjColumn = row.c[62] ? row.c[62].v : null // Column BJ (index 61)
-          const bkColumn = row.c[63] ? row.c[63].v : null // Column BK (index 62)
-
-          // Only include rows where both BJ and BK are not null
-          if (bjColumn && bkColumn) {
-            const order = {
-              rowIndex: actualRowIndex,
-              id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-              companyName: row.c[3] ? row.c[3].v : "",
-              contactPerson: row.c[4] ? row.c[4].v : "",
-              contactNumber: row.c[5] ? row.c[5].v : "",
-              billingAddress: row.c[6] ? row.c[6].v : "", // Added billing address
-              shippingAddress: row.c[7] ? row.c[7].v : "", // Added shipping address
-              paymentMode: row.c[8] ? row.c[8].v : "",
-              paymentDetails: row.c[8] === "Advance" ? "Attached" : "N/A", // Payment details for history
-              paymentTerms: row.c[10] ? row.c[10].v : "",
-              quantity: row.c[10] ? row.c[10].v : "",
-              transportMode: row.c[11] ? row.c[11].v : "",
-              freightType: row.c[12] ? row.c[12].v : "", // Added freight type
-              destination: row.c[13] ? row.c[13].v : "",
-              poNumber: row.c[14] ? row.c[14].v : "",
-              amount: row.c[15] ? Number.parseFloat(row.c[15].v) || 0 : 0, // Adjusted amount column
-              seniorApproval: row.c[16] ? row.c[16].v : "Approved", // Added senior approval
-              totalQty: row.c[60] ? row.c[60].v : "", // Same as quantity for now
-              billingQty: row.c[69] ? row.c[69].v : row.c[10] ? row.c[10].v : "", // Invoice qty or original qty
-              invoiceDate: bkColumn, // Column BK contains the invoice date
-              invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
-              invoiceQty: row.c[69] ? row.c[69].v : "", // Column BQ (quantity)
-              fullRowData: row.c,
-              invoiceData: {
-                invoiceNumber: row.c[65] ? row.c[65].v : "",
-                qty: row.c[69] ? row.c[69].v : "",
-                processedAt: bkColumn
-              },
-              approvalData: {
-                approvedBy: row.c[16] ? row.c[16].v : "Approved" // Approval data
+            // Only include rows where BJ is not null and BK is null
+            if (bjColumn && !bkColumn) {
+              const order = {
+                rowIndex: actualRowIndex,
+                id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                orderNo: row.c[1] ? row.c[1].v : "", // Column B - Order No
+                quotationNo: row.c[2] ? row.c[2].v : "", // Column C
+                companyName: row.c[3] ? row.c[3].v : "",
+                contactPersonName: row.c[4] ? row.c[4].v : "", // Fix field name to match column definition
+                contactNumber: row.c[5] ? row.c[5].v : "",
+                billingAddress: row.c[6] ? row.c[6].v : "",
+                shippingAddress: row.c[7] ? row.c[7].v : "",
+                paymentMode: row.c[8] ? row.c[8].v : "",
+                paymentTerms: row.c[10] ? row.c[10].v : "",
+                qty: row.c[19] ? row.c[19].v : "", // Map to qty field for column definition
+                transportMode: row.c[11] ? row.c[11].v : "",
+                freightType: row.c[12] ? row.c[12].v : "",
+                destination: row.c[13] ? row.c[13].v : "",
+                poNumber: row.c[14] ? row.c[14].v : "",
+                offer: row.c[15] ? row.c[15].v : "",
+                amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
+                // Keep existing fields for backward compatibility
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                quantity: row.c[10] ? row.c[10].v : "",
+                paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A",
+                seniorApproval: row.c[16] ? row.c[16].v : "Approved",
+                totalQty: row.c[60] ? row.c[60].v : "",
+                billingQty: row.c[10] ? row.c[10].v : "",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
+                fullRowData: row.c,
+                conveyedForRegistration: row.c[18] ? row.c[18].v : "",
+                approvedName: row.c[21] ? row.c[21].v : "",
+                calibrationCertRequired: row.c[22] ? row.c[22].v : "",
+                certificateCategory: row.c[23] ? row.c[23].v : "",
+                installationRequired: row.c[24] ? row.c[24].v : "",
+                ewayBillDetails: row.c[25] ? row.c[25].v : "",
+                ewayBillAttachment: row.c[26] ? row.c[26].v : "",
+                srnNumber: row.c[27] ? row.c[27].v : "",
+                srnNumberAttachment: row.c[28] ? row.c[28].v : "",
+                attachment: row.c[29] ? row.c[29].v : "",
+                itemName1: row.c[30] ? row.c[30].v : "",
+                quantity1: row.c[31] ? row.c[31].v : "",
+                itemName2: row.c[32] ? row.c[32].v : "",
+                quantity2: row.c[33] ? row.c[33].v : "",
+                itemName3: row.c[34] ? row.c[34].v : "",
+                quantity3: row.c[35] ? row.c[35].v : "",
+                itemName4: row.c[36] ? row.c[36].v : "",
+                quantity4: row.c[37] ? row.c[37].v : "",
+                itemName5: row.c[38] ? row.c[38].v : "",
+                quantity5: row.c[39] ? row.c[39].v : "",
+                itemName6: row.c[40] ? row.c[40].v : "",
+                quantity6: row.c[41] ? row.c[41].v : "",
+                itemName7: row.c[42] ? row.c[42].v : "",
+                quantity7: row.c[43] ? row.c[43].v : "",
+                itemName8: row.c[44] ? row.c[44].v : "",
+                quantity8: row.c[45] ? row.c[45].v : "",
+                itemName9: row.c[46] ? row.c[46].v : "",
+                quantity9: row.c[47] ? row.c[47].v : "",
+                itemName10: row.c[48] ? row.c[48].v : "",
+                quantity10: row.c[49] ? row.c[49].v : "",
+                itemName11: row.c[50] ? row.c[50].v : "",
+                quantity11: row.c[51] ? row.c[51].v : "",
+                itemName12: row.c[52] ? row.c[52].v : "",
+                quantity12: row.c[53] ? row.c[53].v : "",
+                itemName13: row.c[54] ? row.c[54].v : "",
+                quantity13: row.c[55] ? row.c[55].v : "",
+                itemName14: row.c[56] ? row.c[56].v : "",
+                quantity14: row.c[57] ? row.c[57].v : "",
+                itemName15: row.c[58] ? row.c[58].v : "",
+                quantity15: row.c[59] ? row.c[59].v : "",
+                remarks: row.c[61] ? row.c[61].v : "",
+                quotationCopy2: row.c[15] ? row.c[15].v : "",
               }
+              pendingOrders.push(order)
             }
-            historyOrders.push(order)
           }
-        }
-      })
+        })
 
-      setHistoryOrders(historyOrders)
+        setPendingOrders(pendingOrders)
+      }
+    } catch (err: any) {
+      console.error("Error fetching pending orders:", err)
+      setError(err.message)
+      setPendingOrders([])
+    } finally {
+      setLoading(false)
     }
-  } catch (err: any) {
-    console.error("Error fetching history orders:", err)
-    setError(err.message)
-    setHistoryOrders([])
-  } finally {
-    setLoading(false)
   }
-}
 
-useEffect(() => {
-  fetchPendingOrders()
-  fetchHistoryOrders()
-}, [])
+  const fetchHistoryOrders = async () => {
+    setLoading(true)
+    setError(null)
 
+    try {
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const response = await fetch(sheetUrl)
+      const text = await response.text()
+
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}") + 1
+      const jsonData = text.substring(jsonStart, jsonEnd)
+
+      const data = JSON.parse(jsonData)
+
+      if (data && data.table && data.table.rows) {
+        const historyOrders: any[] = []
+
+        data.table.rows.slice(6).forEach((row, index) => {
+          if (row.c) {
+            const actualRowIndex = index + 2
+            const bjColumn = row.c[62] ? row.c[62].v : null // Column BJ (index 61)
+            const bkColumn = row.c[63] ? row.c[63].v : null // Column BK (index 62)
+
+            // Only include rows where both BJ and BK are not null
+            if (bjColumn && bkColumn) {
+              const order = {
+                rowIndex: actualRowIndex,
+                id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                orderNo: row.c[1] ? row.c[1].v : "", // Column B - Order No
+                quotationNo: row.c[2] ? row.c[2].v : "", // Column C
+                companyName: row.c[3] ? row.c[3].v : "",
+                contactPersonName: row.c[4] ? row.c[4].v : "", // Fix field name to match column definition
+                contactNumber: row.c[5] ? row.c[5].v : "",
+                billingAddress: row.c[6] ? row.c[6].v : "",
+                shippingAddress: row.c[7] ? row.c[7].v : "",
+                paymentMode: row.c[8] ? row.c[8].v : "",
+                paymentTerms: row.c[10] ? row.c[10].v : "",
+                qty: row.c[19] ? row.c[19].v : "", // Map to qty field for column definition
+                transportMode: row.c[11] ? row.c[11].v : "",
+                freightType: row.c[12] ? row.c[12].v : "",
+                destination: row.c[13] ? row.c[13].v : "",
+                poNumber: row.c[14] ? row.c[14].v : "",
+                offer: row.c[15] ? row.c[15].v : "",
+                amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
+                // Keep existing fields for backward compatibility
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                quantity: row.c[10] ? row.c[10].v : "",
+                paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A",
+                seniorApproval: row.c[16] ? row.c[16].v : "Approved",
+                totalQty: row.c[60] ? row.c[60].v : "",
+                billingQty: row.c[10] ? row.c[10].v : "",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
+                fullRowData: row.c,
+                conveyedForRegistration: row.c[18] ? row.c[18].v : "",
+                approvedName: row.c[21] ? row.c[21].v : "",
+                calibrationCertRequired: row.c[22] ? row.c[22].v : "",
+                certificateCategory: row.c[23] ? row.c[23].v : "",
+                installationRequired: row.c[24] ? row.c[24].v : "",
+                ewayBillDetails: row.c[25] ? row.c[25].v : "",
+                ewayBillAttachment: row.c[26] ? row.c[26].v : "",
+                srnNumber: row.c[27] ? row.c[27].v : "",
+                srnNumberAttachment: row.c[28] ? row.c[28].v : "",
+                attachment: row.c[29] ? row.c[29].v : "",
+                itemName1: row.c[30] ? row.c[30].v : "",
+                quantity1: row.c[31] ? row.c[31].v : "",
+                itemName2: row.c[32] ? row.c[32].v : "",
+                quantity2: row.c[33] ? row.c[33].v : "",
+                itemName3: row.c[34] ? row.c[34].v : "",
+                quantity3: row.c[35] ? row.c[35].v : "",
+                itemName4: row.c[36] ? row.c[36].v : "",
+                quantity4: row.c[37] ? row.c[37].v : "",
+                itemName5: row.c[38] ? row.c[38].v : "",
+                quantity5: row.c[39] ? row.c[39].v : "",
+                itemName6: row.c[40] ? row.c[40].v : "",
+                quantity6: row.c[41] ? row.c[41].v : "",
+                itemName7: row.c[42] ? row.c[42].v : "",
+                quantity7: row.c[43] ? row.c[43].v : "",
+                itemName8: row.c[44] ? row.c[44].v : "",
+                quantity8: row.c[45] ? row.c[45].v : "",
+                itemName9: row.c[46] ? row.c[46].v : "",
+                quantity9: row.c[47] ? row.c[47].v : "",
+                itemName10: row.c[48] ? row.c[48].v : "",
+                quantity10: row.c[49] ? row.c[49].v : "",
+                itemName11: row.c[50] ? row.c[50].v : "",
+                quantity11: row.c[51] ? row.c[51].v : "",
+                itemName12: row.c[52] ? row.c[52].v : "",
+                quantity12: row.c[53] ? row.c[53].v : "",
+                itemName13: row.c[54] ? row.c[54].v : "",
+                quantity13: row.c[55] ? row.c[55].v : "",
+                itemName14: row.c[56] ? row.c[56].v : "",
+                quantity14: row.c[57] ? row.c[57].v : "",
+                itemName15: row.c[58] ? row.c[58].v : "",
+                quantity15: row.c[59] ? row.c[59].v : "",
+                remarks: row.c[61] ? row.c[61].v : "",
+                quotationCopy2: row.c[15] ? row.c[15].v : "",
+                
+                quantity: row.c[10] ? row.c[10].v : "",
+                paymentDetails: row.c[8] === "Advance" ? "Attached" : "N/A",
+                seniorApproval: row.c[16] ? row.c[16].v : "Approved",
+                totalQty: row.c[59] ? row.c[59].v : "",
+                billingQty: row.c[69] ? row.c[69].v : row.c[10] ? row.c[10].v : "",
+                invoiceDate: bkColumn,
+                invoiceNumber: row.c[65] ? row.c[65].v : "",
+                invoiceUpload: row.c[66] ? row.c[66].v : "",
+                ewayBillUpload: row.c[67] ? row.c[67].v : "",
+                totalQtyHistory: row.c[68] ? row.c[68].v : "",
+                totalBillAmount: row.c[69] ? row.c[69].v : "",
+                invoiceQty: row.c[69] ? row.c[69].v : "",
+                fullRowData: row.c,
+                invoiceData: {
+                  invoiceNumber: row.c[65] ? row.c[65].v : "",
+                  qty: row.c[69] ? row.c[69].v : "",
+                  processedAt: bkColumn,
+                },
+                approvalData: {
+                  approvedBy: row.c[16] ? row.c[16].v : "Approved",
+                },
+              }
+              historyOrders.push(order)
+            }
+          }
+        })
+
+        setHistoryOrders(historyOrders)
+      }
+    } catch (err: any) {
+      console.error("Error fetching history orders:", err)
+      setError(err.message)
+      setHistoryOrders([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPendingOrders()
+    fetchHistoryOrders()
+  }, [])
+
+  // Filter orders based on search term and selected column
+  const filteredPendingOrders = useMemo(() => {
+    if (!searchTerm) return pendingOrders
+
+    return pendingOrders.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = pendingColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase())
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+        return fieldValue.includes(searchTerm.toLowerCase())
+      }
+    })
+  }, [pendingOrders, searchTerm, selectedColumn])
+
+  const filteredHistoryOrders = useMemo(() => {
+    if (!searchTerm) return historyOrders
+
+    return historyOrders.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = historyColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase())
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+        return fieldValue.includes(searchTerm.toLowerCase())
+      }
+    })
+  }, [historyOrders, searchTerm, selectedColumn])
+
+  // Column visibility handlers
+  const togglePendingColumn = (columnKey) => {
+    setVisiblePendingColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const toggleHistoryColumn = (columnKey) => {
+    setVisibleHistoryColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const showAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: col.key === "actions" }), {}))
+  }
+
+  const showAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: false }), {}))
+  }
 
   // const pendingOrders = orders.filter((order) => order.status === "dispatch-processed")
   const processedOrders = orders.filter((order) => order.invoiceData)
@@ -197,12 +463,12 @@ useEffect(() => {
   const updateOrderStatus = async (order: any, invoiceData: any) => {
     try {
       setUploading(true)
-  
+
       const formData = new FormData()
       formData.append("sheetName", SHEET_NAME)
       formData.append("action", "updateByOrderNoInColumnB")
       formData.append("orderNo", order.id)
-  
+
       // Handle invoice file upload
       if (invoiceAttachment) {
         try {
@@ -214,7 +480,7 @@ useEffect(() => {
           console.error("Error converting invoice file:", error)
         }
       }
-  
+
       // Handle eway bill file upload
       if (ewayBillAttachment) {
         try {
@@ -226,36 +492,37 @@ useEffect(() => {
           console.error("Error converting E-way Bill file:", error)
         }
       }
-  
-      const rowData = new Array(70).fill("")
-  
-      // Add today's date to BK column (index 62)
-      const today = new Date();
 
-      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-      
+      const rowData = new Array(70).fill("")
+
+      // Add today's date to BK column (index 62)
+      const today = new Date()
+
+      const formattedDate =
+        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
       rowData[63] = formattedDate
-  
+
       // Add invoice data to specific columns
       rowData[65] = invoiceData.invoiceNumber // Column BO (invoice number)
       rowData[68] = invoiceData.qty // Column BQ (quantity)
       rowData[69] = totalBillAmount.toString() // Column BS (total bill amount)
       // rowData[69] = "Invoice Created" // Column BR (status)
       // rowData[70] = today.toISOString() // Column BS (timestamp)
-  
+
       formData.append("rowData", JSON.stringify(rowData))
-  
+
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       })
-  
+
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`)
       }
-  
+
       let result
       try {
         const responseText = await updateResponse.text()
@@ -263,7 +530,7 @@ useEffect(() => {
       } catch (parseError) {
         result = { success: true }
       }
-  
+
       if (result.success !== false) {
         await fetchPendingOrders()
         await fetchHistoryOrders()
@@ -283,7 +550,7 @@ useEffect(() => {
   const handleProcess = (orderId: string) => {
     const order = pendingOrders.find((o) => o.id === orderId)
     if (!order) return
-    
+
     setSelectedOrder(orderId)
     setInvoiceNumber("")
     setQty(order.quantity || 0) // Auto-fill from sheet data
@@ -295,19 +562,19 @@ useEffect(() => {
 
   const handleSubmit = async () => {
     if (!selectedOrder || !invoiceNumber) return
-  
+
     const order = pendingOrders.find((o) => o.id === selectedOrder)
     if (!order) return
-  
+
     const invoiceData = {
       invoiceNumber,
       qty,
       processedAt: new Date().toISOString(),
       processedBy: "Current User",
     }
-  
+
     const result = await updateOrderStatus(order, invoiceData)
-  
+
     if (result.success) {
       setIsDialogOpen(false)
       setSelectedOrder("")
@@ -338,7 +605,7 @@ useEffect(() => {
       </MainLayout>
     )
   }
-  
+
   if (error) {
     return (
       <MainLayout>
@@ -346,10 +613,13 @@ useEffect(() => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600">Error Loading Data</h1>
             <p className="text-muted-foreground mt-2">{error}</p>
-            <Button onClick={() => {
-              fetchPendingOrders()
-              fetchHistoryOrders()
-            }} className="mt-4">
+            <Button
+              onClick={() => {
+                fetchPendingOrders()
+                fetchHistoryOrders()
+              }}
+              className="mt-4"
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -360,112 +630,168 @@ useEffect(() => {
   }
 
   const handleRefresh = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()]);
+      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()])
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const renderCellContent = (order, columnKey) => {
+    const value = order[columnKey]
+
+    switch (columnKey) {
+      case "actions":
+        return (
+          <Button size="sm" onClick={() => handleProcess(order.id)}>
+            Process
+          </Button>
+        )
+      case "quotationCopy":
+      case "quotationCopy2":
+        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
+      case "acceptanceCopy":
+        return value && (value.startsWith("http") || value.startsWith("https")) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            <Badge variant="default">Link</Badge>
+          </a>
+        ) : (
+          <Badge variant="secondary">{value || "Available"}</Badge>
+        )
+      case "calibrationCertRequired":
+      case "installationRequired":
+        return <Badge variant={value === "Yes" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      case "billingAddress":
+      case "shippingAddress":
+      case "remarks":
+        return <div className="max-w-[150px] truncate">{value || ""}</div>
+      case "paymentMode":
+        return (
+          <div className="flex items-center gap-2">
+            {value}
+            {value === "Advance" && <Badge variant="secondary">Required</Badge>}
+          </div>
+        )
+      default:
+        return value || ""
+    }
+  }
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-        <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-  Make Invoice (Accounts Part)
-</h1>
-          <p className="text-muted-foreground">Create invoices for processed orders</p>
-        </div>
-        <Button onClick={handleRefresh} variant="outline">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              Make Invoice (Accounts Part)
+            </h1>
+            <p className="text-muted-foreground">Create invoices for processed orders</p>
+          </div>
+          <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
 
+        {/* Search and Filter Controls */}
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-            <TabsTrigger value="history">History ({historyOrders.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({filteredPendingOrders.length})</TabsTrigger>
+            <TabsTrigger value="history">History ({filteredHistoryOrders.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pending Invoices</CardTitle>
-                <CardDescription>Orders waiting for invoice creation</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Pending Invoices</CardTitle>
+                    <CardDescription>Orders waiting for invoice creation</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {pendingColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`pending-${column.key}`}
+                              checked={visiblePendingColumns[column.key]}
+                              onCheckedChange={() => togglePendingColumn(column.key)}
+                            />
+                            <Label htmlFor={`pending-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Order Number</TableHead>
-                        <TableHead>Company Name</TableHead>
-                        <TableHead>Contact Person Name</TableHead>
-                        <TableHead>Contact Number</TableHead>
-                        <TableHead>Billing Address</TableHead>
-                        <TableHead>Shipping Address</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Payment Details</TableHead>
-                        <TableHead>Payment Terms (In Days)</TableHead>
-                        <TableHead>Order Received Qty</TableHead>
-                        <TableHead>Transport Mode</TableHead>
-                        <TableHead>Freight Type</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>PO Number</TableHead>
-                        <TableHead>Senior Approval</TableHead>
-                        {/* <TableHead>Total Qty</TableHead>
-                        <TableHead>Billing Qty</TableHead> */}
-                        <TableHead>Quotation Copy</TableHead>
-                        <TableHead>Acceptance Copy</TableHead>
+                        {pendingColumns
+                          .filter((col) => visiblePendingColumns[col.key])
+                          .map((column) => (
+                            <TableHead key={column.key}>{column.label}</TableHead>
+                          ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pendingOrders.map((order) => (
+                      {filteredPendingOrders.map((order) => (
                         <TableRow key={order.id}>
-                          <TableCell>
-                            <Button size="sm" onClick={() => handleProcess(order.id)}>
-                              Process
-                            </Button>
-                          </TableCell>
-                          <TableCell className="font-medium">{order.id}</TableCell>
-                          <TableCell>{order.companyName}</TableCell>
-                          <TableCell>{order.contactPerson}</TableCell>
-                          <TableCell>{order.contactNumber}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.billingAddress || "N/A"}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
-                          <TableCell>{order.paymentMode}</TableCell>
-                          <TableCell>
-                            {order.paymentMode === "Advance" ? (
-                              <Badge variant="secondary">Required</Badge>
-                            ) : (
-                              <Badge variant="outline">N/A</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{order.paymentTerms}</TableCell>
-                          <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.transportMode}</TableCell>
-                          <TableCell>{order.freightType || "N/A"}</TableCell>
-                          <TableCell>{order.destination}</TableCell>
-                          <TableCell>{order.poNumber}</TableCell>
-                          <TableCell>
-                            <Badge variant="default">{order.approvalData?.approvedBy || "Approved"}</Badge>
-                          </TableCell>
-                          {/* <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.quantity}</TableCell> */}
-                          <TableCell>
-                            <Badge variant="outline">Available</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">Available</Badge>
-                          </TableCell>
+                          {pendingColumns
+                            .filter((col) => visiblePendingColumns[col.key])
+                            .map((column) => (
+                              <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                            ))}
                         </TableRow>
                       ))}
+                      {filteredPendingOrders.length === 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                            className="text-center text-muted-foreground"
+                          >
+                            {searchTerm ? "No orders match your search criteria" : "No pending orders found"}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -476,74 +802,80 @@ useEffect(() => {
           <TabsContent value="history" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Invoice History</CardTitle>
-                <CardDescription>Previously created invoices</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Invoice History</CardTitle>
+                    <CardDescription>Previously created invoices</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {historyColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`history-${column.key}`}
+                              checked={visibleHistoryColumns[column.key]}
+                              onCheckedChange={() => toggleHistoryColumn(column.key)}
+                            />
+                            <Label htmlFor={`history-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Order Number</TableHead>
-                        <TableHead>Company Name</TableHead>
-                        <TableHead>Contact Person Name</TableHead>
-                        <TableHead>Contact Number</TableHead>
-                        <TableHead>Billing Address</TableHead>
-                        <TableHead>Shipping Address</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Payment Details</TableHead>
-                        <TableHead>Payment Terms (In Days)</TableHead>
-                        <TableHead>Order Received Qty</TableHead>
-                        <TableHead>Transport Mode</TableHead>
-                        <TableHead>Freight Type</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>PO Number</TableHead>
-                        <TableHead>Senior Approval</TableHead>
-                        <TableHead>Total Qty</TableHead>
-                        <TableHead>Billing Qty</TableHead>
-                        <TableHead>Invoice Number</TableHead>
-                        <TableHead>Invoice Date</TableHead>
-                        <TableHead>Action</TableHead>
+                        {historyColumns
+                          .filter((col) => visibleHistoryColumns[col.key])
+                          .map((column) => (
+                            <TableHead key={column.key}>{column.label}</TableHead>
+                          ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {historyOrders.map((order) => (
+                      {filteredHistoryOrders.map((order) => (
                         <TableRow key={order.id}>
-                          <TableCell className="font-medium">{order.id}</TableCell>
-                          <TableCell>{order.companyName}</TableCell>
-                          <TableCell>{order.contactPerson}</TableCell>
-                          <TableCell>{order.contactNumber}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.billingAddress || "N/A"}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
-                          <TableCell>{order.paymentMode}</TableCell>
-                          <TableCell>
-                            {order.paymentMode === "Advance" ? (
-                              <Badge variant="default">Attached</Badge>
-                            ) : (
-                              <Badge variant="outline">N/A</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>{order.paymentTerms}</TableCell>
-                          <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.transportMode}</TableCell>
-                          <TableCell>{order.freightType || "N/A"}</TableCell>
-                          <TableCell>{order.destination}</TableCell>
-                          <TableCell>{order.poNumber}</TableCell>
-                          <TableCell>
-                            <Badge variant="default">{order.approvalData?.approvedBy || "Approved"}</Badge>
-                          </TableCell>
-                          <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.invoiceQty || order.quantity}</TableCell>
-                          <TableCell className="font-medium">{order.invoiceNumber}</TableCell>
-                          <TableCell>{order.invoiceDate}</TableCell>
-                          <TableCell>
-                            <Button size="sm" variant="outline" onClick={() => handleView(order)}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                          </TableCell>
+                          {historyColumns
+                            .filter((col) => visibleHistoryColumns[col.key])
+                            .map((column) => (
+                              <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                            ))}
                         </TableRow>
                       ))}
+                      {filteredHistoryOrders.length === 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                            className="text-center text-muted-foreground"
+                          >
+                            {searchTerm ? "No orders match your search criteria" : "No history orders found"}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -574,43 +906,34 @@ useEffect(() => {
                 />
               </div>
               <div className="space-y-2">
-  <Label htmlFor="totalQty">Total QTY</Label>
-  <Input
-    id="totalQty"
-    type="number"
-    value={qty}
-    onChange={(e) => setQty(Number.parseInt(e.target.value) || 0)}
-    // disabled // Make it read-only since it's auto-filled
-  />
-</div>
-<div className="space-y-2">
-  <Label htmlFor="totalBillAmount">Total Bill Amount</Label>
-  <Input
-    id="totalBillAmount"
-    type="number"
-    value={totalBillAmount}
-    onChange={(e) => setTotalBillAmount(Number.parseFloat(e.target.value) || 0)}
-    placeholder="Enter total bill amount"
-  />
-</div>
+                <Label htmlFor="totalQty">Total QTY</Label>
+                <Input
+                  id="totalQty"
+                  type="number"
+                  value={qty}
+                  onChange={(e) => setQty(Number.parseInt(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="totalBillAmount">Total Bill Amount</Label>
+                <Input
+                  id="totalBillAmount"
+                  type="number"
+                  value={totalBillAmount}
+                  onChange={(e) => setTotalBillAmount(Number.parseFloat(e.target.value) || 0)}
+                  placeholder="Enter total bill amount"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="invoice">Invoice (Attachment)</Label>
-                <Input 
-                  id="invoice" 
-                  type="file" 
-                  onChange={(e) => setInvoiceAttachment(e.target.files?.[0] || null)}
-                />
+                <Input id="invoice" type="file" onChange={(e) => setInvoiceAttachment(e.target.files?.[0] || null)} />
                 {invoiceAttachment && (
                   <p className="text-sm text-muted-foreground">Selected: {invoiceAttachment.name}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="ewaybill">E-Way Bill (Attachment)</Label>
-                <Input 
-                  id="ewaybill" 
-                  type="file" 
-                  onChange={(e) => setEwayBillAttachment(e.target.files?.[0] || null)}
-                />
+                <Input id="ewaybill" type="file" onChange={(e) => setEwayBillAttachment(e.target.files?.[0] || null)} />
                 {ewayBillAttachment && (
                   <p className="text-sm text-muted-foreground">Selected: {ewayBillAttachment.name}</p>
                 )}

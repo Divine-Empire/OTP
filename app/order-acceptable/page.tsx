@@ -410,10 +410,10 @@ export default function OrderAcceptablePage() {
                 materialReturn: row.c[47] ? row.c[47].v : "", // Column AV
                 deliveryStatus: row.c[48] ? row.c[48].v : "", // Column AW
                 dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
-                dispatchCompleteDate: row.c[50] ? row.c[50].v : "", // Column AY
-                deliveryCompleteDate: row.c[51] ? row.c[51].v : "", // Column AZ
+                dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
+                deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
                 status: row.c[24] ? row.c[24].v : "",
-                completeDate: row.c[25] ? row.c[25].v : "",
+                completeDate: formatGoogleSheetsDate(row.c[25] ? row.c[25].v : ""),
                 // Additional columns BD, BE, BF (indices 55, 56, 57)
                 isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column BD
                 orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column BE

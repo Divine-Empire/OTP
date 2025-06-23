@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { useData } from "@/components/data-provider"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, RefreshCw } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { RefreshCw, Search, Settings } from "lucide-react"
 
 export default function CalibrationPage() {
   const { orders, updateOrder } = useData()
@@ -35,6 +44,166 @@ export default function CalibrationPage() {
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
   const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
   const SHEET_NAME = "DISPATCH-DELIVERY"
+
+  // Column definitions for Pending tab (B to BJ plus warehouse material history headers)
+  const pendingColumns = [
+    { key: "actions", label: "Actions", searchable: false },
+    { key: "orderNo", label: "Order No.", searchable: true },
+    { key: "quotationNo", label: "Quotation No.", searchable: true },
+    { key: "companyName", label: "Company Name", searchable: true },
+    { key: "contactPersonName", label: "Contact Person Name", searchable: true },
+    { key: "contactNumber", label: "Contact Number", searchable: true },
+    { key: "billingAddress", label: "Billing Address", searchable: true },
+    { key: "shippingAddress", label: "Shipping Address", searchable: true },
+    { key: "paymentMode", label: "Payment Mode", searchable: true },
+    { key: "quotationCopy", label: "Quotation Copy", searchable: true },
+    { key: "paymentTerms", label: "Payment Terms(In Days)", searchable: true },
+    { key: "transportMode", label: "Transport Mode", searchable: true },
+    { key: "freightType", label: "Freight Type", searchable: true },
+    { key: "destination", label: "Destination", searchable: true },
+    { key: "poNumber", label: "Po Number", searchable: true },
+    { key: "quotationCopy2", label: "Quotation Copy", searchable: true },
+    { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
+    { key: "offer", label: "Offer", searchable: true },
+    { key: "conveyedForRegistration", label: "Conveyed For Registration Form", searchable: true },
+    { key: "qty", label: "Qty", searchable: true },
+    { key: "amount", label: "Amount", searchable: true },
+    { key: "approvedName", label: "Approved Name", searchable: true },
+    { key: "calibrationCertRequired", label: "Calibration Certificate Required", searchable: true },
+    { key: "certificateCategory", label: "Certificate Category", searchable: true },
+    { key: "installationRequired", label: "Installation Required", searchable: true },
+    { key: "ewayBillDetails", label: "Eway Bill Details", searchable: true },
+    { key: "ewayBillAttachment", label: "Eway Bill Attachment", searchable: true },
+    { key: "srnNumber", label: "Srn Number", searchable: true },
+    { key: "srnNumberAttachment", label: "Srn Number Attachment", searchable: true },
+    { key: "attachment", label: "Attachment", searchable: true },
+    { key: "itemName1", label: "Item Name 1", searchable: true },
+    { key: "quantity1", label: "Quantity 1", searchable: true },
+    { key: "itemName2", label: "Item Name 2", searchable: true },
+    { key: "quantity2", label: "Quantity 2", searchable: true },
+    { key: "itemName3", label: "Item Name 3", searchable: true },
+    { key: "quantity3", label: "Quantity 3", searchable: true },
+    { key: "itemName4", label: "Item Name 4", searchable: true },
+    { key: "quantity4", label: "Quantity 4", searchable: true },
+    { key: "itemName5", label: "Item Name 5", searchable: true },
+    { key: "quantity5", label: "Quantity 5", searchable: true },
+    { key: "itemName6", label: "Item Name 6", searchable: true },
+    { key: "quantity6", label: "Quantity 6", searchable: true },
+    { key: "itemName7", label: "Item Name 7", searchable: true },
+    { key: "quantity7", label: "Quantity 7", searchable: true },
+    { key: "itemName8", label: "Item Name 8", searchable: true },
+    { key: "quantity8", label: "Quantity 8", searchable: true },
+    { key: "itemName9", label: "Item Name 9", searchable: true },
+    { key: "quantity9", label: "Quantity 9", searchable: true },
+    { key: "itemName10", label: "Item Name 10", searchable: true },
+    { key: "quantity10", label: "Quantity 10", searchable: true },
+    { key: "itemName11", label: "Item Name 11", searchable: true },
+    { key: "quantity11", label: "Quantity 11", searchable: true },
+    { key: "itemName12", label: "Item Name 12", searchable: true },
+    { key: "quantity12", label: "Quantity 12", searchable: true },
+    { key: "itemName13", label: "Item Name 13", searchable: true },
+    { key: "quantity13", label: "Quantity 13", searchable: true },
+    { key: "itemName14", label: "Item Name 14", searchable: true },
+    { key: "quantity14", label: "Quantity 14", searchable: true },
+    { key: "itemName15", label: "Item Name 15", searchable: true },
+    { key: "quantity15", label: "Quantity 15", searchable: true },
+    { key: "totalQty", label: "Total Qty", searchable: true },
+    { key: "remarks", label: "Remarks", searchable: true },
+    // Warehouse material history headers (BV to CC)
+    { key: "beforePhotoUpload", label: "Before Photo Upload", searchable: false },
+    { key: "afterPhotoUpload", label: "After Photo Upload", searchable: false },
+    { key: "biltyUpload", label: "Bilty Upload", searchable: false },
+    { key: "transporterName", label: "Transporter/Courier/Flight-Person Name", searchable: true },
+    { key: "transporterContact", label: "Transporter/Courier/Flight-Person Contact No.", searchable: true },
+    { key: "biltyNumber", label: "Transporter/Courier/Flight-Bilty No./Docket No.", searchable: true },
+    { key: "totalCharges", label: "Total Charges", searchable: true },
+    { key: "warehouseRemarks", label: "Warehouse Remarks", searchable: true },
+    // Material receiving status (CG to CI)
+    { key: "materialReceivingStatus", label: "Material Receiving Status", searchable: true },
+    { key: "reason", label: "Reason", searchable: true },
+    { key: "installationRequiredHistory", label: "Installation Required", searchable: true },
+  ]
+
+  // Column definitions for History tab (includes CM to CT)
+  const historyColumns = [
+    ...pendingColumns.filter((col) => col.key !== "actions"),
+    // CM to CT columns
+    { key: "labCalibrationCertificate", label: "Lab Calibration Certificate", searchable: false },
+    { key: "stCalibrationCertificate", label: "ST Calibration Certificate", searchable: false },
+    { key: "labCalibrationDate", label: "Lab Calibration Date", searchable: true },
+    { key: "stCalibrationDate", label: "ST Calibration Date", searchable: true },
+    { key: "labCalibrationPeriod", label: "Lab Calibration Period", searchable: true },
+    { key: "stCalibrationPeriod", label: "ST Calibration Period", searchable: true },
+    { key: "labDueDate", label: "Lab Due Date", searchable: true },
+    { key: "stDueDate", label: "ST Due Date", searchable: true },
+  ]
+
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedColumn, setSelectedColumn] = useState("all")
+  const [visiblePendingColumns, setVisiblePendingColumns] = useState(
+    pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+  const [visibleHistoryColumns, setVisibleHistoryColumns] = useState(
+    historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+
+  const formatGoogleSheetsDate = (dateValue) => {
+    if (!dateValue) return "";
+  
+    // Handle the case where date comes as "Date(2025,5,21)"
+    if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
+      try {
+        // Extract the numbers between parentheses
+        const dateParts = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (dateParts && dateParts.length === 4) {
+          const year = parseInt(dateParts[1]);
+          const month = parseInt(dateParts[2]); // Note: months are 0-indexed in JS
+          const day = parseInt(dateParts[3]);
+          
+          // Create a date object (month is 0-indexed in JS, so no need to subtract 1)
+          const date = new Date(year, month, day);
+          
+          // Format as dd/mm/yyyy
+          const formattedDay = String(date.getDate()).padStart(2, '0');
+          const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // +1 because months are 0-indexed
+          const formattedYear = date.getFullYear();
+          
+          return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+        }
+      } catch (e) {
+        console.error("Error parsing date string:", e);
+      }
+    }
+  
+    // Handle case where date comes as a serial number or string
+    try {
+      // If it's a number (serial date value from Google Sheets)
+      if (typeof dateValue === 'number') {
+        // Google Sheets serial date starts from Dec 30, 1899
+        const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+        const formattedDay = String(date.getDate()).padStart(2, '0');
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      }
+      
+      // If it's already a date string in some format
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        const formattedDay = String(date.getDate()).padStart(2, '0');
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      }
+    } catch (e) {
+      console.error("Error parsing date value:", e);
+    }
+  
+    // If all else fails, return the original value
+    return dateValue;
+  };
 
   const fetchPendingOrders = async () => {
     setLoading(true)
@@ -69,22 +238,87 @@ export default function CalibrationPage() {
               const order = {
                 rowIndex: actualRowIndex,
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                orderNo: row.c[1] ? row.c[1].v : "", // Column B - Order No
+                quotationNo: row.c[2] ? row.c[2].v : "", // Column C
                 companyName: row.c[3] ? row.c[3].v : "",
-                contactPerson: row.c[4] ? row.c[4].v : "",
+                contactPersonName: row.c[4] ? row.c[4].v : "", // Fix field name to match column definition
                 contactNumber: row.c[5] ? row.c[5].v : "",
                 billingAddress: row.c[6] ? row.c[6].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
-                poNumber: row.c[14] ? row.c[14].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
                 paymentTerms: row.c[9] ? row.c[9].v : "",
-                quantity: row.c[10] ? row.c[10].v : "",
+                qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
                 transportMode: row.c[11] ? row.c[11].v : "",
+                freightType: row.c[12] ? row.c[12].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
-                amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
+                poNumber: row.c[14] ? row.c[14].v : "",
+                offer: row.c[15] ? row.c[15].v : "",
+                amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
                 calibrationType: isLabOrder ? "LAB" : "TOTAL STATION", // Set based on column X value
                 columnXValue: xColumn, // Store original column X value for reference
+                // Keep existing fields for backward compatibility
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                quantity: row.c[10] ? row.c[10].v : "",
+                totalQty: row.c[19] ? row.c[19].v : "",
+                quotationCopy: "Available",
                 fullRowData: row.c,
+                conveyedForRegistration: row.c[18] ? row.c[18].v : "",
+                approvedName: row.c[21] ? row.c[21].v : "",
+                calibrationCertRequired: row.c[22] ? row.c[22].v : "",
+                certificateCategory: row.c[23] ? row.c[23].v : "",
+                installationRequired: row.c[24] ? row.c[24].v : "",
+                ewayBillDetails: row.c[25] ? row.c[25].v : "",
+                ewayBillAttachment: row.c[26] ? row.c[26].v : "",
+                srnNumber: row.c[27] ? row.c[27].v : "",
+                srnNumberAttachment: row.c[28] ? row.c[28].v : "",
+                attachment: row.c[29] ? row.c[29].v : "",
+                itemName1: row.c[30] ? row.c[30].v : "",
+                quantity1: row.c[31] ? row.c[31].v : "",
+                itemName2: row.c[32] ? row.c[32].v : "",
+                quantity2: row.c[33] ? row.c[33].v : "",
+                itemName3: row.c[34] ? row.c[34].v : "",
+                quantity3: row.c[35] ? row.c[35].v : "",
+                itemName4: row.c[36] ? row.c[36].v : "",
+                quantity4: row.c[37] ? row.c[37].v : "",
+                itemName5: row.c[38] ? row.c[38].v : "",
+                quantity5: row.c[39] ? row.c[39].v : "",
+                itemName6: row.c[40] ? row.c[40].v : "",
+                quantity6: row.c[41] ? row.c[41].v : "",
+                itemName7: row.c[42] ? row.c[42].v : "",
+                quantity7: row.c[43] ? row.c[43].v : "",
+                itemName8: row.c[44] ? row.c[44].v : "",
+                quantity8: row.c[45] ? row.c[45].v : "",
+                itemName9: row.c[46] ? row.c[46].v : "",
+                quantity9: row.c[47] ? row.c[47].v : "",
+                itemName10: row.c[48] ? row.c[48].v : "",
+                quantity10: row.c[49] ? row.c[49].v : "",
+                itemName11: row.c[50] ? row.c[50].v : "",
+                quantity11: row.c[51] ? row.c[51].v : "",
+                itemName12: row.c[52] ? row.c[52].v : "",
+                quantity12: row.c[53] ? row.c[53].v : "",
+                itemName13: row.c[54] ? row.c[54].v : "",
+                quantity13: row.c[55] ? row.c[55].v : "",
+                itemName14: row.c[56] ? row.c[56].v : "",
+                quantity14: row.c[57] ? row.c[57].v : "",
+                itemName15: row.c[58] ? row.c[58].v : "",
+                quantity15: row.c[59] ? row.c[59].v : "",
+                remarks: row.c[61] ? row.c[61].v : "",
+                quotationCopy2: row.c[15] ? row.c[15].v : "",
+                acceptanceCopy: "Available",
+                // Warehouse material history headers (BV to CC)
+                beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
+                afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
+                biltyUpload: row.c[75] ? row.c[75].v : "", // Column BX
+                transporterName: row.c[76] ? row.c[76].v : "", // Column BY
+                transporterContact: row.c[77] ? row.c[77].v : "", // Column BZ
+                biltyNumber: row.c[78] ? row.c[78].v : "", // Column CA
+                totalCharges: row.c[79] ? row.c[79].v : "", // Column CB
+                warehouseRemarks: row.c[80] ? row.c[80].v : "", // Column CC
+                // Material receiving status (CG to CI)
+                materialReceivingStatus: row.c[84] ? row.c[84].v : "", // Column CG
+                reason: row.c[85] ? row.c[85].v : "", // Column CH
+                installationRequiredHistory: row.c[86] ? row.c[86].v : "", // Column CI
               }
               pendingOrders.push(order)
             }
@@ -103,33 +337,33 @@ export default function CalibrationPage() {
   }
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return "N/A";
-    
+    if (!dateStr) return "N/A"
+
     // Handle Date() constructor format like "Date(2025,5,19)"
     if (dateStr.startsWith("Date(")) {
       try {
-        const parts = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/);
+        const parts = dateStr.match(/Date$$(\d+),(\d+),(\d+)$$/)
         if (parts) {
-          const year = parseInt(parts[1]);
-          const month = parseInt(parts[2]);
-          const day = parseInt(parts[3]);
+          const year = Number.parseInt(parts[1])
+          const month = Number.parseInt(parts[2])
+          const day = Number.parseInt(parts[3])
           // Note: JavaScript months are 0-indexed (5 = June)
-          return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+          return `${String(day).padStart(2, "0")}/${String(month + 1).padStart(2, "0")}/${year}`
         }
       } catch (e) {
-        console.error("Error parsing Date() format:", e);
+        console.error("Error parsing Date() format:", e)
       }
     }
-    
+
     // Handle ISO format like "2025-06-19"
     if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [year, month, day] = dateStr.split('-');
-      return `${day}/${month}/${year}`;
+      const [year, month, day] = dateStr.split("-")
+      return `${day}/${month}/${year}`
     }
-    
+
     // Handle other formats or return as-is if already formatted
-    return dateStr;
-  };
+    return dateStr
+  }
 
   const fetchHistoryOrders = async () => {
     setLoading(true)
@@ -160,31 +394,96 @@ export default function CalibrationPage() {
               const order = {
                 rowIndex: actualRowIndex,
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                orderNo: row.c[1] ? row.c[1].v : "", // Column B - Order No
+                quotationNo: row.c[2] ? row.c[2].v : "", // Column C
                 companyName: row.c[3] ? row.c[3].v : "",
-                contactPerson: row.c[4] ? row.c[4].v : "",
+                contactPersonName: row.c[4] ? row.c[4].v : "", // Fix field name to match column definition
                 contactNumber: row.c[5] ? row.c[5].v : "",
                 billingAddress: row.c[6] ? row.c[6].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
-                poNumber: row.c[14] ? row.c[14].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
                 paymentTerms: row.c[9] ? row.c[9].v : "",
-                quantity: row.c[10] ? row.c[10].v : "",
+                qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
                 transportMode: row.c[11] ? row.c[11].v : "",
+                freightType: row.c[12] ? row.c[12].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
+                poNumber: row.c[14] ? row.c[14].v : "",
+                offer: row.c[15] ? row.c[15].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "",
                 calibrationType: row.c[23] ? row.c[23].v : "", // Default to UNKNOWN if not specified
                 calibrationProcessedDate: clColumn,
+                // Keep existing fields for backward compatibility
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                quantity: row.c[10] ? row.c[10].v : "",
+                totalQty: row.c[19] ? row.c[19].v : "",
+                quotationCopy: "Available",
                 fullRowData: row.c,
-                // Columns 91-97 data (indexes 90-96)
-                labCalibrationCertificate: row.c[90] ? row.c[90].v : "", // Column 91
-                stCalibrationCertificate: row.c[91] ? row.c[91].v : "", // Column 92
-                labCalibrationDate: row.c[92] ? row.c[92].v : "", // Column 93
-                stCalibrationDate: row.c[93] ? row.c[93].v : "", // Column 94
-                labCalibrationPeriod: row.c[94] ? row.c[94].v : "", // Column 95
-                stCalibrationPeriod: row.c[95] ? row.c[95].v : "", // Column 96
-                labDueDate: row.c[96] ? row.c[96].v : "", // Column 97
-                stDueDate: row.c[97] ? row.c[97].v : "", // Column 98
+                conveyedForRegistration: row.c[18] ? row.c[18].v : "",
+                approvedName: row.c[21] ? row.c[21].v : "",
+                calibrationCertRequired: row.c[22] ? row.c[22].v : "",
+                certificateCategory: row.c[23] ? row.c[23].v : "",
+                installationRequired: row.c[24] ? row.c[24].v : "",
+                ewayBillDetails: row.c[25] ? row.c[25].v : "",
+                ewayBillAttachment: row.c[26] ? row.c[26].v : "",
+                srnNumber: row.c[27] ? row.c[27].v : "",
+                srnNumberAttachment: row.c[28] ? row.c[28].v : "",
+                attachment: row.c[29] ? row.c[29].v : "",
+                itemName1: row.c[30] ? row.c[30].v : "",
+                quantity1: row.c[31] ? row.c[31].v : "",
+                itemName2: row.c[32] ? row.c[32].v : "",
+                quantity2: row.c[33] ? row.c[33].v : "",
+                itemName3: row.c[34] ? row.c[34].v : "",
+                quantity3: row.c[35] ? row.c[35].v : "",
+                itemName4: row.c[36] ? row.c[36].v : "",
+                quantity4: row.c[37] ? row.c[37].v : "",
+                itemName5: row.c[38] ? row.c[38].v : "",
+                quantity5: row.c[39] ? row.c[39].v : "",
+                itemName6: row.c[40] ? row.c[40].v : "",
+                quantity6: row.c[41] ? row.c[41].v : "",
+                itemName7: row.c[42] ? row.c[42].v : "",
+                quantity7: row.c[43] ? row.c[43].v : "",
+                itemName8: row.c[44] ? row.c[44].v : "",
+                quantity8: row.c[45] ? row.c[45].v : "",
+                itemName9: row.c[46] ? row.c[46].v : "",
+                quantity9: row.c[47] ? row.c[47].v : "",
+                itemName10: row.c[48] ? row.c[48].v : "",
+                quantity10: row.c[49] ? row.c[49].v : "",
+                itemName11: row.c[50] ? row.c[50].v : "",
+                quantity11: row.c[51] ? row.c[51].v : "",
+                itemName12: row.c[52] ? row.c[52].v : "",
+                quantity12: row.c[53] ? row.c[53].v : "",
+                itemName13: row.c[54] ? row.c[54].v : "",
+                quantity13: row.c[55] ? row.c[55].v : "",
+                itemName14: row.c[56] ? row.c[56].v : "",
+                quantity14: row.c[57] ? row.c[57].v : "",
+                itemName15: row.c[58] ? row.c[58].v : "",
+                quantity15: row.c[59] ? row.c[59].v : "",
+                remarks: row.c[61] ? row.c[61].v : "",
+                quotationCopy2: row.c[15] ? row.c[15].v : "",
+                acceptanceCopy: "Available",
+                // Warehouse material history headers (BV to CC)
+                beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
+                afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
+                biltyUpload: row.c[75] ? row.c[75].v : "", // Column BX
+                transporterName: row.c[76] ? row.c[76].v : "", // Column BY
+                transporterContact: row.c[77] ? row.c[77].v : "", // Column BZ
+                biltyNumber: row.c[78] ? row.c[78].v : "", // Column CA
+                totalCharges: row.c[79] ? row.c[79].v : "", // Column CB
+                warehouseRemarks: row.c[80] ? row.c[80].v : "", // Column CC
+                // Material receiving status (CG to CI)
+                materialReceivingStatus: row.c[84] ? row.c[84].v : "", // Column CG
+                reason: row.c[85] ? row.c[85].v : "", // Column CH
+                installationRequiredHistory: row.c[86] ? row.c[86].v : "", // Column CI
+                // CM to CT columns (calibration data)
+                labCalibrationCertificate: row.c[90] ? row.c[90].v : "", // Column CM
+                stCalibrationCertificate: row.c[91] ? row.c[91].v : "", // Column CN
+                labCalibrationDate: formatGoogleSheetsDate(row.c[92] ? row.c[92].v : ""), // Column CO
+                stCalibrationDate: formatGoogleSheetsDate(row.c[93] ? row.c[93].v : ""), // Column CP
+                labCalibrationPeriod: row.c[94] ? row.c[94].v : "", // Column CQ
+                stCalibrationPeriod: row.c[95] ? row.c[95].v : "", // Column CR
+                labDueDate: formatGoogleSheetsDate(row.c[96] ? row.c[96].v : ""), // Column CS
+                stDueDate: formatGoogleSheetsDate(row.c[97] ? row.c[97].v : ""), // Column CT
                 calibrationData: {
                   section: ckColumn || "UNKNOWN",
                   calibrationDate: row.c[89] ? row.c[89].v : "",
@@ -214,6 +513,70 @@ export default function CalibrationPage() {
     fetchPendingOrders()
     fetchHistoryOrders()
   }, [])
+
+  // Filter orders based on search term and selected column
+  const filteredPendingOrders = useMemo(() => {
+    if (!searchTerm) return pendingOrders
+
+    return pendingOrders.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = pendingColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase())
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+        return fieldValue.includes(searchTerm.toLowerCase())
+      }
+    })
+  }, [pendingOrders, searchTerm, selectedColumn])
+
+  const filteredHistoryOrders = useMemo(() => {
+    if (!searchTerm) return historyOrders
+
+    return historyOrders.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = historyColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase())
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+        return fieldValue.includes(searchTerm.toLowerCase())
+      }
+    })
+  }, [historyOrders, searchTerm, selectedColumn])
+
+  // Column visibility handlers
+  const togglePendingColumn = (columnKey) => {
+    setVisiblePendingColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const toggleHistoryColumn = (columnKey) => {
+    setVisibleHistoryColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const showAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: col.key === "actions" }), {}))
+  }
+
+  const showAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: false }), {}))
+  }
 
   // Legacy orders from useData hook (keep for backward compatibility)
   const legacyPendingOrders = orders.filter(
@@ -265,11 +628,12 @@ export default function CalibrationPage() {
       const rowData = new Array(120).fill("")
 
       // Add today's date to CL column (index 89)
-      const today = new Date();
+      const today = new Date()
 
-      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-      
+      const formattedDate =
+        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
       rowData[88] = formattedDate
 
       // Remove these lines - Apps Script handles calibration data placement
@@ -376,107 +740,6 @@ export default function CalibrationPage() {
     setViewDialogOpen(true)
   }
 
-  const renderTable = (title: string, description: string, section: "LAB" | "TOTAL STATION") => (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Action</TableHead>
-                <TableHead>Order Number</TableHead>
-                <TableHead>Company Name</TableHead>
-                <TableHead>Invoice Number</TableHead>
-                <TableHead>Billing Address</TableHead>
-                <TableHead>Shipping Address</TableHead>
-                <TableHead>Transport Mode</TableHead>
-                <TableHead>Destination</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pendingOrders
-                .filter((order) => order.calibrationType === section)
-                .map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <Button size="sm" onClick={() => handleProcess(order.id, section)}>
-                        Process
-                      </Button>
-                    </TableCell>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{order.companyName}</TableCell>
-                    <TableCell>{order.invoiceNumber || "N/A"}</TableCell>
-                    <TableCell className="max-w-[150px] truncate">{order.billingAddress || "N/A"}</TableCell>
-                    <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
-                    <TableCell>{order.transportMode}</TableCell>
-                    <TableCell>{order.destination}</TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
-  const renderHistoryTable = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Calibration History</CardTitle>
-        <CardDescription>All completed calibration certificates</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order Number</TableHead>
-                <TableHead>Company Name</TableHead>
-                <TableHead>Calibration Type</TableHead>
-                <TableHead>Lab Calibration Certificate</TableHead>
-                <TableHead>ST Calibration Certificate</TableHead>
-                <TableHead>Lab Calibration Date</TableHead>
-                <TableHead>ST Calibration Date</TableHead>
-                <TableHead>Lab Calibration Period</TableHead>
-                <TableHead>ST Calibration Period</TableHead>
-                <TableHead>Lab Due Date</TableHead>
-                <TableHead>ST Due Date</TableHead>
-                {/* <TableHead>Action</TableHead> */}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {historyOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.companyName}</TableCell>
-                  <TableCell>{order.calibrationType || ""}</TableCell>
-                  <TableCell>{order.labCalibrationCertificate || ""}</TableCell>
-                  <TableCell>{order.stCalibrationCertificate || ""}</TableCell>
-                  <TableCell>{formatDate(order.labCalibrationDate) || ""}</TableCell>
-      <TableCell>{formatDate(order.stCalibrationDate) || ""}</TableCell>
-                  <TableCell>{order.labCalibrationPeriod || ""}</TableCell>
-                  <TableCell>{order.stCalibrationPeriod || ""}</TableCell>
-                  <TableCell>{order.labDueDate || ""}</TableCell>
-                  <TableCell>{order.stDueDate || ""}</TableCell>
-                  {/* <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => handleView(order)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                  </TableCell> */}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  )
-
   if (loading) {
     return (
       <MainLayout>
@@ -512,34 +775,274 @@ export default function CalibrationPage() {
   }
 
   const handleRefresh = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()]);
+      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()])
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  const renderCellContent = (order, columnKey) => {
+    const value = order[columnKey]
+
+    switch (columnKey) {
+      case "actions":
+        return (
+          <Button size="sm" onClick={() => handleProcess(order.id, order.calibrationType)}>
+            Process
+          </Button>
+        )
+      case "quotationCopy":
+      case "quotationCopy2":
+        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "Available"}</Badge>
+      case "acceptanceCopy":
+        return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            <Badge variant="default">Link</Badge>
+          </a>
+        ) : (
+          <Badge variant="secondary">{value || "Available"}</Badge>
+        )
+      case "calibrationCertRequired":
+      case "installationRequired":
+      case "installationRequiredHistory":
+        return <Badge variant={value === "Yes" || value === "YES" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      case "billingAddress":
+      case "shippingAddress":
+      case "remarks":
+      case "warehouseRemarks":
+      case "reason":
+        return <div className="max-w-[150px] truncate">{value || ""}</div>
+      case "beforePhotoUpload":
+      case "afterPhotoUpload":
+      case "biltyUpload":
+      case "labCalibrationCertificate":
+      case "stCalibrationCertificate":
+        return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            <Badge variant="default">View</Badge>
+          </a>
+        ) : (
+          <Badge variant="secondary">N/A</Badge>
+        )
+      case "materialReceivingStatus":
+        return <Badge variant={value === "yes" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      case "labCalibrationDate":
+      case "stCalibrationDate":
+      case "labDueDate":
+      case "stDueDate":
+        return formatDate(value)
+      default:
+        return value || ""
+    }
+  }
+
+  const renderTable = (title: string, description: string, section: "LAB" | "TOTAL STATION") => (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Column Visibility
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+              <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="flex gap-2 p-2">
+                <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
+                  Show All
+                </Button>
+                <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
+                  Hide All
+                </Button>
+              </div>
+              <DropdownMenuSeparator />
+              <div className="p-2 space-y-2">
+                {pendingColumns.map((column) => (
+                  <div key={column.key} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`pending-${column.key}`}
+                      checked={visiblePendingColumns[column.key]}
+                      onCheckedChange={() => togglePendingColumn(column.key)}
+                    />
+                    <Label htmlFor={`pending-${column.key}`} className="text-sm">
+                      {column.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {pendingColumns
+                  .filter((col) => visiblePendingColumns[col.key])
+                  .map((column) => (
+                    <TableHead key={column.key}>{column.label}</TableHead>
+                  ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPendingOrders
+                .filter((order) => order.calibrationType === section)
+                .map((order) => (
+                  <TableRow key={order.id}>
+                    {pendingColumns
+                      .filter((col) => visiblePendingColumns[col.key])
+                      .map((column) => (
+                        <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                      ))}
+                  </TableRow>
+                ))}
+              {filteredPendingOrders.filter((order) => order.calibrationType === section).length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                    className="text-center text-muted-foreground"
+                  >
+                    {searchTerm ? "No orders match your search criteria" : `No pending ${section} orders found`}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const renderHistoryTable = () => (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Calibration History</CardTitle>
+            <CardDescription>All completed calibration certificates</CardDescription>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Column Visibility
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+              <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="flex gap-2 p-2">
+                <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
+                  Show All
+                </Button>
+                <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
+                  Hide All
+                </Button>
+              </div>
+              <DropdownMenuSeparator />
+              <div className="p-2 space-y-2">
+                {historyColumns.map((column) => (
+                  <div key={column.key} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`history-${column.key}`}
+                      checked={visibleHistoryColumns[column.key]}
+                      onCheckedChange={() => toggleHistoryColumn(column.key)}
+                    />
+                    <Label htmlFor={`history-${column.key}`} className="text-sm">
+                      {column.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {historyColumns
+                  .filter((col) => visibleHistoryColumns[col.key])
+                  .map((column) => (
+                    <TableHead key={column.key}>{column.label}</TableHead>
+                  ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredHistoryOrders.map((order) => (
+                <TableRow key={order.id}>
+                  {historyColumns
+                    .filter((col) => visibleHistoryColumns[col.key])
+                    .map((column) => (
+                      <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                    ))}
+                </TableRow>
+              ))}
+              {filteredHistoryOrders.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                    className="text-center text-muted-foreground"
+                  >
+                    {searchTerm ? "No orders match your search criteria" : "No history orders found"}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  )
 
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Calibration Certificate Required</h1>
-          <p className="text-muted-foreground">Manage calibration certificates for different equipment types</p>
-        </div>
-        <Button onClick={handleRefresh} variant="outline">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              Calibration Certificate Required
+            </h1>
+            <p className="text-muted-foreground">Manage calibration certificates for different equipment types</p>
+          </div>
+          <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
 
+        {/* Search and Filter Controls */}
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-            <TabsTrigger value="history">History ({historyOrders.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({filteredPendingOrders.length})</TabsTrigger>
+            <TabsTrigger value="history">History ({filteredHistoryOrders.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">

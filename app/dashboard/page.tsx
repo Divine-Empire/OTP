@@ -362,7 +362,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.pendingOrders}</div>
-            <p className="text-xs text-muted-foreground">Column BD is null</p>
+            {/* <p className="text-xs text-muted-foreground">Column BD is null</p> */}
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-green-100 to-green-200 border border-green-200 shadow-sm">
@@ -372,7 +372,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.completedOrders}</div>
-            <p className="text-xs text-muted-foreground">Column BD is "Yes"</p>
+            {/* <p className="text-xs text-muted-foreground">Column BD is "Yes"</p> */}
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-red-100 to-red-200 border border-red-200 shadow-sm">
@@ -382,7 +382,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.cancelOrders}</div>
-            <p className="text-xs text-muted-foreground">Column BD is "order cancel"</p>
+            {/* <p className="text-xs text-muted-foreground">Column BD is "order cancel"</p> */}
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-purple-100 to-purple-200 border border-purple-200 shadow-sm">
@@ -392,7 +392,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.deliveredOrders}</div>
-            <p className="text-xs text-muted-foreground">CU & CV not null</p>
+            {/* <p className="text-xs text-muted-foreground">CU & CV not null</p> */}
           </CardContent>
         </Card>
       </div>
@@ -406,7 +406,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{dashboardData.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">From DISPATCH-DELIVERY BR column</p>
+            {/* <p className="text-xs text-muted-foreground">From DISPATCH-DELIVERY BR column</p> */}
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-green-100 to-green-200 border border-green-200 shadow-sm">
@@ -416,7 +416,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{dashboardData.completedRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">AW = "completed", BT column</p>
+            {/* <p className="text-xs text-muted-foreground">AW = "completed", BT column</p> */}
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-r from-yellow-100 to-yellow-200 border border-yellow-200 shadow-sm">
@@ -426,7 +426,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{dashboardData.pendingRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">AW = "pending", BT column</p>
+            {/* <p className="text-xs text-muted-foreground">AW = "pending", BT column</p> */}
           </CardContent>
         </Card>
       </div>
@@ -436,7 +436,7 @@ export default function DashboardPage() {
         <Card className="bg-gradient-to-r from-white to-gray-100 border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Monthly Orders Analytics</CardTitle>
-            <CardDescription>Orders completed by month (BD=Yes with BB date)</CardDescription>
+            {/* <CardDescription>Orders completed by month (BD=Yes with BB date)</CardDescription> */}
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -453,7 +453,7 @@ export default function DashboardPage() {
         <Card className="bg-gradient-to-r from-white to-gray-100 border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Revenue Distribution</CardTitle>
-            <CardDescription>Based on AW column status and BT revenue</CardDescription>
+            {/* <CardDescription>Based on AW column status and BT revenue</CardDescription> */}
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -484,7 +484,7 @@ export default function DashboardPage() {
         <Card className="bg-gradient-to-r from-white to-gray-100 border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Top 5 Customers</CardTitle>
-            <CardDescription>Real data from DISPATCH-DELIVERY sheet (Column D company names, BR revenue sum)</CardDescription>
+            {/* <CardDescription>Real data from DISPATCH-DELIVERY sheet (Column D company names, BR revenue sum)</CardDescription> */}
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

@@ -203,9 +203,9 @@ export default function CheckInventoryPage() {
             const actualRowIndex = index + 7
 
             // Column BL (index 63) - inventory status
-            const hasColumnBL = row.c[63] && row.c[63].v !== null && row.c[63].v !== ""
+            const hasColumnBL = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
             // Column BM (index 64) - inventory remarks
-            const isColumnBMEmpty = !row.c[64] || row.c[64].v === null || row.c[64].v === ""
+            const isColumnBMEmpty = !row.c[71] || row.c[71].v === null || row.c[71].v === ""
 
             // For pending orders: show rows where BL has data but BM is empty
             if (hasColumnBL && isColumnBMEmpty) {
@@ -275,9 +275,9 @@ export default function CheckInventoryPage() {
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[40] ? row.c[40].v : "",
-                inventoryStatus: row.c[63] ? row.c[63].v : null, // Column BL
-                inventoryRemarks: row.c[64] ? row.c[64].v : "", // Column BM
-                processedDate: formatGoogleSheetsDate(row.c[65] ? row.c[65].v : ""), // Column BN
+                inventoryStatus: row.c[70] ? row.c[70].v : null, // Column BL
+                inventoryRemarks: row.c[71] ? row.c[71].v : "", // Column BM
+                processedDate: formatGoogleSheetsDate(row.c[72] ? row.c[72].v : ""), // Column BN
                 fullRowData: row.c,
               }
 
@@ -318,9 +318,9 @@ export default function CheckInventoryPage() {
             const actualRowIndex = index + 7
 
             // Column BL (index 63) - inventory status
-            const hasColumnBL = row.c[63] && row.c[63].v !== null && row.c[63].v !== ""
+            const hasColumnBL = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
             // Column BM (index 64) - inventory remarks
-            const hasColumnBM = row.c[64] && row.c[64].v !== null && row.c[64].v !== ""
+            const hasColumnBM = row.c[71] && row.c[71].v !== null && row.c[71].v !== ""
 
             // For processed orders: show rows where both BL and BM have data
             if (hasColumnBL && hasColumnBM) {
@@ -523,15 +523,15 @@ export default function CheckInventoryPage() {
       // BO (index 66) - received date
 
       // Set processed date (column BN - index 65)
-      rowData[64] = formattedDate
+      rowData[71] = formattedDate
 
       // Set received date (column BO - index 66)
-      rowData[66] = inventoryData.receivedDate
+      rowData[73] = inventoryData.receivedDate
 
       // Set remarks if any
-      if (inventoryData.remarks) {
-        rowData[64] = inventoryData.remarks
-      }
+      // if (inventoryData.remarks) {
+      //   rowData[64] = inventoryData.remarks
+      // }
 
       formData.append("rowData", JSON.stringify(rowData))
 

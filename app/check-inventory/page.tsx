@@ -115,6 +115,10 @@ export default function CheckInventoryPage() {
   const [visibleHistoryColumns, setVisibleHistoryColumns] = useState(
     historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
   )
+
+  const [inventoryPhotoAttachment, setInventoryPhotoAttachment] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
   const { user: currentUser } = useAuth()
 
   const formatGoogleSheetsDate = (dateValue) => {
@@ -489,6 +493,8 @@ export default function CheckInventoryPage() {
     setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: false }), {}))
   }
 
+  
+
   // Update order status by finding the correct row that matches the order ID in column B
   const updateOrderStatus = async (order, inventoryData) => {
     try {
@@ -500,6 +506,18 @@ export default function CheckInventoryPage() {
       formData.append("sheetName", SHEET_NAME);
       formData.append("action", "updateByOrderNoInColumnB");
       formData.append("orderNo", order.id);
+  
+      // Handle inventory photo upload
+      if (inventoryPhotoAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(inventoryPhotoAttachment);
+          formData.append("beforePhotoFile", base64Data);
+          formData.append("beforePhotoFileName", inventoryPhotoAttachment.name);
+          formData.append("beforePhotoMimeType", inventoryPhotoAttachment.type);
+        } catch (error) {
+          console.error("Error converting inventory photo file:", error);
+        }
+      }
   
       // Create a sparse array to update only specific columns
       const rowData = new Array(70).fill(""); // Make sure array is large enough for all columns
@@ -520,14 +538,13 @@ export default function CheckInventoryPage() {
         // Customer wants material as (column BL - index 63)
         rowData[63] = inventoryData.partialDetails?.customerDecision || "";
         
-        // Created by (column BM - index 64)
-        rowData[64] = inventoryData.partialDetails?.createdBy || "";
+        // Created by (column BM - index 64) - will be set by the file upload
+        // rowData[64] = inventoryData.partialDetails?.createdBy || "";
         
         // Warehouse location (column BN - index 65)
         rowData[65] = inventoryData.partialDetails?.warehouseLocation || "";
         
         // Create indent if not available (column BO - index 66)
-        // Note: For file uploads, you'll need additional handling in your Apps Script
         rowData[66] = inventoryData.partialDetails?.createIndent ? "File Uploaded" : "";
         
         // Line item number (column BP - index 67)
@@ -542,20 +559,11 @@ export default function CheckInventoryPage() {
   
       formData.append("rowData", JSON.stringify(rowData));
   
-      console.log("Sending data to Apps Script:", {
-        sheetName: SHEET_NAME,
-        orderNo: order.id,
-        rowData: rowData,
-        availabilityStatus: inventoryData.availabilityStatus,
-      });
-  
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       });
-  
-      console.log("Response status:", updateResponse.status);
   
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`);
@@ -564,58 +572,125 @@ export default function CheckInventoryPage() {
       let result;
       try {
         const responseText = await updateResponse.text();
-        console.log("Raw response:", responseText);
         result = JSON.parse(responseText);
       } catch (parseError) {
-        console.log("Response parsing failed, but request might be successful");
         result = { success: true };
       }
   
-      console.log("Parsed result:", result);
-  
       if (result.success !== false) {
         await fetchOrders();
-        return true;
+        return { success: true, fileUrls: result.fileUrls };
       } else {
         throw new Error(result.error || "Update failed");
       }
     } catch (err) {
       console.error("Error updating order:", err);
       setError(err.message);
-      return false;
+      return { success: false, error: err.message };
     }
+  };
+
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        // Ensure the result is a string
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Failed to convert file to base64'));
+        }
+      };
+      reader.onerror = (error) => reject(error);
+    });
   };
   
   const handleSubmit = async () => {
     if (!selectedOrder || !availabilityStatus) return;
   
-    setIsSubmitting(true);
+    setUploading(true);
+    setIsSubmitting(true); // Start loading
+  setError(null);
   
-    const inventoryData = {
-      availabilityStatus,
-      remarks,
-      partialDetails: {
-        customerDecision: partialDetails.customerDecision,
-        createdBy: partialDetails.createdBy,
-        warehouseLocation: partialDetails.warehouseLocation,
-        createIndent: partialDetails.createIndent,
-        lineItemNumber: partialDetails.lineItemNumber,
-        totalQty: partialDetails.totalQty,
-        leadTime: partialDetails.leadTime,
-        unavailableItems: availabilityStatus === "Partial" ? unavailableItems : []
-      },
-      processedAt: new Date().toISOString(),
-      processedBy: currentUser?.name || "Unknown"
-    };
+    try {
+      const formData = new FormData();
+      formData.append("sheetName", SHEET_NAME);
+      formData.append("action", "updateByOrderNoInColumnB");
+      formData.append("orderNo", selectedOrder.id);
   
-    const success = await updateOrderStatus(selectedOrder, inventoryData);
+      // Handle inventory photo upload
+      if (inventoryPhotoAttachment) {
+        const base64Data = await convertFileToBase64(inventoryPhotoAttachment);
+        formData.append("inventoryPhotoFile", base64Data);
+        formData.append("inventoryPhotoFileName", inventoryPhotoAttachment.name);
+        formData.append("inventoryPhotoMimeType", inventoryPhotoAttachment.type);
+      }
   
-    setIsSubmitting(false);
+      // Prepare row data
+      const rowData = new Array(70).fill("");
+      const today = new Date();
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
   
-    if (success) {
+      // Set inventory status (column BJ - index 61)
+      rowData[61] = availabilityStatus;
+  
+      // Set processed date (column BI - index 59)
+      rowData[59] = formattedDate;
+  
+      // Set remarks in column BK (index 62)
+      rowData[62] = remarks || "";
+  
+      // For Not Available or Partial status
+      if (availabilityStatus === "Not Available" || availabilityStatus === "Partial") {
+        rowData[63] = partialDetails.customerDecision || "";
+        rowData[64] = partialDetails.createdBy || "";  // Column BM - This is the fix
+        rowData[65] = partialDetails.warehouseLocation || "";
+        rowData[66] = partialDetails.createIndent ? "File Uploaded" : "";
+        rowData[67] = partialDetails.lineItemNumber || "";
+        rowData[68] = partialDetails.totalQty || "";
+        rowData[69] = partialDetails.leadTime || "";
+      }
+  
+      formData.append("rowData", JSON.stringify(rowData));
+  
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+  
+      if (!result.success) {
+        throw new Error(result.error || "Update failed");
+      }
+  
+      // Success handling
       setIsDialogOpen(false);
       setSelectedOrder(null);
-      alert(`Order ${selectedOrder.id} has been updated successfully.`);
+      setInventoryPhotoAttachment(null);
+      
+      // Refresh data
+      await fetchOrders();
+      
+      // Show success message
+      let message = `Inventory check for order ${selectedOrder.id} updated successfully`;
+      if (result.fileUrls?.inventoryPhotoUrl) {
+        message += `\n\nPhoto uploaded: ${result.fileUrls.inventoryPhotoUrl}`;
+      }
+      alert(message);
+  
+    } catch (err) {
+      console.error("Submission error:", err);
+      setError(err.message);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -1003,7 +1078,7 @@ export default function CheckInventoryPage() {
 
       {availabilityStatus === "Available" && (
         <div className="space-y-2">
-          <Label htmlFor="remarks">Remarks (BK)</Label>
+          <Label htmlFor="remarks">Remarks</Label>
           <Textarea
             id="remarks"
             value={remarks}
@@ -1016,7 +1091,7 @@ export default function CheckInventoryPage() {
       {(availabilityStatus === "Partial" || availabilityStatus === "Not Available") && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="customerDecision">Customer wants material as (BL)</Label>
+            <Label htmlFor="customerDecision">Customer wants material as</Label>
             <Select 
               id="customerDecision"
               value={partialDetails.customerDecision || ""}
@@ -1034,17 +1109,17 @@ export default function CheckInventoryPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="createdBy">Created by (BM)</Label>
-            <Input
-              id="createdBy"
-              value={partialDetails.createdBy || ""}
-              onChange={(e) => setPartialDetails({...partialDetails, createdBy: e.target.value})}
-              placeholder="Enter name"
-            />
-          </div>
+  <Label htmlFor="createdBy">Created by</Label>
+  <Input
+    id="createdBy"
+    value={partialDetails.createdBy || ""}
+    onChange={(e) => setPartialDetails({...partialDetails, createdBy: e.target.value})}
+    placeholder="Enter name"
+  />
+</div>
 
           <div className="space-y-2">
-            <Label htmlFor="warehouseLocation">Warehouse location (BN)</Label>
+            <Label htmlFor="warehouseLocation">Warehouse location</Label>
             <Input
               id="warehouseLocation"
               value={partialDetails.warehouseLocation || ""}
@@ -1054,18 +1129,20 @@ export default function CheckInventoryPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="createIndent">Create indent if not available (BO)</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="file"
-                id="createIndent"
-                onChange={(e) => setPartialDetails({...partialDetails, createIndent: e.target.files[0]})}
-              />
-            </div>
-          </div>
+  <Label htmlFor="inventoryPhoto">Inventory Photo</Label>
+  <Input 
+    id="inventoryPhoto" 
+    type="file" 
+    accept="image/*"
+    onChange={(e) => setInventoryPhotoAttachment(e.target.files?.[0] || null)}
+  />
+  {inventoryPhotoAttachment && (
+    <p className="text-sm text-muted-foreground">Selected: {inventoryPhotoAttachment.name}</p>
+  )}
+</div>
 
           <div className="space-y-2">
-            <Label htmlFor="lineItemNumber">Line item number (BP)</Label>
+            <Label htmlFor="lineItemNumber">Line item number</Label>
             <Input
               type="number"
               id="lineItemNumber"
@@ -1076,7 +1153,7 @@ export default function CheckInventoryPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="totalQty">Total qty (BQ)</Label>
+            <Label htmlFor="totalQty">Total qty</Label>
             <Input
               type="number"
               id="totalQty"
@@ -1087,7 +1164,7 @@ export default function CheckInventoryPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="leadTime">Material received lead time (BR)</Label>
+            <Label htmlFor="leadTime">Material received lead time</Label>
             <Input
               type="number"
               id="leadTime"
@@ -1098,7 +1175,7 @@ export default function CheckInventoryPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks (BK)</Label>
+            <Label htmlFor="remarks">Remarks</Label>
             <Textarea
               id="remarks"
               value={remarks}
@@ -1107,7 +1184,7 @@ export default function CheckInventoryPage() {
             />
           </div>
 
-          {availabilityStatus === "Partial" && (
+          {/* {availabilityStatus === "Partial" && (
             <div className="space-y-4">
               {unavailableItems.map((item, index) => (
                 <div key={index} className="flex gap-2 items-end">
@@ -1139,7 +1216,7 @@ export default function CheckInventoryPage() {
                 Add Unavailable Item
               </Button>
             </div>
-          )}
+          )} */}
         </>
       )}
 
@@ -1148,18 +1225,18 @@ export default function CheckInventoryPage() {
           Cancel
         </Button>
         <Button
-          onClick={handleSubmit}
-          disabled={!availabilityStatus || currentUser?.role === "user" || isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            "Submit"
-          )}
-        </Button>
+  onClick={handleSubmit}
+  disabled={!availabilityStatus || currentUser?.role === "user" || isSubmitting}
+>
+  {isSubmitting ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Processing...
+    </>
+  ) : (
+    "Submit"
+  )}
+</Button>
       </div>
     </div>
   </DialogContent>
