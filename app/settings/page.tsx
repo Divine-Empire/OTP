@@ -298,7 +298,7 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Settings</h1>
             <p className="text-muted-foreground">Manage users and their permissions</p>
           </div>
           <div className="flex gap-2">

@@ -361,12 +361,29 @@ export default function DeliveryPage() {
     )
   }
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()]);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
+        <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Delivery Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Delivery Management</h1>
           <p className="text-muted-foreground">Manage delivery operations and documentation</p>
+        </div>
+        <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
         <Tabs defaultValue="pending" className="space-y-4">
@@ -386,6 +403,7 @@ export default function DeliveryPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Action</TableHead>
                         <TableHead>Order Number</TableHead>
                         <TableHead>Company Name</TableHead>
                         <TableHead>Invoice Number</TableHead>
@@ -393,24 +411,23 @@ export default function DeliveryPage() {
                         <TableHead>Transport Mode</TableHead>
                         <TableHead>Destination</TableHead>
                         <TableHead>Warehouse Processed</TableHead>
-                        <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {pendingOrders.map((order) => (
                         <TableRow key={order.id}>
+                          <TableCell>
+                            <Button size="sm" onClick={() => handleProcess(order.id)}>
+                              Process Delivery
+                            </Button>
+                          </TableCell>
                           <TableCell className="font-medium">{order.id}</TableCell>
                           <TableCell>{order.companyName}</TableCell>
                           <TableCell>{order.invoiceNumber || "N/A"}</TableCell>
                           <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
                           <TableCell>{order.transportMode}</TableCell>
                           <TableCell>{order.destination}</TableCell>
-                          <TableCell>{order.warehouseProcessedDate}</TableCell>
-                          <TableCell>
-                            <Button size="sm" onClick={() => handleProcess(order.id)}>
-                              Process Delivery
-                            </Button>
-                          </TableCell>
+                          <TableCell>{order.poNumber}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

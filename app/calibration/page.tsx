@@ -387,6 +387,7 @@ export default function CalibrationPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Action</TableHead>
                 <TableHead>Order Number</TableHead>
                 <TableHead>Company Name</TableHead>
                 <TableHead>Invoice Number</TableHead>
@@ -394,7 +395,6 @@ export default function CalibrationPage() {
                 <TableHead>Shipping Address</TableHead>
                 <TableHead>Transport Mode</TableHead>
                 <TableHead>Destination</TableHead>
-                <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -402,6 +402,11 @@ export default function CalibrationPage() {
                 .filter((order) => order.calibrationType === section)
                 .map((order) => (
                   <TableRow key={order.id}>
+                    <TableCell>
+                      <Button size="sm" onClick={() => handleProcess(order.id, section)}>
+                        Process
+                      </Button>
+                    </TableCell>
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>{order.companyName}</TableCell>
                     <TableCell>{order.invoiceNumber || "N/A"}</TableCell>
@@ -409,11 +414,6 @@ export default function CalibrationPage() {
                     <TableCell className="max-w-[150px] truncate">{order.shippingAddress || "N/A"}</TableCell>
                     <TableCell>{order.transportMode}</TableCell>
                     <TableCell>{order.destination}</TableCell>
-                    <TableCell>
-                      <Button size="sm" onClick={() => handleProcess(order.id, section)}>
-                        Process
-                      </Button>
-                    </TableCell>
                   </TableRow>
                 ))}
             </TableBody>
@@ -453,15 +453,15 @@ export default function CalibrationPage() {
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.id}</TableCell>
                   <TableCell>{order.companyName}</TableCell>
-                  <TableCell>{order.calibrationType || "UNKNOWN"}</TableCell>
-                  <TableCell>{order.labCalibrationCertificate || "N/A"}</TableCell>
-                  <TableCell>{order.stCalibrationCertificate || "N/A"}</TableCell>
-                  <TableCell>{formatDate(order.labCalibrationDate) || "N/A"}</TableCell>
-      <TableCell>{formatDate(order.stCalibrationDate) || "N/A"}</TableCell>
-                  <TableCell>{order.labCalibrationPeriod || "N/A"}</TableCell>
-                  <TableCell>{order.stCalibrationPeriod || "N/A"}</TableCell>
-                  <TableCell>{order.labDueDate || "N/A"}</TableCell>
-                  <TableCell>{order.stDueDate || "N/A"}</TableCell>
+                  <TableCell>{order.calibrationType || ""}</TableCell>
+                  <TableCell>{order.labCalibrationCertificate || ""}</TableCell>
+                  <TableCell>{order.stCalibrationCertificate || ""}</TableCell>
+                  <TableCell>{formatDate(order.labCalibrationDate) || ""}</TableCell>
+      <TableCell>{formatDate(order.stCalibrationDate) || ""}</TableCell>
+                  <TableCell>{order.labCalibrationPeriod || ""}</TableCell>
+                  <TableCell>{order.stCalibrationPeriod || ""}</TableCell>
+                  <TableCell>{order.labDueDate || ""}</TableCell>
+                  <TableCell>{order.stDueDate || ""}</TableCell>
                   {/* <TableCell>
                     <Button size="sm" variant="outline" onClick={() => handleView(order)}>
                       <Eye className="h-4 w-4 mr-1" />
@@ -511,12 +511,29 @@ export default function CalibrationPage() {
     )
   }
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()]);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
+        <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Calibration Certificate Required</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Calibration Certificate Required</h1>
           <p className="text-muted-foreground">Manage calibration certificates for different equipment types</p>
+        </div>
+        <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
         <Tabs defaultValue="pending" className="space-y-4">

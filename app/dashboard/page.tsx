@@ -327,15 +327,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <MainLayout>
+<MainLayout>
     <div className="space-y-6 bg-gradient-to-b from-blue-50 to-purple-50 p-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-purple-700">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Dashboard</h1>
           <p className="text-muted-foreground">Real-time overview from Google Sheets</p>
-          <p className="text-sm text-gray-500">
+          {/* <p className="text-sm text-gray-500">
             Data from: {ORDER_DISPATCH_SHEET} & {DISPATCH_DELIVERY_SHEET}
-          </p>
+          </p> */}
         </div>
         <Button onClick={fetchAllData} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -345,7 +345,7 @@ export default function DashboardPage() {
 
       {/* Order Statistics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
+        <Card className="bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -355,7 +355,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">From ORDER-DISPATCH sheet</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-yellow-100 to-yellow-200 border border-yellow-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -365,7 +365,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Column BD is null</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-green-100 to-green-200 border border-green-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Complete Orders</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -375,7 +375,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Column BD is "Yes"</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-red-100 to-red-200 border border-red-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cancel Orders</CardTitle>
             <XCircle className="h-4 w-4 text-muted-foreground" />
@@ -385,7 +385,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Column BD is "order cancel"</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-purple-100 to-purple-200 border border-purple-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Delivered Orders</CardTitle>
             <Truck className="h-4 w-4 text-muted-foreground" />
@@ -399,7 +399,7 @@ export default function DashboardPage() {
 
       {/* Revenue Statistics */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -409,7 +409,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">From DISPATCH-DELIVERY BR column</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-green-100 to-green-200 border border-green-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed Revenue</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -419,7 +419,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">AW = "completed", BT column</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-yellow-100 to-yellow-200 border border-yellow-200 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Revenue</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -433,7 +433,7 @@ export default function DashboardPage() {
 
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="bg-gradient-to-r from-white to-gray-100 border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Monthly Orders Analytics</CardTitle>
             <CardDescription>Orders completed by month (BD=Yes with BB date)</CardDescription>
@@ -450,7 +450,7 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-r from-white to-gray-100 border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Revenue Distribution</CardTitle>
             <CardDescription>Based on AW column status and BT revenue</CardDescription>
@@ -481,7 +481,7 @@ export default function DashboardPage() {
 
       {/* Top Customers */}
       <div className="grid gap-4 md:grid-cols-1">
-        <Card>
+        <Card className="bg-gradient-to-r from-white to-gray-100 border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Top 5 Customers</CardTitle>
             <CardDescription>Real data from DISPATCH-DELIVERY sheet (Column D company names, BR revenue sum)</CardDescription>

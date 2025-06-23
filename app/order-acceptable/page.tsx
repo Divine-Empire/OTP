@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,13 +13,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Eye, RefreshCw } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { RefreshCw, Search, Settings } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 
-
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec'
-const SHEET_ID = '1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA'
-const SHEET_NAME = 'ORDER-DISPATCH'
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
+const SHEET_NAME = "ORDER-DISPATCH"
 
 const checklistItems = [
   "Price as per Quotation Check",
@@ -30,6 +37,71 @@ const checklistItems = [
   "Material Availability Check",
   "GST Check",
   "Customer Details Check",
+]
+
+// Column definitions for Pending tab
+const pendingColumns = [
+  { key: "actions", label: "Actions", searchable: false },
+  { key: "timestamp", label: "Timestamp", searchable: true },
+  { key: "orderNo", label: "Order No.", searchable: true },
+  { key: "quotationNo", label: "Quotation No.", searchable: true },
+  { key: "companyName", label: "Company Name", searchable: true },
+  { key: "contactPersonName", label: "Contact Person Name", searchable: true },
+  { key: "contactNumber", label: "Contact Number", searchable: true },
+  { key: "billingAddress", label: "Billing Address", searchable: true },
+  { key: "shippingAddress", label: "Shipping Address", searchable: true },
+  { key: "paymentMode", label: "Payment Mode", searchable: true },
+  { key: "paymentTerms", label: "Payment Terms(In Days)", searchable: true },
+  { key: "referenceName", label: "Reference Name", searchable: true },
+  { key: "email", label: "Email", searchable: true },
+  { key: "itemName1", label: "Item Name 1", searchable: true },
+  { key: "quantity1", label: "Quantity 1", searchable: true },
+  { key: "itemName2", label: "Item Name 2", searchable: true },
+  { key: "quantity2", label: "Quantity 2", searchable: true },
+  { key: "itemName3", label: "Item Name 3", searchable: true },
+  { key: "quantity3", label: "Quantity 3", searchable: true },
+  { key: "itemName4", label: "Item Name 4", searchable: true },
+  { key: "quantity4", label: "Quantity 4", searchable: true },
+  { key: "itemName5", label: "Item Name 5", searchable: true },
+  { key: "quantity5", label: "Quantity 5", searchable: true },
+  { key: "itemName6", label: "Item Name 6", searchable: true },
+  { key: "quantity6", label: "Quantity 6", searchable: true },
+  { key: "itemName7", label: "Item Name 7", searchable: true },
+  { key: "quantity7", label: "Quantity 7", searchable: true },
+  { key: "itemName8", label: "Item Name 8", searchable: true },
+  { key: "quantity8", label: "Quantity 8", searchable: true },
+  { key: "itemName9", label: "Item Name 9", searchable: true },
+  { key: "quantity9", label: "Quantity 9", searchable: true },
+  { key: "itemName10", label: "Item Name 10", searchable: true },
+  { key: "quantity10", label: "Quantity 10", searchable: true },
+  { key: "transportMode", label: "Transport Mode", searchable: true },
+  { key: "freightType", label: "Freight Type", searchable: true },
+  { key: "destination", label: "Destination", searchable: true },
+  { key: "poNumber", label: "Po Number", searchable: true },
+  { key: "quotationCopy", label: "Quotation Copy", searchable: true },
+  { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
+  { key: "offerShow", label: "Offer Show", searchable: true },
+  { key: "conveyedForRegistration", label: "Conveyed For Registration Form", searchable: true },
+  { key: "totalOrderQty", label: "Total Order Qty", searchable: true },
+  { key: "amount", label: "Amount", searchable: true },
+  { key: "totalDispatch", label: "Total Dispatch", searchable: true },
+  { key: "quantityDelivered", label: "Quantity Delivered", searchable: true },
+  { key: "orderCancel", label: "Order Cancel", searchable: true },
+  { key: "pendingDeliveryQty", label: "Pending Delivery Qty", searchable: true },
+  { key: "pendingDispatchQty", label: "Pending Dispatch Qty", searchable: true },
+  { key: "materialReturn", label: "Material Return", searchable: true },
+  { key: "deliveryStatus", label: "Delivery Status", searchable: true },
+  { key: "dispatchStatus", label: "Dispatch Status", searchable: true },
+  { key: "dispatchCompleteDate", label: "Dispatch Complete Date", searchable: true },
+  { key: "deliveryCompleteDate", label: "Delivery Complete Date", searchable: true },
+]
+
+// Column definitions for History tab (includes 3 additional columns)
+const historyColumns = [
+  ...pendingColumns.filter((col) => col.key !== "actions"),
+  { key: "isOrderAcceptable", label: "Is Order Acceptable?", searchable: true },
+  { key: "orderAcceptanceChecklist", label: "Order Acceptance Checklist", searchable: true },
+  { key: "remarks", label: "Remark", searchable: true },
 ]
 
 export default function OrderAcceptablePage() {
@@ -43,43 +115,110 @@ export default function OrderAcceptablePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState(null)
-const { user: currentUser } = useAuth()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [visiblePendingColumns, setVisiblePendingColumns] = useState(
+    pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+  const [visibleHistoryColumns, setVisibleHistoryColumns] = useState(
+    historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+  const { user: currentUser } = useAuth()
+
+  const formatGoogleSheetsDate = (dateValue) => {
+    if (!dateValue) return "";
+  
+    // Handle the case where date comes as "Date(2025,5,21)"
+    if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
+      try {
+        // Extract the numbers between parentheses
+        const dateParts = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
+        if (dateParts && dateParts.length === 4) {
+          const year = parseInt(dateParts[1]);
+          const month = parseInt(dateParts[2]); // Note: months are 0-indexed in JS
+          const day = parseInt(dateParts[3]);
+          
+          // Create a date object (month is 0-indexed in JS, so no need to subtract 1)
+          const date = new Date(year, month, day);
+          
+          // Format as dd/mm/yyyy
+          const formattedDay = String(date.getDate()).padStart(2, '0');
+          const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // +1 because months are 0-indexed
+          const formattedYear = date.getFullYear();
+          
+          return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+        }
+      } catch (e) {
+        console.error("Error parsing date string:", e);
+      }
+    }
+  
+    // Handle case where date comes as a serial number or string
+    try {
+      // If it's a number (serial date value from Google Sheets)
+      if (typeof dateValue === 'number') {
+        // Google Sheets serial date starts from Dec 30, 1899
+        const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+        const formattedDay = String(date.getDate()).padStart(2, '0');
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      }
+      
+      // If it's already a date string in some format
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        const formattedDay = String(date.getDate()).padStart(2, '0');
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+        const formattedYear = date.getFullYear();
+        
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+      }
+    } catch (e) {
+      console.error("Error parsing date value:", e);
+    }
+  
+    // If all else fails, return the original value
+    return dateValue;
+  };
 
   // Fetch data from Google Sheets - condition: column Q is not null and column R is null
   const fetchOrders = async () => {
     setLoading(true)
     setError(null)
-    
+
     try {
       // Fetch the entire sheet using Google Sheets API directly
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
-      
+
       // Extract the JSON part from the response
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}') + 1
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}") + 1
       const jsonData = text.substring(jsonStart, jsonEnd)
-      
+
       const data = JSON.parse(jsonData)
-      
+
       // Process the orders data
       if (data && data.table && data.table.rows) {
         const ordersData = []
-        
+
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             // Condition: column Q is not null and column R is null
-            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== ""; // Column Q (index 16)
-            const isColumnREmpty = !row.c[53] || row.c[53].v === null || row.c[53].v === ""; // Column R (index 17)
-            
+            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== "" // Column Q (index 16)
+            const isColumnREmpty = !row.c[53] || row.c[53].v === null || row.c[53].v === "" // Column R (index 17)
+
             if (hasColumnQ && isColumnREmpty) {
               // Calculate correct row index
-              const actualRowIndex = index + 7;
-              
+              const actualRowIndex = index + 7
+
               const order = {
                 rowIndex: actualRowIndex,
-                // Columns B to AA (indices 1 to 26)
+                timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
+                // Columns B to AZ (all columns for search functionality)
                 orderNo: row.c[1] ? row.c[1].v : "", // Column B
                 quotationNo: row.c[2] ? row.c[2].v : "", // Column C
                 companyName: row.c[3] ? row.c[3].v : "", // Column D
@@ -89,36 +228,64 @@ const { user: currentUser } = useAuth()
                 shippingAddress: row.c[7] ? row.c[7].v : "", // Column H
                 paymentMode: row.c[8] ? row.c[8].v : "", // Column I
                 paymentTerms: row.c[9] ? row.c[9].v : "", // Column J
-                orderReceivedQty: row.c[10] ? row.c[10].v : "", // Column K
-                transportMode: row.c[32] ? row.c[32].v : "", // Column L
-                freightType: row.c[33] ? row.c[33].v : "", // Column M
-                destination: row.c[34] ? row.c[34].v : "", // Column N
-                poNumber: row.c[35] ? row.c[35].v : "", // Column O
-                quotationCopy: row.c[36] ? row.c[36].v : "", // Column P
-                acceptanceCopy: row.c[37] ? row.c[37].v : "", // Column Q
-                offerShow: row.c[38] ? row.c[38].v : "", // Column R
-                conveyedForRegistration: row.c[39] ? row.c[39].v : "", // Column S
-                qtyAmount: row.c[40] ? row.c[40].v : "", // Column T
-                quantityDelivered: row.c[43] ? row.c[43].v : "", // Column U
-                orderCancel: row.c[44] ? row.c[44].v : "", // Column V
-                pendingQty: row.c[45] ? row.c[45].v : "", // Column W
-                materialReturn: row.c[47] ? row.c[47].v : "", // Column X
-                status: row.c[24] ? row.c[24].v : "pending", // Column Y
-                completeDate: row.c[51] ? row.c[51].v : "", // Column Z
+                referenceName: row.c[10] ? row.c[10].v : "", // Column K
+                email: row.c[11] ? row.c[11].v : "", // Column L
+                itemName1: row.c[12] ? row.c[12].v : "", // Column M
+                quantity1: row.c[13] ? row.c[13].v : "", // Column N
+                itemName2: row.c[14] ? row.c[14].v : "", // Column O
+                quantity2: row.c[15] ? row.c[15].v : "", // Column P
+                itemName3: row.c[16] ? row.c[16].v : "", // Column Q
+                quantity3: row.c[17] ? row.c[17].v : "", // Column R
+                itemName4: row.c[18] ? row.c[18].v : "", // Column S
+                quantity4: row.c[19] ? row.c[19].v : "", // Column T
+                itemName5: row.c[20] ? row.c[20].v : "", // Column U
+                quantity5: row.c[21] ? row.c[21].v : "", // Column V
+                itemName6: row.c[22] ? row.c[22].v : "", // Column W
+                quantity6: row.c[23] ? row.c[23].v : "", // Column X
+                itemName7: row.c[24] ? row.c[24].v : "", // Column Y
+                quantity7: row.c[25] ? row.c[25].v : "", // Column Z
+                itemName8: row.c[26] ? row.c[26].v : "", // Column AA
+                quantity8: row.c[27] ? row.c[27].v : "", // Column AB
+                itemName9: row.c[28] ? row.c[28].v : "", // Column AC
+                quantity9: row.c[29] ? row.c[29].v : "", // Column AD
+                itemName10: row.c[30] ? row.c[30].v : "", // Column AE
+                quantity10: row.c[31] ? row.c[31].v : "", // Column AF
+                transportMode: row.c[32] ? row.c[32].v : "", // Column AG
+                freightType: row.c[33] ? row.c[33].v : "", // Column AH
+                destination: row.c[34] ? row.c[34].v : "", // Column AI
+                poNumber: row.c[35] ? row.c[35].v : "", // Column AJ
+                quotationCopy: row.c[36] ? row.c[36].v : "", // Column AK
+                acceptanceCopy: row.c[37] ? row.c[37].v : "", // Column AL
+                offerShow: row.c[38] ? row.c[38].v : "", // Column AM
+                conveyedForRegistration: row.c[39] ? row.c[39].v : "", // Column AN
+                totalOrderQty: row.c[40] ? row.c[40].v : "", // Column AO
+                amount: row.c[41] ? row.c[41].v : "", // Column AP
+                totalDispatch: row.c[42] ? row.c[42].v : "", // Column AQ
+                quantityDelivered: row.c[43] ? row.c[43].v : "", // Column AR
+                orderCancel: row.c[44] ? row.c[44].v : "", // Column AS
+                pendingDeliveryQty: row.c[45] ? row.c[45].v : "", // Column AT
+                pendingDispatchQty: row.c[46] ? row.c[46].v : "", // Column AU
+                materialReturn: row.c[47] ? row.c[47].v : "", // Column AV
+                deliveryStatus: row.c[48] ? row.c[48].v : "", // Column AW
+                dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
+                dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
+                deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
+                status: row.c[24] ? row.c[24].v : "pending",
+                completeDate: row.c[51] ? row.c[51].v : "",
                 // Keep the old field names for backward compatibility in dialog
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-                fullRowData: row.c
+                fullRowData: row.c,
               }
-              
+
               console.log(`Order ${order.orderNo}: Company "${order.companyName}" at actual row ${order.rowIndex}`)
               ordersData.push(order)
             }
           }
         })
-        
+
         setOrders(ordersData)
-        console.log('Total orders loaded:', ordersData.length)
-        console.log('Orders data:', ordersData)
+        console.log("Total orders loaded:", ordersData.length)
+        console.log("Orders data:", ordersData)
       }
     } catch (err) {
       console.error("Error fetching orders data:", err)
@@ -130,40 +297,40 @@ const { user: currentUser } = useAuth()
   }
 
   // Helper function to format date from Google Sheets format
-  const formatGoogleSheetsDate = (dateValue) => {
-    if (!dateValue) return "";
-    
-    if (typeof dateValue === 'string' && dateValue.includes('Date(')) {
-      const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
-      if (match) {
-        const year = parseInt(match[1]);
-        const month = parseInt(match[2]);
-        const day = parseInt(match[3]);
-        
-        const date = new Date(year, month, day);
-        const formattedDay = String(date.getDate()).padStart(2, '0');
-        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
-        const formattedYear = date.getFullYear();
-        
-        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
-      }
-    }
-    
-    try {
-      const date = new Date(dateValue);
-      if (!isNaN(date.getTime())) {
-        const formattedDay = String(date.getDate()).padStart(2, '0');
-        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
-        const formattedYear = date.getFullYear();
-        
-        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
-      }
-    } catch (e) {
-      console.error('Error parsing date:', e);
-    }
-    
-    return dateValue;
-  };
+  // const formatGoogleSheetsDate = (dateValue) => {
+  //   if (!dateValue) return ""
+
+  //   if (typeof dateValue === "string" && dateValue.includes("Date(")) {
+  //     const match = dateValue.match(/Date$$(\d+),(\d+),(\d+)$$/)
+  //     if (match) {
+  //       const year = Number.parseInt(match[1])
+  //       const month = Number.parseInt(match[2])
+  //       const day = Number.parseInt(match[3])
+
+  //       const date = new Date(year, month, day)
+  //       const formattedDay = String(date.getDate()).padStart(2, "0")
+  //       const formattedMonth = String(date.getMonth() + 1).padStart(2, "0")
+  //       const formattedYear = date.getFullYear()
+
+  //       return `${formattedDay}/${formattedMonth}/${formattedYear}`
+  //     }
+  //   }
+
+  //   try {
+  //     const date = new Date(dateValue)
+  //     if (!isNaN(date.getTime())) {
+  //       const formattedDay = String(date.getDate()).padStart(2, "0")
+  //       const formattedMonth = String(date.getMonth() + 1).padStart(2, "0")
+  //       const formattedYear = date.getFullYear()
+
+  //       return `${formattedDay}/${formattedMonth}/${formattedYear}`
+  //     }
+  //   } catch (e) {
+  //     console.error("Error parsing date:", e)
+  //   }
+
+  //   return dateValue
+  // }
 
   // Fetch processed orders (where both Q and R have data)
   const fetchProcessedOrders = async () => {
@@ -171,29 +338,29 @@ const { user: currentUser } = useAuth()
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
-      
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}') + 1
+
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}") + 1
       const jsonData = text.substring(jsonStart, jsonEnd)
-      
+
       const data = JSON.parse(jsonData)
-      
+
       if (data && data.table && data.table.rows) {
         const processedOrdersData = []
-        
+
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             // Show rows where both column Q and R have data
-            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== ""; // Column Q (index 16)
-            const hasColumnR = row.c[53] && row.c[53].v !== null && row.c[53].v !== ""; // Column R (index 17)
-            
+            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== "" // Column Q (index 16)
+            const hasColumnR = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column R (index 17)
+
             if (hasColumnQ && hasColumnR) {
-              const actualRowIndex = index + 7;
-              
+              const actualRowIndex = index + 7
+
               const processedOrder = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
-                // Columns B to AA (indices 1 to 26)
+                // All columns for history view
                 orderNo: row.c[1] ? row.c[1].v : "", // Column B
                 quotationNo: row.c[2] ? row.c[2].v : "", // Column C
                 companyName: row.c[3] ? row.c[3].v : "", // Column D
@@ -203,36 +370,64 @@ const { user: currentUser } = useAuth()
                 shippingAddress: row.c[7] ? row.c[7].v : "", // Column H
                 paymentMode: row.c[8] ? row.c[8].v : "", // Column I
                 paymentTerms: row.c[9] ? row.c[9].v : "", // Column J
-                orderReceivedQty: row.c[10] ? row.c[10].v : "", // Column K
-                transportMode: row.c[11] ? row.c[11].v : "", // Column L
-                freightType: row.c[12] ? row.c[12].v : "", // Column M
-                destination: row.c[13] ? row.c[13].v : "", // Column N
-                poNumber: row.c[14] ? row.c[14].v : "", // Column O
-                quotationCopy: row.c[15] ? row.c[15].v : "", // Column P
-                acceptanceCopy: row.c[16] ? row.c[16].v : "", // Column Q
-                offerShow: row.c[17] ? row.c[17].v : "", // Column R
-                conveyedForRegistration: row.c[18] ? row.c[18].v : "", // Column S
-                qtyAmount: row.c[19] ? row.c[19].v : "", // Column T
-                quantityDelivered: row.c[20] ? row.c[20].v : "", // Column U
-                orderCancel: row.c[21] ? row.c[21].v : "", // Column V
-                pendingQty: row.c[22] ? row.c[22].v : "", // Column W
-                materialReturn: row.c[23] ? row.c[23].v : "", // Column X
-                status: row.c[24] ? row.c[24].v : "", // Column Y
-                completeDate: row.c[25] ? row.c[25].v : "", // Column Z
-                // Additional columns AE, AF, AG (indices 30, 31, 32)
-                isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column AE
-                orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column AF
-                remarks: row.c[57] ? row.c[57].v : "", // Column AG
+                referenceName: row.c[10] ? row.c[10].v : "", // Column K
+                email: row.c[11] ? row.c[11].v : "", // Column L
+                itemName1: row.c[12] ? row.c[12].v : "", // Column M
+                quantity1: row.c[13] ? row.c[13].v : "", // Column N
+                itemName2: row.c[14] ? row.c[14].v : "", // Column O
+                quantity2: row.c[15] ? row.c[15].v : "", // Column P
+                itemName3: row.c[16] ? row.c[16].v : "", // Column Q
+                quantity3: row.c[17] ? row.c[17].v : "", // Column R
+                itemName4: row.c[18] ? row.c[18].v : "", // Column S
+                quantity4: row.c[19] ? row.c[19].v : "", // Column T
+                itemName5: row.c[20] ? row.c[20].v : "", // Column U
+                quantity5: row.c[21] ? row.c[21].v : "", // Column V
+                itemName6: row.c[22] ? row.c[22].v : "", // Column W
+                quantity6: row.c[23] ? row.c[23].v : "", // Column X
+                itemName7: row.c[24] ? row.c[24].v : "", // Column Y
+                quantity7: row.c[25] ? row.c[25].v : "", // Column Z
+                itemName8: row.c[26] ? row.c[26].v : "", // Column AA
+                quantity8: row.c[27] ? row.c[27].v : "", // Column AB
+                itemName9: row.c[28] ? row.c[28].v : "", // Column AC
+                quantity9: row.c[29] ? row.c[29].v : "", // Column AD
+                itemName10: row.c[30] ? row.c[30].v : "", // Column AE
+                quantity10: row.c[31] ? row.c[31].v : "", // Column AF
+                transportMode: row.c[32] ? row.c[32].v : "", // Column AG
+                freightType: row.c[33] ? row.c[33].v : "", // Column AH
+                destination: row.c[34] ? row.c[34].v : "", // Column AI
+                poNumber: row.c[35] ? row.c[35].v : "", // Column AJ
+                quotationCopy: row.c[36] ? row.c[36].v : "", // Column AK
+                acceptanceCopy: row.c[37] ? row.c[37].v : "", // Column AL
+                offerShow: row.c[38] ? row.c[38].v : "", // Column AM
+                conveyedForRegistration: row.c[39] ? row.c[39].v : "", // Column AN
+                totalOrderQty: row.c[40] ? row.c[40].v : "", // Column AO
+                amount: row.c[41] ? row.c[41].v : "", // Column AP
+                totalDispatch: row.c[42] ? row.c[42].v : "", // Column AQ
+                quantityDelivered: row.c[43] ? row.c[43].v : "", // Column AR
+                orderCancel: row.c[44] ? row.c[44].v : "", // Column AS
+                pendingDeliveryQty: row.c[45] ? row.c[45].v : "", // Column AT
+                pendingDispatchQty: row.c[46] ? row.c[46].v : "", // Column AU
+                materialReturn: row.c[47] ? row.c[47].v : "", // Column AV
+                deliveryStatus: row.c[48] ? row.c[48].v : "", // Column AW
+                dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
+                dispatchCompleteDate: row.c[50] ? row.c[50].v : "", // Column AY
+                deliveryCompleteDate: row.c[51] ? row.c[51].v : "", // Column AZ
+                status: row.c[24] ? row.c[24].v : "",
+                completeDate: row.c[25] ? row.c[25].v : "",
+                // Additional columns BD, BE, BF (indices 55, 56, 57)
+                isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column BD
+                orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column BE
+                remarks: row.c[57] ? row.c[57].v : "", // Column BF
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : "",
-                fullRowData: row.c
+                fullRowData: row.c,
               }
-              
+
               processedOrdersData.push(processedOrder)
             }
           }
         })
-        
+
         return processedOrdersData
       }
       return []
@@ -246,12 +441,38 @@ const { user: currentUser } = useAuth()
     fetchOrders()
   }, [])
 
+  // Filter orders based on search term
+  const filteredOrders = useMemo(() => {
+    if (!searchTerm) return orders
+
+    return orders.filter((order) => {
+      const searchableFields = pendingColumns
+        .filter((col) => col.searchable)
+        .map((col) => String(order[col.key] || "").toLowerCase())
+
+      return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+    })
+  }, [orders, searchTerm])
+
   // Filter orders based on status
-  const pendingOrders = orders.filter(order => order.status === "pending")
+  const pendingOrders = filteredOrders.filter((order) => order.status === "pending")
 
   // For processed orders, we'll fetch them separately when the tab is clicked
   const [processedOrders, setProcessedOrders] = useState([])
   const [processedLoading, setProcessedLoading] = useState(false)
+
+  // Filter processed orders based on search term
+  const filteredProcessedOrders = useMemo(() => {
+    if (!searchTerm) return processedOrders
+
+    return processedOrders.filter((order) => {
+      const searchableFields = historyColumns
+        .filter((col) => col.searchable)
+        .map((col) => String(order[col.key] || "").toLowerCase())
+
+      return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+    })
+  }, [processedOrders, searchTerm])
 
   const handleProcessedTabClick = async () => {
     setProcessedLoading(true)
@@ -268,84 +489,115 @@ const { user: currentUser } = useAuth()
     setIsDialogOpen(true)
   }
 
+  // Column visibility handlers
+  const togglePendingColumn = (columnKey) => {
+    setVisiblePendingColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const toggleHistoryColumn = (columnKey) => {
+    setVisibleHistoryColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const showAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: col.key === "actions" }), {}))
+  }
+
+  const showAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: false }), {}))
+  }
+
   // Update order status in Google Sheets
   const updateOrderStatus = async (order, acceptanceData) => {
     try {
       console.log(`Updating order for Order No.: ${order.id}`)
       console.log(`Order details:`, order)
-      
+
       const formData = new FormData()
-      formData.append('sheetName', SHEET_NAME)
-      formData.append('action', 'updateByOrderNoInColumnB')
-      formData.append('orderNo', order.id) // This will search in column B
-      
+      formData.append("sheetName", SHEET_NAME)
+      formData.append("action", "updateByOrderNoInColumnB")
+      formData.append("orderNo", order.id) // This will search in column B
+
       // Create a sparse array to update only specific columns
-      const rowData = new Array(57).fill('') // Create array with 30 empty strings
+      const rowData = new Array(57).fill("") // Create array with 30 empty strings
 
       // Add today's date to column R (index 17)
-      const today = new Date();
+      const today = new Date()
 
-      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-      
-      rowData[53] = formattedDate; // Column R
-      
+      const formattedDate =
+        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
+      rowData[53] = formattedDate // Column R
+
       // Add acceptance status to column S (index 18)
-      rowData[55] = acceptanceData.isAcceptable; // Column S
-      
-      if (acceptanceData.isAcceptable === 'Yes') {
+      rowData[55] = acceptanceData.isAcceptable // Column S
+
+      if (acceptanceData.isAcceptable === "Yes") {
         // If Yes, add checklist items to column T (index 19)
-        const checklistText = acceptanceData.checklist.join(', ');
-        rowData[56] = checklistText; // Column T
+        const checklistText = acceptanceData.checklist.join(", ")
+        rowData[56] = checklistText // Column T
       }
-      
+
       // Always add remarks to column U (index 20) regardless of acceptance status
-      rowData[57] = acceptanceData.remarks || ''; // Column U
-      
-      formData.append('rowData', JSON.stringify(rowData))
-      
-      console.log('Sending data to Apps Script:', {
+      rowData[57] = acceptanceData.remarks || "" // Column U
+
+      formData.append("rowData", JSON.stringify(rowData))
+
+      console.log("Sending data to Apps Script:", {
         sheetName: SHEET_NAME,
         orderNo: order.id,
         isAcceptable: acceptanceData.isAcceptable,
         todayDate: formattedDate,
         checklist: acceptanceData.checklist,
-        remarks: acceptanceData.remarks
+        remarks: acceptanceData.remarks,
       })
-      
+
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'cors',
-        body: formData
+        method: "POST",
+        mode: "cors",
+        body: formData,
       })
-      
-      console.log('Response status:', updateResponse.status)
-      
+
+      console.log("Response status:", updateResponse.status)
+
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`)
       }
-      
+
       let result
       try {
         const responseText = await updateResponse.text()
-        console.log('Raw response:', responseText)
+        console.log("Raw response:", responseText)
         result = JSON.parse(responseText)
       } catch (parseError) {
-        console.log('Response parsing failed, but request might be successful')
+        console.log("Response parsing failed, but request might be successful")
         result = { success: true }
       }
-      
-      console.log('Parsed result:', result)
-      
+
+      console.log("Parsed result:", result)
+
       if (result.success !== false) {
         await fetchOrders()
         return true
       } else {
-        throw new Error(result.error || 'Update failed')
+        throw new Error(result.error || "Update failed")
       }
-      
     } catch (err) {
-      console.error('Error updating order:', err)
+      console.error("Error updating order:", err)
       setError(err.message)
       return false
     }
@@ -353,7 +605,9 @@ const { user: currentUser } = useAuth()
 
   const handleSubmit = async () => {
     if (!selectedOrder || !isAcceptable) return
-
+  
+    setIsSubmitting(true) // Start loading
+    
     const acceptanceData = {
       isAcceptable,
       checklist: isAcceptable === "Yes" ? checkedItems : [],
@@ -361,9 +615,11 @@ const { user: currentUser } = useAuth()
       processedAt: new Date().toISOString(),
       processedBy: "Current User",
     }
-
+  
     const success = await updateOrderStatus(selectedOrder, acceptanceData)
-    
+  
+    setIsSubmitting(false) // Stop loading regardless of outcome
+  
     if (success) {
       setIsDialogOpen(false)
       setSelectedOrder(null)
@@ -375,6 +631,40 @@ const { user: currentUser } = useAuth()
   const handleView = (order) => {
     setViewOrder(order)
     setViewDialogOpen(true)
+  }
+
+  const renderCellContent = (order, columnKey) => {
+    const value = order[columnKey]
+
+    switch (columnKey) {
+      case "actions":
+        return (
+          <Button size="sm" onClick={() => handleProcess(order)}>
+            Process
+          </Button>
+        )
+      case "quotationCopy":
+        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      case "acceptanceCopy":
+        return value && (value.startsWith("http") || value.startsWith("https")) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            <Badge variant="default">Link</Badge>
+          </a>
+        ) : (
+          <Badge variant="secondary">{value || "N/A"}</Badge>
+        )
+      case "status":
+        return <Badge variant="outline">{value}</Badge>
+      case "isOrderAcceptable":
+        return <Badge variant={value === "Yes" ? "default" : "destructive"}>{value || "N/A"}</Badge>
+      case "billingAddress":
+      case "shippingAddress":
+      case "orderAcceptanceChecklist":
+      case "remarks":
+        return <div className="max-w-[150px] truncate">{value}</div>
+      default:
+        return value || ""
+    }
   }
 
   if (loading) {
@@ -410,9 +700,9 @@ const { user: currentUser } = useAuth()
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Order Acceptable</h1>
-            <p className="text-muted-foreground">Review and process incoming orders from Google Sheets</p>
-            <p className="text-sm text-gray-500">Sheet: {SHEET_NAME} | Total Orders: {orders.length}</p>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              Order Acceptable
+            </h1>
           </div>
           <Button onClick={fetchOrders} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -420,106 +710,102 @@ const { user: currentUser } = useAuth()
           </Button>
         </div>
 
+        {/* Search and Filter Controls */}
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search across all columns..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
             <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-            <TabsTrigger value="history" onClick={handleProcessedTabClick}>History ({processedOrders.length})</TabsTrigger>
+            <TabsTrigger value="history" onClick={handleProcessedTabClick}>
+              History ({filteredProcessedOrders.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pending Orders</CardTitle>
-                <CardDescription>Orders from Google Sheets waiting for acceptance review (Q not null, R null)</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Pending Orders</CardTitle>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {pendingColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`pending-${column.key}`}
+                              checked={visiblePendingColumns[column.key]}
+                              onCheckedChange={() => togglePendingColumn(column.key)}
+                            />
+                            <Label htmlFor={`pending-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Actions</TableHead>
-                        <TableHead>Order No.</TableHead>
-                        <TableHead>Quotation No.</TableHead>
-                        <TableHead>Company Name</TableHead>
-                        <TableHead>Contact Person Name</TableHead>
-                        <TableHead>Contact Number</TableHead>
-                        <TableHead>Billing Address</TableHead>
-                        <TableHead>Shipping Address</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Payment Terms (In Days)</TableHead>
-                        <TableHead>Reference No.</TableHead>
-                        <TableHead>Transport Mode</TableHead>
-                        <TableHead>Freight Type</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>PO Number</TableHead>
-                        <TableHead>Quotation Copy</TableHead>
-                        <TableHead>Acceptance Copy (Purchase Order Only)</TableHead>
-                        <TableHead>Offer Show</TableHead>
-                        <TableHead>Conveyed For Registration Form</TableHead>
-                        <TableHead>Qty Amount</TableHead>
-                        <TableHead>Quantity Delivered</TableHead>
-                        <TableHead>Order Cancel</TableHead>
-                        <TableHead>Pending Qty</TableHead>
-                        <TableHead>Material Return</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Complete Date</TableHead>
+                        {pendingColumns
+                          .filter((col) => visiblePendingColumns[col.key])
+                          .map((column) => (
+                            <TableHead key={column.key}>{column.label}</TableHead>
+                          ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {pendingOrders.map((order) => (
                         <TableRow key={order.rowIndex}>
-                          <TableCell>
-                            <Button size="sm" onClick={() => handleProcess(order)}>
-                              Process
-                            </Button>
-                          </TableCell>
-                          <TableCell className="font-medium">{order.orderNo}</TableCell>
-                          <TableCell>{order.quotationNo}</TableCell>
-                          <TableCell>{order.companyName}</TableCell>
-                          <TableCell>{order.contactPersonName}</TableCell>
-                          <TableCell>{order.contactNumber}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.billingAddress}</TableCell>
-                          <TableCell className="max-w-[150px] truncate">{order.shippingAddress}</TableCell>
-                          <TableCell>{order.paymentMode}</TableCell>
-                          <TableCell>{order.paymentTerms}</TableCell>
-                          <TableCell>{order.orderReceivedQty}</TableCell>
-                          <TableCell>{order.transportMode}</TableCell>
-                          <TableCell>{order.freightType}</TableCell>
-                          <TableCell>{order.destination}</TableCell>
-                          <TableCell>{order.poNumber}</TableCell>
-                          <TableCell>
-                            <Badge variant={order.quotationCopy === "Available" ? "default" : "secondary"}>
-                              {order.quotationCopy || "N/A"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-  {order.acceptanceCopy && (order.acceptanceCopy.startsWith('http') || order.acceptanceCopy.startsWith('https')) ? (
-    <a href={order.acceptanceCopy} target="_blank" rel="noopener noreferrer">
-      <Badge variant="default">Link</Badge>
-    </a>
-  ) : (
-    <Badge variant="secondary">
-      {order.acceptanceCopy || "N/A"}
-    </Badge>
-  )}
-</TableCell>
-                          <TableCell>{order.offerShow}</TableCell>
-                          <TableCell>{order.conveyedForRegistration}</TableCell>
-                          <TableCell>{order.qtyAmount}</TableCell>
-                          <TableCell>{order.quantityDelivered}</TableCell>
-                          <TableCell>{order.orderCancel}</TableCell>
-                          <TableCell>{order.pendingQty}</TableCell>
-                          <TableCell>{order.materialReturn}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{order.status}</Badge>
-                          </TableCell>
-                          <TableCell>{order.completeDate}</TableCell>
+                          {pendingColumns
+                            .filter((col) => visiblePendingColumns[col.key])
+                            .map((column) => (
+                              <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                            ))}
                         </TableRow>
                       ))}
                       {pendingOrders.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={26} className="text-center text-muted-foreground">
-                            No pending orders found in Google Sheets (Q not null, R null)
+                          <TableCell
+                            colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                            className="text-center text-muted-foreground"
+                          >
+                            {searchTerm
+                              ? "No orders match your search criteria"
+                              : "No pending orders found in Google Sheets"}
                           </TableCell>
                         </TableRow>
                       )}
@@ -531,124 +817,97 @@ const { user: currentUser } = useAuth()
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-  <Card>
-    <CardHeader>
-      <CardTitle>Order History</CardTitle>
-      <CardDescription>Previously processed orders (where both Q and R columns have data)</CardDescription>
-    </CardHeader>
-    <CardContent>
-      {processedLoading ? (
-        <div className="flex items-center justify-center h-32">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Loading processed orders...</span>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Order No.</TableHead>
-                <TableHead>Quotation No.</TableHead>
-                <TableHead>Company Name</TableHead>
-                <TableHead>Contact Person Name</TableHead>
-                <TableHead>Contact Number</TableHead>
-                <TableHead>Billing Address</TableHead>
-                <TableHead>Shipping Address</TableHead>
-                <TableHead>Payment Mode</TableHead>
-                <TableHead>Payment Terms (In Days)</TableHead>
-                <TableHead>Order Received Qty</TableHead>
-                <TableHead>Transport Mode</TableHead>
-                <TableHead>Freight Type</TableHead>
-                <TableHead>Destination</TableHead>
-                <TableHead>PO Number</TableHead>
-                <TableHead>Quotation Copy</TableHead>
-                <TableHead>Acceptance Copy (Purchase Order Only)</TableHead>
-                <TableHead>Offer Show</TableHead>
-                <TableHead>Conveyed For Registration Form</TableHead>
-                <TableHead>Qty Amount</TableHead>
-                <TableHead>Quantity Delivered</TableHead>
-                <TableHead>Order Cancel</TableHead>
-                <TableHead>Pending Qty</TableHead>
-                <TableHead>Material Return</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Complete Date</TableHead>
-                <TableHead>Is Order Acceptable?</TableHead>
-                <TableHead>Order Acceptance Checklist</TableHead>
-                <TableHead>Remarks</TableHead>
-                {/* <TableHead>Actions</TableHead> */}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {processedOrders.map((order) => (
-                <TableRow key={order.rowIndex}>
-                  <TableCell>{order.timestamp}</TableCell>
-                  <TableCell className="font-medium">{order.orderNo}</TableCell>
-                  <TableCell>{order.quotationNo}</TableCell>
-                  <TableCell>{order.companyName}</TableCell>
-                  <TableCell>{order.contactPersonName}</TableCell>
-                  <TableCell>{order.contactNumber}</TableCell>
-                  <TableCell className="max-w-[150px] truncate">{order.billingAddress}</TableCell>
-                  <TableCell className="max-w-[150px] truncate">{order.shippingAddress}</TableCell>
-                  <TableCell>{order.paymentMode}</TableCell>
-                  <TableCell>{order.paymentTerms}</TableCell>
-                  <TableCell>{order.orderReceivedQty}</TableCell>
-                  <TableCell>{order.transportMode}</TableCell>
-                  <TableCell>{order.freightType}</TableCell>
-                  <TableCell>{order.destination}</TableCell>
-                  <TableCell>{order.poNumber}</TableCell>
-                  <TableCell>
-                    <Badge variant={order.quotationCopy === "Available" ? "default" : "secondary"}>
-                      {order.quotationCopy || "N/A"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={order.acceptanceCopy === "Available" ? "default" : "secondary"}>
-                      {order.acceptanceCopy || "N/A"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{order.offerShow}</TableCell>
-                  <TableCell>{order.conveyedForRegistration}</TableCell>
-                  <TableCell>{order.qtyAmount}</TableCell>
-                  <TableCell>{order.quantityDelivered}</TableCell>
-                  <TableCell>{order.orderCancel}</TableCell>
-                  <TableCell>{order.pendingQty}</TableCell>
-                  <TableCell>{order.materialReturn}</TableCell>
-                  <TableCell>
-                    <Badge variant="default">
-                      {order.status || "Completed"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{order.completeDate}</TableCell>
-                  <TableCell>
-                    <Badge variant={order.isOrderAcceptable === "Yes" ? "default" : "destructive"}>
-                      {order.isOrderAcceptable || "N/A"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate">{order.orderAcceptanceChecklist}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{order.remarks}</TableCell>
-                  {/* <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => handleView(order)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                  </TableCell> */}
-                </TableRow>
-              ))}
-              {processedOrders.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={30} className="text-center text-muted-foreground">
-                    No processed orders found (Q and R columns both need data)
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-</TabsContent>
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Order History</CardTitle>
+                    <CardDescription>
+                      Previously processed orders (where both Q and R columns have data)
+                    </CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {historyColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`history-${column.key}`}
+                              checked={visibleHistoryColumns[column.key]}
+                              onCheckedChange={() => toggleHistoryColumn(column.key)}
+                            />
+                            <Label htmlFor={`history-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {processedLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Loading processed orders...</span>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {historyColumns
+                            .filter((col) => visibleHistoryColumns[col.key])
+                            .map((column) => (
+                              <TableHead key={column.key}>{column.label}</TableHead>
+                            ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredProcessedOrders.map((order) => (
+                          <TableRow key={order.rowIndex}>
+                            {historyColumns
+                              .filter((col) => visibleHistoryColumns[col.key])
+                              .map((column) => (
+                                <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                              ))}
+                          </TableRow>
+                        ))}
+                        {filteredProcessedOrders.length === 0 && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                              className="text-center text-muted-foreground"
+                            >
+                              {searchTerm ? "No orders match your search criteria" : "No processed orders found"}
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Process Dialog */}
@@ -661,11 +920,11 @@ const { user: currentUser } = useAuth()
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="orderNo">Order No.</Label>
-                <Input id="orderNo" value={selectedOrder?.orderNo || ''} disabled />
+                <Input id="orderNo" value={selectedOrder?.orderNo || ""} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="companyName">Company Name</Label>
-                <Input id="companyName" value={selectedOrder?.companyName || ''} disabled />
+                <Input id="companyName" value={selectedOrder?.companyName || ""} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="acceptable">Is Order Acceptable? *</Label>
@@ -717,9 +976,19 @@ const { user: currentUser } = useAuth()
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!isAcceptable || currentUser?.role === "user"}>
-                  Submit
-                </Button>
+                <Button 
+  onClick={handleSubmit} 
+  disabled={!isAcceptable || currentUser?.role === "user" || isSubmitting}
+>
+  {isSubmitting ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Processing...
+    </>
+  ) : (
+    "Submit"
+  )}
+</Button>
               </div>
             </div>
           </DialogContent>

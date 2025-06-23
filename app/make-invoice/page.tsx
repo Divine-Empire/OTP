@@ -315,7 +315,7 @@ useEffect(() => {
       if (result.fileUrls) {
         message += "\n\nFiles uploaded to Google Drive:"
         if (result.fileUrls.invoiceUrl) message += "\n- Invoice attachment"
-        if (result.fileUrls.ewayBillUrl) message += "\n- E-Way Bill attachment"
+        if (result.fileUrls.ewayBillUrl1) message += "\n- E-Way Bill attachment"
       }
       alert(message)
     } else {
@@ -359,12 +359,31 @@ useEffect(() => {
     )
   }
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([fetchPendingOrders(), fetchHistoryOrders()]);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
+        <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Make Invoice (Accounts Part)</h1>
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+  Make Invoice (Accounts Part)
+</h1>
           <p className="text-muted-foreground">Create invoices for processed orders</p>
+        </div>
+        <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
         <Tabs defaultValue="pending" className="space-y-4">
@@ -384,6 +403,7 @@ useEffect(() => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Action</TableHead>
                         <TableHead>Order Number</TableHead>
                         <TableHead>Company Name</TableHead>
                         <TableHead>Contact Person Name</TableHead>
@@ -403,12 +423,16 @@ useEffect(() => {
                         <TableHead>Billing Qty</TableHead> */}
                         <TableHead>Quotation Copy</TableHead>
                         <TableHead>Acceptance Copy</TableHead>
-                        <TableHead>Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {pendingOrders.map((order) => (
                         <TableRow key={order.id}>
+                          <TableCell>
+                            <Button size="sm" onClick={() => handleProcess(order.id)}>
+                              Process
+                            </Button>
+                          </TableCell>
                           <TableCell className="font-medium">{order.id}</TableCell>
                           <TableCell>{order.companyName}</TableCell>
                           <TableCell>{order.contactPerson}</TableCell>
@@ -439,11 +463,6 @@ useEffect(() => {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">Available</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button size="sm" onClick={() => handleProcess(order.id)}>
-                              Process
-                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}

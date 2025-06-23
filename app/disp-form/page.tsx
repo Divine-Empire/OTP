@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,136 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Eye, Plus, Trash2, RefreshCw } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { Plus, Trash2, RefreshCw, Search, Settings } from "lucide-react"
+
+// Column definitions for Pending tab (ORDER-DISPATCH sheet, columns B to BZ)
+const pendingColumns = [
+  { key: "actions", label: "Actions", searchable: false },
+  { key: "orderNo", label: "Order No.", searchable: true },
+  { key: "quotationNo", label: "Quotation No.", searchable: true },
+  { key: "companyName", label: "Company Name", searchable: true },
+  { key: "contactPersonName", label: "Contact Person Name", searchable: true },
+  { key: "contactNumber", label: "Contact Number", searchable: true },
+  { key: "billingAddress", label: "Billing Address", searchable: true },
+  { key: "shippingAddress", label: "Shipping Address", searchable: true },
+  { key: "paymentMode", label: "Payment Mode", searchable: true },
+  { key: "paymentTerms", label: "Payment Terms(In Days)", searchable: true },
+  { key: "referenceName", label: "Reference Name", searchable: true },
+  { key: "email", label: "Email", searchable: true },
+  { key: "itemName1", label: "Item Name 1", searchable: true },
+  { key: "quantity1", label: "Quantity 1", searchable: true },
+  { key: "itemName2", label: "Item Name 2", searchable: true },
+  { key: "quantity2", label: "Quantity 2", searchable: true },
+  { key: "itemName3", label: "Item Name 3", searchable: true },
+  { key: "quantity3", label: "Quantity 3", searchable: true },
+  { key: "itemName4", label: "Item Name 4", searchable: true },
+  { key: "quantity4", label: "Quantity 4", searchable: true },
+  { key: "itemName5", label: "Item Name 5", searchable: true },
+  { key: "quantity5", label: "Quantity 5", searchable: true },
+  { key: "itemName6", label: "Item Name 6", searchable: true },
+  { key: "quantity6", label: "Quantity 6", searchable: true },
+  { key: "itemName7", label: "Item Name 7", searchable: true },
+  { key: "quantity7", label: "Quantity 7", searchable: true },
+  { key: "itemName8", label: "Item Name 8", searchable: true },
+  { key: "quantity8", label: "Quantity 8", searchable: true },
+  { key: "itemName9", label: "Item Name 9", searchable: true },
+  { key: "quantity9", label: "Quantity 9", searchable: true },
+  { key: "itemName10", label: "Item Name 10", searchable: true },
+  { key: "quantity10", label: "Quantity 10", searchable: true },
+  { key: "transportMode", label: "Transport Mode", searchable: true },
+  { key: "freightType", label: "Freight Type", searchable: true },
+  { key: "destination", label: "Destination", searchable: true },
+  { key: "poNumber", label: "Po Number", searchable: true },
+  { key: "quotationCopy", label: "Quotation Copy", searchable: true },
+  { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
+  { key: "offerShow", label: "Offer Show", searchable: true },
+  { key: "conveyedForRegistration", label: "Conveyed For Registration Form", searchable: true },
+  { key: "totalOrderQty", label: "Total Order Qty", searchable: true },
+  { key: "amount", label: "Amount", searchable: true },
+  { key: "totalDispatch", label: "Total Dispatch", searchable: true },
+  { key: "quantityDelivered", label: "Quantity Delivered", searchable: true },
+  { key: "orderCancel", label: "Order Cancel", searchable: true },
+  { key: "pendingDeliveryQty", label: "Pending Delivery Qty", searchable: true },
+  { key: "pendingDispatchQty", label: "Pending Dispatch Qty", searchable: true },
+  { key: "materialReturn", label: "Material Return", searchable: true },
+  { key: "deliveryStatus", label: "Delivery Status", searchable: true },
+  { key: "dispatchStatus", label: "Dispatch Status", searchable: true },
+  { key: "dispatchCompleteDate", label: "Dispatch Complete Date", searchable: true },
+  { key: "deliveryCompleteDate", label: "Delivery Complete Date", searchable: true },
+]
+
+// Column definitions for History tab (DISPATCH-DELIVERY sheet, columns B to BZ)
+const historyColumns = [
+  { key: "orderNo", label: "Order No.", searchable: true },
+  { key: "quotationNo", label: "Quotation No.", searchable: true },
+  { key: "companyName", label: "Company Name", searchable: true },
+  { key: "contactPersonName", label: "Contact Person Name", searchable: true },
+  { key: "contactNumber", label: "Contact Number", searchable: true },
+  { key: "billingAddress", label: "Billing Address", searchable: true },
+  { key: "shippingAddress", label: "Shipping Address", searchable: true },
+  { key: "paymentMode", label: "Payment Mode", searchable: true },
+  { key: "quotationCopyHistory", label: "Quotation Copy", searchable: true },
+  { key: "paymentTerms", label: "Payment Terms(In Days)", searchable: true },
+  { key: "transportMode", label: "Transport Mode", searchable: true },
+  { key: "freightType", label: "Freight Type", searchable: true },
+  { key: "destination", label: "Destination", searchable: true },
+  { key: "poNumber", label: "Po Number", searchable: true },
+  { key: "quotationCopy", label: "Quotation Copy", searchable: true },
+  { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
+  { key: "offer", label: "Offer", searchable: true },
+  { key: "conveyedForRegistration", label: "Conveyed For Registration Form", searchable: true },
+  { key: "qty", label: "Qty", searchable: true },
+  { key: "amount", label: "Amount", searchable: true },
+  { key: "approvedName", label: "Approved Name", searchable: true },
+  { key: "calibrationRequired", label: "Calibration Certificate Required", searchable: true },
+  { key: "certificateCategory", label: "Certificate Category", searchable: true },
+  { key: "installationRequired", label: "Installation Required", searchable: true },
+  { key: "ewayBillDetails", label: "Eway Bill Details", searchable: true },
+  { key: "ewayBillAttachment", label: "Eway Bill Attachment", searchable: true },
+  { key: "srnNumber", label: "Srn Number", searchable: true },
+  { key: "srnNumberAttachment", label: "Srn Number Attachment", searchable: true },
+  { key: "attachment", label: "Attachment", searchable: true },
+  { key: "itemName1", label: "Item Name 1", searchable: true },
+  { key: "quantity1", label: "Quantity 1", searchable: true },
+  { key: "itemName2", label: "Item Name 2", searchable: true },
+  { key: "quantity2", label: "Quantity 2", searchable: true },
+  { key: "itemName3", label: "Item Name 3", searchable: true },
+  { key: "quantity3", label: "Quantity 3", searchable: true },
+  { key: "itemName4", label: "Item Name 4", searchable: true },
+  { key: "quantity4", label: "Quantity 4", searchable: true },
+  { key: "itemName5", label: "Item Name 5", searchable: true },
+  { key: "quantity5", label: "Quantity 5", searchable: true },
+  { key: "itemName6", label: "Item Name 6", searchable: true },
+  { key: "quantity6", label: "Quantity 6", searchable: true },
+  { key: "itemName7", label: "Item Name 7", searchable: true },
+  { key: "quantity7", label: "Quantity 7", searchable: true },
+  { key: "itemName8", label: "Item Name 8", searchable: true },
+  { key: "quantity8", label: "Quantity 8", searchable: true },
+  { key: "itemName9", label: "Item Name 9", searchable: true },
+  { key: "quantity9", label: "Quantity 9", searchable: true },
+  { key: "itemName10", label: "Item Name 10", searchable: true },
+  { key: "quantity10", label: "Quantity 10", searchable: true },
+  { key: "itemName11", label: "Item Name 11", searchable: true },
+  { key: "quantity11", label: "Quantity 11", searchable: true },
+  { key: "itemName12", label: "Item Name 12", searchable: true },
+  { key: "quantity12", label: "Quantity 12", searchable: true },
+  { key: "itemName13", label: "Item Name 13", searchable: true },
+  { key: "quantity13", label: "Quantity 13", searchable: true },
+  { key: "itemName14", label: "Item Name 14", searchable: true },
+  { key: "quantity14", label: "Quantity 14", searchable: true },
+  { key: "itemName15", label: "Item Name 15", searchable: true },
+  { key: "quantity15", label: "Quantity 15", searchable: true },
+  { key: "totalQty", label: "Total Qty", searchable: true },
+  { key: "remarks", label: "Remarks", searchable: true },
+]
 
 const convertFileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -44,17 +173,151 @@ export default function DispFormPage() {
   const [uploading, setUploading] = useState(false)
   const [remarks, setRemarks] = useState<string>("")
 
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedColumn, setSelectedColumn] = useState("all")
+  const [visiblePendingColumns, setVisiblePendingColumns] = useState(
+    pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+  const [visibleHistoryColumns, setVisibleHistoryColumns] = useState(
+    historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
+  )
+
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
   const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
-  const SHEET_NAME = "ORDER-DISPATCH"
+  const PENDING_SHEET_NAME = "ORDER-DISPATCH"
+  const HISTORY_SHEET_NAME = "DISPATCH-DELIVERY"
 
-  const fetchAllOrders = async () => {
+  const formatGoogleSheetsDate = (dateValue) => {
+    if (!dateValue) return ""
+
+    // Handle the case where date comes as "Date(2025,5,21)"
+    if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
+      try {
+        // Extract the numbers between parentheses
+        const dateParts = dateValue.match(/Date$$(\d+),(\d+),(\d+)$$/)
+        if (dateParts && dateParts.length === 4) {
+          const year = Number.parseInt(dateParts[1])
+          const month = Number.parseInt(dateParts[2]) // Note: months are 0-indexed in JS
+          const day = Number.parseInt(dateParts[3])
+
+          // Create a date object (month is 0-indexed in JS, so no need to subtract 1)
+          const date = new Date(year, month, day)
+
+          // Format as dd/mm/yyyy
+          const formattedDay = String(date.getDate()).padStart(2, "0")
+          const formattedMonth = String(date.getMonth() + 1).padStart(2, "0") // +1 because months are 0-indexed
+          const formattedYear = date.getFullYear()
+
+          return `${formattedDay}/${formattedMonth}/${formattedYear}`
+        }
+      } catch (e) {
+        console.error("Error parsing date string:", e)
+      }
+    }
+
+    // Handle case where date comes as a serial number or string
+    try {
+      // If it's a number (serial date value from Google Sheets)
+      if (typeof dateValue === "number") {
+        // Google Sheets serial date starts from Dec 30, 1899
+        const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000))
+        const formattedDay = String(date.getDate()).padStart(2, "0")
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, "0")
+        const formattedYear = date.getFullYear()
+
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`
+      }
+
+      // If it's already a date string in some format
+      const date = new Date(dateValue)
+      if (!isNaN(date.getTime())) {
+        const formattedDay = String(date.getDate()).padStart(2, "0")
+        const formattedMonth = String(date.getMonth() + 1).padStart(2, "0")
+        const formattedYear = date.getFullYear()
+
+        return `${formattedDay}/${formattedMonth}/${formattedYear}`
+      }
+    } catch (e) {
+      console.error("Error parsing date value:", e)
+    }
+
+    // If all else fails, return the original value
+    return dateValue
+  }
+
+  // Filter orders based on search term and selected column
+  const filteredOrders = useMemo(() => {
+    if (!searchTerm) return orders
+
+    return orders.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = pendingColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase())
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+        return fieldValue.includes(searchTerm.toLowerCase())
+      }
+    })
+  }, [orders, searchTerm, selectedColumn])
+
+  // Filter processed orders based on search term
+  const filteredProcessedOrders = useMemo(() => {
+    if (!searchTerm) return processedOrders
+
+    return processedOrders.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = historyColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase())
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+        return fieldValue.includes(searchTerm.toLowerCase())
+      }
+    })
+  }, [processedOrders, searchTerm, selectedColumn])
+
+  // Column visibility handlers
+  const togglePendingColumn = (columnKey) => {
+    setVisiblePendingColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const toggleHistoryColumn = (columnKey) => {
+    setVisibleHistoryColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }))
+  }
+
+  const showAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllPendingColumns = () => {
+    setVisiblePendingColumns(pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: col.key === "actions" }), {}))
+  }
+
+  const showAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}))
+  }
+
+  const hideAllHistoryColumns = () => {
+    setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: false }), {}))
+  }
+
+  const fetchPendingOrders = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${PENDING_SHEET_NAME}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -65,55 +328,223 @@ export default function DispFormPage() {
       const data = JSON.parse(jsonData)
 
       if (data && data.table && data.table.rows) {
-        const pendingData: any[] = []
-        const processedData: any[] = []
+        const ordersData = []
 
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
-            const actualRowIndex = index + 2
-            const statusColumn = row.c[49] ? row.c[49].v?.toString().toLowerCase() : "" // Column AX (index 49)
+            const actualRowIndex = index + 7
 
-            const order = {
-              rowIndex: actualRowIndex,
-              id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
-              companyName: row.c[3] ? row.c[3].v : "",
-              contactPerson: row.c[4] ? row.c[4].v : "",
-              contactNumber: row.c[5] ? row.c[5].v : "",
-              poNumber: row.c[35] ? row.c[35].v : "",
-              paymentMode: row.c[8] ? row.c[8].v : "",
-              paymentTerms: row.c[9] ? row.c[9].v : "",
-              quantity: row.c[41] ? row.c[41].v : "",
-              transportMode: row.c[32] ? row.c[32].v : "",
-              destination: row.c[32] ? row.c[32].v : "",
-              amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
-              status: statusColumn === "completed" ? "dispatch-processed" : "senior-approved",
-              fullRowData: row.c,
-            }
+            // Check if this order needs DISP form processing
+            // You can adjust this logic based on your requirements
+            // const hasColumnBR = row.c[69] && row.c[69].v !== null && row.c[69].v !== ""
+            // const hasColumnBS = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
 
-            if (statusColumn === "pending") {
-              pendingData.push(order)
-            } else if (statusColumn === "completed") {
-              processedData.push(order)
+            // For pending orders: show rows where BR and BS have data (senior approved)
+            // if (hasColumnBR && hasColumnBS) {
+            // Column AX (index 49) - Dispatch Status should be "PENDING"
+            const dispatchStatus = row.c[49] && row.c[49].v ? row.c[49].v.toString().toUpperCase() : ""
+
+            // For pending orders: show rows where AX column has "PENDING" value
+            if (dispatchStatus === "PENDING") {
+              const order = {
+                rowIndex: actualRowIndex,
+                timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
+                // Map all columns B to BZ
+                orderNo: row.c[1] ? row.c[1].v : "", // Column B
+                quotationNo: row.c[2] ? row.c[2].v : "", // Column C
+                companyName: row.c[3] ? row.c[3].v : "", // Column D
+                contactPersonName: row.c[4] ? row.c[4].v : "", // Column E
+                contactNumber: row.c[5] ? row.c[5].v : "", // Column F
+                billingAddress: row.c[6] ? row.c[6].v : "", // Column G
+                shippingAddress: row.c[7] ? row.c[7].v : "", // Column H
+                paymentMode: row.c[8] ? row.c[8].v : "", // Column I
+                paymentTerms: row.c[9] ? row.c[9].v : "", // Column J
+                referenceName: row.c[10] ? row.c[10].v : "", // Column K
+                email: row.c[11] ? row.c[11].v : "", // Column L
+                itemName1: row.c[12] ? row.c[12].v : "", // Column M
+                quantity1: row.c[13] ? row.c[13].v : "", // Column N
+                itemName2: row.c[14] ? row.c[14].v : "", // Column O
+                quantity2: row.c[15] ? row.c[15].v : "", // Column P
+                itemName3: row.c[16] ? row.c[16].v : "", // Column Q
+                quantity3: row.c[17] ? row.c[17].v : "", // Column R
+                itemName4: row.c[18] ? row.c[18].v : "", // Column S
+                quantity4: row.c[19] ? row.c[19].v : "", // Column T
+                itemName5: row.c[20] ? row.c[20].v : "", // Column U
+                quantity5: row.c[21] ? row.c[21].v : "", // Column V
+                itemName6: row.c[22] ? row.c[22].v : "", // Column W
+                quantity6: row.c[23] ? row.c[23].v : "", // Column X
+                itemName7: row.c[24] ? row.c[24].v : "", // Column Y
+                quantity7: row.c[25] ? row.c[25].v : "", // Column Z
+                itemName8: row.c[26] ? row.c[26].v : "", // Column AA
+                quantity8: row.c[27] ? row.c[27].v : "", // Column AB
+                itemName9: row.c[28] ? row.c[28].v : "", // Column AC
+                quantity9: row.c[29] ? row.c[29].v : "", // Column AD
+                itemName10: row.c[30] ? row.c[30].v : "", // Column AE
+                quantity10: row.c[31] ? row.c[31].v : "", // Column AF
+                transportMode: row.c[32] ? row.c[32].v : "", // Column AG
+                freightType: row.c[33] ? row.c[33].v : "", // Column AH
+                destination: row.c[34] ? row.c[34].v : "", // Column AI
+                poNumber: row.c[35] ? row.c[35].v : "", // Column AJ
+                quotationCopy: row.c[36] ? row.c[36].v : "", // Column AK
+                acceptanceCopy: row.c[37] ? row.c[37].v : "", // Column AL
+                offerShow: row.c[38] ? row.c[38].v : "", // Column AM
+                conveyedForRegistration: row.c[39] ? row.c[39].v : "", // Column AN
+                totalOrderQty: row.c[40] ? row.c[40].v : "", // Column AO
+                amount: row.c[41] ? row.c[41].v : "", // Column AP
+                totalDispatch: row.c[42] ? row.c[42].v : "", // Column AQ
+                quantityDelivered: row.c[43] ? row.c[43].v : "", // Column AR
+                orderCancel: row.c[44] ? row.c[44].v : "", // Column AS
+                pendingDeliveryQty: row.c[45] ? row.c[45].v : "", // Column AT
+                pendingDispatchQty: row.c[46] ? row.c[46].v : "", // Column AU
+                materialReturn: row.c[47] ? row.c[47].v : "", // Column AV
+                deliveryStatus: row.c[48] ? row.c[48].v : "", // Column AW
+                dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
+                dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
+                deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
+                // Keep old field names for backward compatibility
+                id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                quantity: row.c[40] ? row.c[40].v : "",
+                fullRowData: row.c,
+              }
+
+              ordersData.push(order)
             }
           }
         })
 
-        setOrders(pendingData)
-        setProcessedOrders(processedData)
+        setOrders(ordersData)
       }
     } catch (err: any) {
-      console.error("Error fetching orders data:", err)
+      console.error("Error fetching pending orders data:", err)
       setError(err.message)
       setOrders([])
-      setProcessedOrders([])
     } finally {
       setLoading(false)
     }
   }
 
+  const fetchProcessedOrders = async () => {
+    setProcessedLoading(true)
+
+    try {
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${HISTORY_SHEET_NAME}`
+      const response = await fetch(sheetUrl)
+      const text = await response.text()
+
+      const jsonStart = text.indexOf("{")
+      const jsonEnd = text.lastIndexOf("}") + 1
+      const jsonData = text.substring(jsonStart, jsonEnd)
+
+      const data = JSON.parse(jsonData)
+
+      if (data && data.table && data.table.rows) {
+        const processedOrdersData = []
+
+        data.table.rows.slice(6).forEach((row, index) => {
+          if (row.c) {
+            const actualRowIndex = index + 7
+
+            // Replace the existing condition with:
+            // Column B (index 1) should have a value
+            const hasOrderNo = row.c[1] && row.c[1].v !== null && row.c[1].v !== ""
+
+            // For processed orders: show rows where column B has a value
+            if (hasOrderNo) {
+              const processedOrder = {
+                rowIndex: actualRowIndex,
+                timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
+                // Map all columns B to BZ for DISPATCH-DELIVERY sheet
+                orderNo: row.c[1] ? row.c[1].v : "", // Column B
+                quotationNo: row.c[2] ? row.c[2].v : "", // Column C
+                companyName: row.c[3] ? row.c[3].v : "", // Column D
+                contactPersonName: row.c[4] ? row.c[4].v : "", // Column E
+                contactNumber: row.c[5] ? row.c[5].v : "", // Column F
+                billingAddress: row.c[6] ? row.c[6].v : "", // Column G
+                shippingAddress: row.c[7] ? row.c[7].v : "", // Column H
+                paymentMode: row.c[8] ? row.c[8].v : "", // Column I
+                quotationCopyHistory: row.c[9] ? row.c[9].v : "", // Column J
+                paymentTerms: row.c[10] ? row.c[10].v : "", // Column K
+                transportMode: row.c[11] ? row.c[11].v : "", // Column L
+                freightType: row.c[12] ? row.c[12].v : "", // Column M
+                destination: row.c[13] ? row.c[13].v : "", // Column N
+                poNumber: row.c[14] ? row.c[14].v : "", // Column O
+                quotationCopy: row.c[15] ? row.c[15].v : "", // Column P
+                acceptanceCopy: row.c[16] ? row.c[16].v : "", // Column Q
+                offer: row.c[17] ? row.c[17].v : "", // Column R
+                conveyedForRegistration: row.c[18] ? row.c[18].v : "", // Column S
+                qty: row.c[19] ? row.c[19].v : "", // Column T
+                amount: row.c[20] ? row.c[20].v : "", // Column U
+                approvedName: row.c[21] ? row.c[21].v : "", // Column V
+                calibrationRequired: row.c[22] ? row.c[22].v : "", // Column W
+                certificateCategory: row.c[23] ? row.c[23].v : "", // Column X
+                installationRequired: row.c[24] ? row.c[24].v : "", // Column Y
+                ewayBillDetails: row.c[25] ? row.c[25].v : "", // Column Z
+                ewayBillAttachment: row.c[26] ? row.c[26].v : "", // Column AA
+                srnNumber: row.c[27] ? row.c[27].v : "", // Column AB
+                srnNumberAttachment: row.c[28] ? row.c[28].v : "", // Column AC
+                attachment: row.c[29] ? row.c[29].v : "", // Column AD
+                itemName1: row.c[30] ? row.c[30].v : "", // Column AE
+                quantity1: row.c[31] ? row.c[31].v : "", // Column AF
+                itemName2: row.c[32] ? row.c[32].v : "", // Column AG
+                quantity2: row.c[33] ? row.c[33].v : "", // Column AH
+                itemName3: row.c[34] ? row.c[34].v : "", // Column AI
+                quantity3: row.c[35] ? row.c[35].v : "", // Column AJ
+                itemName4: row.c[36] ? row.c[36].v : "", // Column AK
+                quantity4: row.c[37] ? row.c[37].v : "", // Column AL
+                itemName5: row.c[38] ? row.c[38].v : "", // Column AM
+                quantity5: row.c[39] ? row.c[39].v : "", // Column AN
+                itemName6: row.c[40] ? row.c[40].v : "", // Column AO
+                quantity6: row.c[41] ? row.c[41].v : "", // Column AP
+                itemName7: row.c[42] ? row.c[42].v : "", // Column AQ
+                quantity7: row.c[43] ? row.c[43].v : "", // Column AR
+                itemName8: row.c[44] ? row.c[44].v : "", // Column AS
+                quantity8: row.c[45] ? row.c[45].v : "", // Column AT
+                itemName9: row.c[46] ? row.c[46].v : "", // Column AU
+                quantity9: row.c[47] ? row.c[47].v : "", // Column AV
+                itemName10: row.c[48] ? row.c[48].v : "", // Column AW
+                quantity10: row.c[49] ? row.c[49].v : "", // Column AX
+                itemName11: row.c[50] ? row.c[50].v : "", // Column AY
+                quantity11: row.c[51] ? row.c[51].v : "", // Column AZ
+                itemName12: row.c[52] ? row.c[52].v : "", // Column BA
+                quantity12: row.c[53] ? row.c[53].v : "", // Column BB
+                itemName13: row.c[54] ? row.c[54].v : "", // Column BC
+                quantity13: row.c[55] ? row.c[55].v : "", // Column BD
+                itemName14: row.c[56] ? row.c[56].v : "", // Column BE
+                quantity14: row.c[57] ? row.c[57].v : "", // Column BF
+                itemName15: row.c[58] ? row.c[58].v : "", // Column BG
+                quantity15: row.c[59] ? row.c[59].v : "", // Column BH
+                totalQty: row.c[60] ? row.c[60].v : "", // Column BI
+                remarks: row.c[61] ? row.c[61].v : "", // Column BJ
+                // Keep old field names for backward compatibility
+                id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                contactPerson: row.c[4] ? row.c[4].v : "",
+                quantity: row.c[19] ? row.c[19].v : "",
+                fullRowData: row.c,
+              }
+
+              processedOrdersData.push(processedOrder)
+            }
+          }
+        })
+
+        setProcessedOrders(processedOrdersData)
+      }
+    } catch (err: any) {
+      console.error("Error fetching processed orders data:", err)
+      setProcessedOrders([])
+    } finally {
+      setProcessedLoading(false)
+    }
+  }
+
   useEffect(() => {
-    fetchAllOrders()
+    fetchPendingOrders()
   }, [])
+
+  const handleProcessedTabClick = async () => {
+    await fetchProcessedOrders()
+  }
 
   const handleProcess = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId)
@@ -123,21 +554,22 @@ export default function DispFormPage() {
     setCalibrationRequired("")
     setCalibrationType("")
     setInstallationRequired("")
-    
+
     // Extract items from the order data (columns M to AF)
     const extractedItems: Array<{ name: string; qty: number }> = []
-    for (let i = 12; i <= 31; i += 2) { // Columns M (12) to AF (31)
+    for (let i = 12; i <= 31; i += 2) {
+      // Columns M (12) to AF (31)
       const nameCol = order.fullRowData[i]
       const qtyCol = order.fullRowData[i + 1]
-      
+
       if (nameCol && nameCol.v && nameCol.v.toString().trim() !== "") {
         extractedItems.push({
           name: nameCol.v.toString(),
-          qty: qtyCol ? Number(qtyCol.v) || 0 : 0
+          qty: qtyCol ? Number(qtyCol.v) || 0 : 0,
         })
       }
     }
-    
+
     setItems(extractedItems)
     setEwayBillDetails("")
     setEwayBillAttachment(null)
@@ -145,9 +577,8 @@ export default function DispFormPage() {
     setSrnNumberAttachment(null)
     setPaymentAttachment(null)
     setIsDialogOpen(true)
-    setRemarks("") // Add this line
+    setRemarks("")
   }
-
 
   const addItem = () => {
     setItems([...items, { name: "", qty: 0 }])
@@ -166,13 +597,13 @@ export default function DispFormPage() {
   const updateOrderStatus = async (order: any, dispatchData: any) => {
     try {
       setUploading(true)
-  
+
       const formData = new FormData()
       formData.append("sheetName", "DISPATCH-DELIVERY")
-      formData.append("action", "insert") // Changed to "insert" to always create new row
+      formData.append("action", "insert")
       formData.append("orderNo", order.id)
-  
-      // Handle file uploads (same as before)
+
+      // Handle file uploads
       if (ewayBillAttachment) {
         try {
           const base64Data = await convertFileToBase64(ewayBillAttachment)
@@ -183,7 +614,7 @@ export default function DispFormPage() {
           console.error("Error converting Eway Bill file:", error)
         }
       }
-  
+
       if (srnNumberAttachment) {
         try {
           const base64Data = await convertFileToBase64(srnNumberAttachment)
@@ -194,7 +625,7 @@ export default function DispFormPage() {
           console.error("Error converting SRN file:", error)
         }
       }
-  
+
       if (paymentAttachment) {
         try {
           const base64Data = await convertFileToBase64(paymentAttachment)
@@ -205,34 +636,30 @@ export default function DispFormPage() {
           console.error("Error converting Payment file:", error)
         }
       }
-  
-      const rowData = new Array(100).fill("") // Make sure this is large enough for all columns
+
+      const rowData = new Array(100).fill("")
 
       // Add today's date in column A (index 0)
-      const today = new Date();
+      const today = new Date()
+      const formattedDate =
+        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
 
-      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-                            `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-      
       rowData[0] = formattedDate
-  
-      // Add order number in column B (index 1)
       rowData[1] = order.id
-  
-      // Map other data to columns
-      rowData[22] = dispatchData.calibrationRequired // Column X
-      rowData[23] = dispatchData.calibrationType || "" // Column Y
-      rowData[24] = dispatchData.installationRequired // Column Z
-      rowData[25] = dispatchData.ewayBillDetails // Column AB
-      rowData[27] = dispatchData.srnNumber // Column AC
-      rowData[61] = dispatchData.remarks || "" // Column BI (index 61)
-  
+      rowData[22] = dispatchData.calibrationRequired
+      rowData[23] = dispatchData.calibrationType || ""
+      rowData[24] = dispatchData.installationRequired
+      rowData[25] = dispatchData.ewayBillDetails
+      rowData[27] = dispatchData.srnNumber
+      rowData[61] = dispatchData.remarks || ""
+
       // Process items array
       const processedItems = dispatchData.items.map((item: any) => ({
         name: item.name || "",
-        qty: item.qty || 0
+        qty: item.qty || 0,
       }))
-  
+
       // Assign items to columns starting from AA (index 30)
       let columnIndex = 30
       processedItems.forEach((item: any) => {
@@ -242,20 +669,19 @@ export default function DispFormPage() {
           columnIndex += 2
         }
       })
-  
+
       formData.append("rowData", JSON.stringify(rowData))
-  
-  
+
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       })
-  
+
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`)
       }
-  
+
       let result
       try {
         const responseText = await updateResponse.text()
@@ -263,9 +689,9 @@ export default function DispFormPage() {
       } catch (parseError) {
         result = { success: true }
       }
-  
+
       if (result.success !== false) {
-        await fetchAllOrders()
+        await fetchPendingOrders()
         return { success: true, fileUrls: result.fileUrls }
       } else {
         throw new Error(result.error || "Update failed")
@@ -292,7 +718,7 @@ export default function DispFormPage() {
       items,
       ewayBillDetails,
       srnNumber,
-      remarks, // Add this line
+      remarks,
       processedAt: new Date().toISOString(),
     }
 
@@ -322,9 +748,45 @@ export default function DispFormPage() {
   const handleRefresh = async () => {
     setLoading(true)
     setProcessedLoading(true)
-    await fetchAllOrders()
+    await fetchPendingOrders()
+    await fetchProcessedOrders()
     setLoading(false)
     setProcessedLoading(false)
+  }
+
+  const renderCellContent = (order, columnKey) => {
+    const value = order[columnKey]
+
+    switch (columnKey) {
+      case "actions":
+        return (
+          <Button size="sm" onClick={() => handleProcess(order.id)}>
+            Process
+          </Button>
+        )
+      case "quotationCopy":
+      case "quotationCopyHistory":
+        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      case "acceptanceCopy":
+        return value && (value.startsWith("http") || value.startsWith("https")) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            <Badge variant="default">Link</Badge>
+          </a>
+        ) : (
+          <Badge variant="secondary">{value || "N/A"}</Badge>
+        )
+      case "calibrationRequired":
+      case "installationRequired":
+        return <Badge variant={value === "YES" ? "default" : "destructive"}>{value || "N/A"}</Badge>
+      case "billingAddress":
+      case "shippingAddress":
+      case "remarks":
+        return <div className="max-w-[150px] truncate">{value}</div>
+      case "amount":
+        return value ? `₹${Number(value).toLocaleString()}` : ""
+      default:
+        return value || ""
+    }
   }
 
   if (loading) {
@@ -345,7 +807,7 @@ export default function DispFormPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600">Error Loading Data</h1>
             <p className="text-muted-foreground mt-2">{error}</p>
-            <Button onClick={fetchAllOrders} className="mt-4">
+            <Button onClick={fetchPendingOrders} className="mt-4">
               <RefreshCw className="h-4 w-4 mr-2" />
               Retry
             </Button>
@@ -360,7 +822,9 @@ export default function DispFormPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">DISP Form</h1>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              DISP Form
+            </h1>
             <p className="text-muted-foreground">Process dispatch forms for approved orders</p>
           </div>
           <Button onClick={handleRefresh} variant="outline">
@@ -369,62 +833,106 @@ export default function DispFormPage() {
           </Button>
         </div>
 
+        {/* Search and Filter Controls */}
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="pending">Pending ({orders.length})</TabsTrigger>
-            <TabsTrigger value="history">History ({processedOrders.length})</TabsTrigger>
+            <TabsTrigger value="pending">Pending ({filteredOrders.length})</TabsTrigger>
+            <TabsTrigger value="history" onClick={handleProcessedTabClick}>
+              History ({filteredProcessedOrders.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Pending DISP Forms</CardTitle>
-                <CardDescription>Orders waiting for dispatch form processing</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Pending DISP Forms</CardTitle>
+                    <CardDescription>Orders waiting for dispatch form processing</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {pendingColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`pending-${column.key}`}
+                              checked={visiblePendingColumns[column.key]}
+                              onCheckedChange={() => togglePendingColumn(column.key)}
+                            />
+                            <Label htmlFor={`pending-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Company Name</TableHead>
-                        <TableHead>Contact Person</TableHead>
-                        <TableHead>Contact Number</TableHead>
-                        <TableHead>PO Number</TableHead>
-                        <TableHead>Payment Mode</TableHead>
-                        <TableHead>Payment Terms</TableHead>
-                        <TableHead>Quantity</TableHead>
-                        <TableHead>Transport Mode</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                        {pendingColumns
+                          .filter((col) => visiblePendingColumns[col.key])
+                          .map((column) => (
+                            <TableHead key={column.key}>{column.label}</TableHead>
+                          ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {orders.map((order) => (
+                      {filteredOrders.map((order) => (
                         <TableRow key={order.id}>
-                          <TableCell className="font-medium">{order.id}</TableCell>
-                          <TableCell>{order.companyName}</TableCell>
-                          <TableCell>{order.contactPerson}</TableCell>
-                          <TableCell>{order.contactNumber}</TableCell>
-                          <TableCell>{order.poNumber}</TableCell>
-                          <TableCell>{order.paymentMode}</TableCell>
-                          <TableCell>{order.paymentTerms}</TableCell>
-                          <TableCell>{order.quantity}</TableCell>
-                          <TableCell>{order.transportMode}</TableCell>
-                          <TableCell>{order.destination}</TableCell>
-                          <TableCell>₹{order.amount.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{order.status}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button size="sm" onClick={() => handleProcess(order.id)}>
-                              Process
-                            </Button>
-                          </TableCell>
+                          {pendingColumns
+                            .filter((col) => visiblePendingColumns[col.key])
+                            .map((column) => (
+                              <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                            ))}
                         </TableRow>
                       ))}
+                      {filteredOrders.length === 0 && (
+                        <TableRow>
+                          <TableCell
+                            colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                            className="text-center text-muted-foreground"
+                          >
+                            {searchTerm
+                              ? "No orders match your search criteria"
+                              : "No pending orders found in Google Sheets"}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -435,8 +943,47 @@ export default function DispFormPage() {
           <TabsContent value="history" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>DISP Form History</CardTitle>
-                <CardDescription>Previously processed dispatch forms</CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>DISP Form History</CardTitle>
+                    <CardDescription>Previously processed dispatch forms</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {historyColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`history-${column.key}`}
+                              checked={visibleHistoryColumns[column.key]}
+                              onCheckedChange={() => toggleHistoryColumn(column.key)}
+                            />
+                            <Label htmlFor={`history-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </CardHeader>
               <CardContent>
                 {processedLoading ? (
@@ -448,46 +995,33 @@ export default function DispFormPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Company Name</TableHead>
-                          <TableHead>Contact Person</TableHead>
-                          <TableHead>Contact Number</TableHead>
-                          <TableHead>PO Number</TableHead>
-                          <TableHead>Payment Mode</TableHead>
-                          <TableHead>Payment Terms</TableHead>
-                          <TableHead>Quantity</TableHead>
-                          <TableHead>Transport Mode</TableHead>
-                          <TableHead>Destination</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
+                          {historyColumns
+                            .filter((col) => visibleHistoryColumns[col.key])
+                            .map((column) => (
+                              <TableHead key={column.key}>{column.label}</TableHead>
+                            ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {processedOrders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-medium">{order.id}</TableCell>
-                            <TableCell>{order.companyName}</TableCell>
-                            <TableCell>{order.contactPerson}</TableCell>
-                            <TableCell>{order.contactNumber}</TableCell>
-                            <TableCell>{order.poNumber}</TableCell>
-                            <TableCell>{order.paymentMode}</TableCell>
-                            <TableCell>{order.paymentTerms}</TableCell>
-                            <TableCell>{order.quantity}</TableCell>
-                            <TableCell>{order.transportMode}</TableCell>
-                            <TableCell>{order.destination}</TableCell>
-                            <TableCell>₹{order.amount.toLocaleString()}</TableCell>
-                            <TableCell>
-                              <Badge variant="default">{order.status}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button size="sm" variant="outline" onClick={() => handleView(order)}>
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
-                              </Button>
-                            </TableCell>
+                        {filteredProcessedOrders.map((order) => (
+                          <TableRow key={order.orderNo}>
+                            {historyColumns
+                              .filter((col) => visibleHistoryColumns[col.key])
+                              .map((column) => (
+                                <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                              ))}
                           </TableRow>
                         ))}
+                        {filteredProcessedOrders.length === 0 && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                              className="text-center text-muted-foreground"
+                            >
+                              {searchTerm ? "No orders match your search criteria" : "No processed orders found"}
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -532,7 +1066,6 @@ export default function DispFormPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="LAB">LAB</SelectItem>
-                      {/* <SelectItem value="AUTO LEVEL">AUTO LEVEL</SelectItem> */}
                       <SelectItem value="TOTAL STATION">TOTAL STATION</SelectItem>
                     </SelectContent>
                   </Select>
@@ -601,45 +1134,40 @@ export default function DispFormPage() {
               </div>
 
               <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Items (Max 15)</Label>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  onClick={addItem}
-                  disabled={items.length >= 15}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Item ({items.length}/15)
-                </Button>
-              </div>
-              {items.map((item, index) => (
-                <div key={index} className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <Label htmlFor={`itemName-${index}`}>Item Name</Label>
-                    <Input
-                      id={`itemName-${index}`}
-                      value={item.name}
-                      onChange={(e) => updateItem(index, "name", e.target.value)}
-                      placeholder="Enter item name"
-                    />
-                  </div>
-                  <div className="w-24">
-                    <Label htmlFor={`qty-${index}`}>QTY</Label>
-                    <Input
-                      id={`qty-${index}`}
-                      type="number"
-                      value={item.qty}
-                      onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                  </div>
-                  <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
-                    <Trash2 className="h-4 w-4" />
+                <div className="flex items-center justify-between">
+                  <Label>Items (Max 15)</Label>
+                  <Button type="button" size="sm" onClick={addItem} disabled={items.length >= 15}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Item ({items.length}/15)
                   </Button>
                 </div>
-              ))}
-            </div>
+                {items.map((item, index) => (
+                  <div key={index} className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <Label htmlFor={`itemName-${index}`}>Item Name</Label>
+                      <Input
+                        id={`itemName-${index}`}
+                        value={item.name}
+                        onChange={(e) => updateItem(index, "name", e.target.value)}
+                        placeholder="Enter item name"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Label htmlFor={`qty-${index}`}>QTY</Label>
+                      <Input
+                        id={`qty-${index}`}
+                        type="number"
+                        value={item.qty}
+                        onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="paymentDetails">Payment Details (Attachment) - In case of Advance</Label>
@@ -655,14 +1183,14 @@ export default function DispFormPage() {
               </div>
 
               <div className="space-y-2">
-  <Label htmlFor="remarks">Remarks</Label>
-  <Input
-    id="remarks"
-    value={remarks}
-    onChange={(e) => setRemarks(e.target.value)}
-    placeholder="Enter any additional remarks"
-  />
-</div>
+                <Label htmlFor="remarks">Remarks</Label>
+                <Input
+                  id="remarks"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Enter any additional remarks"
+                />
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -749,3 +1277,4 @@ export default function DispFormPage() {
     </MainLayout>
   )
 }
+
