@@ -261,7 +261,7 @@ export default function CalibrationPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: "Available",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -305,7 +305,7 @@ export default function CalibrationPage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: "Available",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // Warehouse material history headers (BV to CC)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
                 afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
@@ -417,7 +417,7 @@ export default function CalibrationPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: "Available",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -461,7 +461,7 @@ export default function CalibrationPage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: "Available",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // Warehouse material history headers (BV to CC)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
                 afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
@@ -797,14 +797,14 @@ export default function CalibrationPage() {
         )
       case "quotationCopy":
       case "quotationCopy2":
-        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "Available"}</Badge>
+        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
         return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
             <Badge variant="default">Link</Badge>
           </a>
         ) : (
-          <Badge variant="secondary">{value || "Available"}</Badge>
+          <Badge variant="secondary">{value || ""}</Badge>
         )
       case "calibrationCertRequired":
       case "installationRequired":
@@ -816,6 +816,12 @@ export default function CalibrationPage() {
       case "warehouseRemarks":
       case "reason":
         return <div className="max-w-[150px] truncate">{value || ""}</div>
+        case "acceptanceCopy":
+    case "ewayBillAttachment":
+    case "srnNumberAttachment":
+    case "attachment":
+    case "invoiceUpload":
+    case "ewayBillUpload":
       case "beforePhotoUpload":
       case "afterPhotoUpload":
       case "biltyUpload":

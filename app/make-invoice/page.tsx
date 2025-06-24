@@ -642,7 +642,7 @@ export default function MakeInvoicePage() {
 
   const renderCellContent = (order, columnKey) => {
     const value = order[columnKey]
-
+  
     switch (columnKey) {
       case "actions":
         return (
@@ -654,12 +654,17 @@ export default function MakeInvoicePage() {
       case "quotationCopy2":
         return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
+      case "ewayBillAttachment":
+      case "srnNumberAttachment":
+      case "attachment":
+      case "invoiceUpload":
+      case "ewayBillUpload":
         return value && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
-            <Badge variant="default">Link</Badge>
+            <Badge variant="default">View Attachment</Badge>
           </a>
         ) : (
-          <Badge variant="secondary">{value || "Available"}</Badge>
+          <Badge variant="secondary">{value || "N/A"}</Badge>
         )
       case "calibrationCertRequired":
       case "installationRequired":
@@ -675,6 +680,9 @@ export default function MakeInvoicePage() {
             {value === "Advance" && <Badge variant="secondary">Required</Badge>}
           </div>
         )
+      case "amount":
+      case "totalBillAmount":
+        return value ? `₹${Number(value).toLocaleString()}` : ""
       default:
         return value || ""
     }

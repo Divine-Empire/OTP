@@ -754,40 +754,44 @@ export default function DispFormPage() {
     setProcessedLoading(false)
   }
 
-  const renderCellContent = (order, columnKey) => {
-    const value = order[columnKey]
+  // Update the renderCellContent function to handle these fields as hyperlinks
+const renderCellContent = (order, columnKey) => {
+  const value = order[columnKey]
 
-    switch (columnKey) {
-      case "actions":
-        return (
-          <Button size="sm" onClick={() => handleProcess(order.id)}>
-            Process
-          </Button>
-        )
-      case "quotationCopy":
-      case "quotationCopyHistory":
-        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
-      case "acceptanceCopy":
-        return value && (value.startsWith("http") || value.startsWith("https")) ? (
-          <a href={value} target="_blank" rel="noopener noreferrer">
-            <Badge variant="default">Link</Badge>
-          </a>
-        ) : (
-          <Badge variant="secondary">{value || "N/A"}</Badge>
-        )
-      case "calibrationRequired":
-      case "installationRequired":
-        return <Badge variant={value === "YES" ? "default" : "destructive"}>{value || "N/A"}</Badge>
-      case "billingAddress":
-      case "shippingAddress":
-      case "remarks":
-        return <div className="max-w-[150px] truncate">{value}</div>
-      case "amount":
-        return value ? `₹${Number(value).toLocaleString()}` : ""
-      default:
-        return value || ""
-    }
+  switch (columnKey) {
+    case "actions":
+      return (
+        <Button size="sm" onClick={() => handleProcess(order.id)}>
+          Process
+        </Button>
+      )
+    case "quotationCopy":
+    case "quotationCopyHistory":
+      return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+    case "acceptanceCopy":
+    case "ewayBillAttachment":
+    case "srnNumberAttachment":
+    case "attachment":
+      return value && (value.startsWith("http") || value.startsWith("https")) ? (
+        <a href={value} target="_blank" rel="noopener noreferrer">
+          <Badge variant="default">View Attachment</Badge>
+        </a>
+      ) : (
+        <Badge variant="secondary">{value || "N/A"}</Badge>
+      )
+    case "calibrationRequired":
+    case "installationRequired":
+      return <Badge variant={value === "YES" ? "default" : "destructive"}>{value || "N/A"}</Badge>
+    case "billingAddress":
+    case "shippingAddress":
+    case "remarks":
+      return <div className="max-w-[150px] truncate">{value}</div>
+    case "amount":
+      return value ? `₹${Number(value).toLocaleString()}` : ""
+    default:
+      return value || ""
   }
+}
 
   if (loading) {
     return (

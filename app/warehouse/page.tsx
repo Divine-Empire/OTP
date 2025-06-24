@@ -238,7 +238,7 @@ export default function WarehousePage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: "Available",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
               }
               pendingOrders.push(order)
             }
@@ -311,7 +311,7 @@ export default function WarehousePage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: "Available",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
                 fullRowData: row.c,
                 warehouseData: {
                   processedAt: buColumn,
@@ -359,7 +359,7 @@ export default function WarehousePage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: "Available",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // BN to BR columns
                 totalQtyHistory: row.c[69] ? row.c[69].v : "",
                 totalBillAmount: row.c[70] ? row.c[70].v : "",
@@ -675,7 +675,7 @@ export default function WarehousePage() {
 
   const renderCellContent = (order, columnKey) => {
     const value = order[columnKey]
-
+  
     switch (columnKey) {
       case "actions":
         return (
@@ -685,14 +685,19 @@ export default function WarehousePage() {
         )
       case "quotationCopy":
       case "quotationCopy2":
-        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "Available"}</Badge>
+        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
+      case "ewayBillAttachment":
+      case "srnNumberAttachment":
+      case "attachment":
+      case "invoiceUpload":
+      case "ewayBillUpload":
         return value && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
-            <Badge variant="default">Link</Badge>
+            <Badge variant="default">View Attachment</Badge>
           </a>
         ) : (
-          <Badge variant="secondary">{value || "Available"}</Badge>
+          <Badge variant="secondary">{value || "N/A"}</Badge>
         )
       case "calibrationCertRequired":
       case "installationRequired":
@@ -700,18 +705,17 @@ export default function WarehousePage() {
       case "billingAddress":
       case "shippingAddress":
       case "remarks":
-      case "warehouseRemarks":
         return <div className="max-w-[150px] truncate">{value || ""}</div>
-      case "beforePhoto":
-      case "afterPhoto":
-      case "biltyUpload":
-        return value && (value.startsWith("http") || value.startsWith("https")) ? (
-          <a href={value} target="_blank" rel="noopener noreferrer">
-            <Badge variant="default">View</Badge>
-          </a>
-        ) : (
-          <Badge variant="secondary">N/A</Badge>
+      case "paymentMode":
+        return (
+          <div className="flex items-center gap-2">
+            {value}
+            {value === "Advance" && <Badge variant="secondary">Required</Badge>}
+          </div>
         )
+      case "amount":
+      case "totalBillAmount":
+        return value ? `₹${Number(value).toLocaleString()}` : ""
       default:
         return value || ""
     }

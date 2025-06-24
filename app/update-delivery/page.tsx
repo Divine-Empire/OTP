@@ -253,7 +253,7 @@ export default function DeliveryPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: "Available",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -297,7 +297,7 @@ export default function DeliveryPage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: "Available",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // Warehouse material history headers (BV to CC)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
                 afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
@@ -418,64 +418,64 @@ export default function DeliveryPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: "Available",
+                quotationCopy: row.c[15] ? row.c[15].v : "",
                 fullRowData: row.c,
                 deliveryData: {
                   processedAt: cvColumn,
                   processedBy: "Current User",
                 },
-                conveyedForRegistration: row.c[17] ? row.c[17].v : "",
-                approvedName: row.c[18] ? row.c[18].v : "",
-                calibrationCertRequired: row.c[21] ? row.c[21].v : "",
-                certificateCategory: row.c[22] ? row.c[22].v : "",
-                installationRequired: row.c[23] ? row.c[23].v : "",
-                ewayBillDetails: row.c[24] ? row.c[24].v : "",
-                ewayBillAttachment: row.c[25] ? row.c[25].v : "",
-                srnNumber: row.c[26] ? row.c[26].v : "",
-                srnNumberAttachment: row.c[27] ? row.c[27].v : "",
-                attachment: row.c[28] ? row.c[28].v : "",
-                itemName1: row.c[29] ? row.c[29].v : "",
-                quantity1: row.c[30] ? row.c[30].v : "",
-                itemName2: row.c[31] ? row.c[31].v : "",
-                quantity2: row.c[32] ? row.c[32].v : "",
-                itemName3: row.c[33] ? row.c[33].v : "",
-                quantity3: row.c[34] ? row.c[34].v : "",
-                itemName4: row.c[35] ? row.c[35].v : "",
-                quantity4: row.c[36] ? row.c[36].v : "",
-                itemName5: row.c[37] ? row.c[37].v : "",
-                quantity5: row.c[38] ? row.c[38].v : "",
-                itemName6: row.c[39] ? row.c[39].v : "",
-                quantity6: row.c[40] ? row.c[40].v : "",
-                itemName7: row.c[41] ? row.c[41].v : "",
-                quantity7: row.c[42] ? row.c[42].v : "",
-                itemName8: row.c[43] ? row.c[43].v : "",
-                quantity8: row.c[44] ? row.c[44].v : "",
-                itemName9: row.c[45] ? row.c[45].v : "",
-                quantity9: row.c[46] ? row.c[46].v : "",
-                itemName10: row.c[47] ? row.c[47].v : "",
-                quantity10: row.c[48] ? row.c[48].v : "",
-                itemName11: row.c[49] ? row.c[49].v : "",
-                quantity11: row.c[50] ? row.c[50].v : "",
-                itemName12: row.c[51] ? row.c[51].v : "",
-                quantity12: row.c[52] ? row.c[52].v : "",
-                itemName13: row.c[53] ? row.c[53].v : "",
-                quantity13: row.c[54] ? row.c[54].v : "",
-                itemName14: row.c[55] ? row.c[55].v : "",
-                quantity14: row.c[56] ? row.c[56].v : "",
-                itemName15: row.c[57] ? row.c[57].v : "",
-                quantity15: row.c[58] ? row.c[58].v : "",
+                conveyedForRegistration: row.c[18] ? row.c[18].v : "",
+                approvedName: row.c[21] ? row.c[21].v : "",
+                calibrationCertRequired: row.c[22] ? row.c[22].v : "",
+                certificateCategory: row.c[23] ? row.c[23].v : "",
+                installationRequired: row.c[24] ? row.c[24].v : "",
+                ewayBillDetails: row.c[25] ? row.c[25].v : "",
+                ewayBillAttachment: row.c[26] ? row.c[26].v : "",
+                srnNumber: row.c[27] ? row.c[27].v : "",
+                srnNumberAttachment: row.c[28] ? row.c[28].v : "",
+                attachment: row.c[29] ? row.c[29].v : "",
+                itemName1: row.c[30] ? row.c[30].v : "",
+                quantity1: row.c[31] ? row.c[31].v : "",
+                itemName2: row.c[32] ? row.c[32].v : "",
+                quantity2: row.c[33] ? row.c[33].v : "",
+                itemName3: row.c[34] ? row.c[34].v : "",
+                quantity3: row.c[35] ? row.c[35].v : "",
+                itemName4: row.c[36] ? row.c[36].v : "",
+                quantity4: row.c[37] ? row.c[37].v : "",
+                itemName5: row.c[38] ? row.c[38].v : "",
+                quantity5: row.c[39] ? row.c[39].v : "",
+                itemName6: row.c[40] ? row.c[40].v : "",
+                quantity6: row.c[41] ? row.c[41].v : "",
+                itemName7: row.c[42] ? row.c[42].v : "",
+                quantity7: row.c[43] ? row.c[43].v : "",
+                itemName8: row.c[44] ? row.c[44].v : "",
+                quantity8: row.c[45] ? row.c[45].v : "",
+                itemName9: row.c[46] ? row.c[46].v : "",
+                quantity9: row.c[47] ? row.c[47].v : "",
+                itemName10: row.c[48] ? row.c[48].v : "",
+                quantity10: row.c[49] ? row.c[49].v : "",
+                itemName11: row.c[50] ? row.c[50].v : "",
+                quantity11: row.c[51] ? row.c[51].v : "",
+                itemName12: row.c[52] ? row.c[52].v : "",
+                quantity12: row.c[53] ? row.c[53].v : "",
+                itemName13: row.c[54] ? row.c[54].v : "",
+                quantity13: row.c[55] ? row.c[55].v : "",
+                itemName14: row.c[56] ? row.c[56].v : "",
+                quantity14: row.c[57] ? row.c[57].v : "",
+                itemName15: row.c[58] ? row.c[58].v : "",
+                quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: "Available",
+                acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // Warehouse material history headers (BV to CC)
-                beforePhotoUpload: row.c[76] ? row.c[76].v : "", // Column BV
-                afterPhotoUpload: row.c[77] ? row.c[77].v : "", // Column BW
-                biltyUpload: row.c[78] ? row.c[78].v : "", // Column BX
-                transporterName: row.c[79] ? row.c[79].v : "", // Column BY
-                transporterContact: row.c[80] ? row.c[80].v : "", // Column BZ
-                biltyNumber: row.c[81] ? row.c[81].v : "", // Column CA
-                totalCharges: row.c[82] ? row.c[82].v : "", // Column CB
-                warehouseRemarks: row.c[83] ? row.c[83].v : "", // Column CC
+                beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
+                afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
+                biltyUpload: row.c[75] ? row.c[75].v : "", // Column BX
+                transporterName: row.c[76] ? row.c[76].v : "", // Column BY
+                transporterContact: row.c[77] ? row.c[77].v : "", // Column BZ
+                biltyNumber: row.c[78] ? row.c[78].v : "", // Column CA
+                totalCharges: row.c[79] ? row.c[79].v : "", // Column CB
+                warehouseRemarks: row.c[80] ? row.c[80].v : "", // Column CC
                 // Material receiving status (CG to CI)
                 materialReceivingStatus: row.c[84] ? row.c[84].v : "", // Column CG
                 reason: row.c[85] ? row.c[85].v : "", // Column CH
@@ -483,12 +483,12 @@ export default function DeliveryPage() {
                 // Calibration history (CM to CT)
                 labCalibrationCertificate: row.c[90] ? row.c[90].v : "", // Column CM
                 stCalibrationCertificate: row.c[91] ? row.c[91].v : "", // Column CN
-                labCalibrationDate: row.c[92] ? row.c[92].v : "", // Column CO
-                stCalibrationDate: row.c[93] ? row.c[93].v : "", // Column CP
+                labCalibrationDate: formatGoogleSheetsDate(row.c[92] ? row.c[92].v : ""), // Column CO
+                stCalibrationDate: formatGoogleSheetsDate(row.c[93] ? row.c[93].v : ""), // Column CP
                 labCalibrationPeriod: row.c[94] ? row.c[94].v : "", // Column CQ
                 stCalibrationPeriod: row.c[95] ? row.c[95].v : "", // Column CR
-                labDueDate: row.c[96] ? row.c[96].v : "", // Column CS
-                stDueDate: row.c[97] ? row.c[97].v : "", // Column CT
+                labDueDate: formatGoogleSheetsDate(row.c[96] ? row.c[96].v : ""), // Column CS
+                stDueDate: formatGoogleSheetsDate(row.c[97] ? row.c[97].v : ""), // Column CT
                 // Upload DN column (CX)
                 uploadDN: row.c[101] ? row.c[101].v : "", // Column CX
               }
@@ -772,14 +772,14 @@ export default function DeliveryPage() {
         )
       case "quotationCopy":
       case "quotationCopy2":
-        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "Available"}</Badge>
+        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
         return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
             <Badge variant="default">Link</Badge>
           </a>
         ) : (
-          <Badge variant="secondary">{value || "Available"}</Badge>
+          <Badge variant="secondary">{value || ""}</Badge>
         )
       case "calibrationCertRequired":
       case "installationRequired":
@@ -791,6 +791,12 @@ export default function DeliveryPage() {
       case "warehouseRemarks":
       case "reason":
         return <div className="max-w-[150px] truncate">{value || ""}</div>
+        case "acceptanceCopy":
+    case "ewayBillAttachment":
+    case "srnNumberAttachment":
+    case "attachment":
+    case "invoiceUpload":
+    case "ewayBillUpload":
       case "beforePhotoUpload":
       case "afterPhotoUpload":
       case "biltyUpload":
