@@ -75,6 +75,7 @@ const pendingColumns = [
   { key: "dispatchStatus", label: "Dispatch Status", searchable: true },
   { key: "dispatchCompleteDate", label: "Dispatch Complete Date", searchable: true },
   { key: "deliveryCompleteDate", label: "Delivery Complete Date", searchable: true },
+  { key: "seniorApproveName", label: "Senior Approval Name", searchable: true },
 ]
 
 // Column definitions for History tab (DISPATCH-DELIVERY sheet, columns B to BZ)
@@ -401,6 +402,7 @@ export default function DispFormPage() {
                 dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
                 dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
                 deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
+                seniorApproveName: row.c[77] ? row.c[77].v : "",
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
