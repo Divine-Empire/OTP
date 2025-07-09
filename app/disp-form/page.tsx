@@ -173,6 +173,7 @@ export default function DispFormPage() {
   const [paymentAttachment, setPaymentAttachment] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [remarks, setRemarks] = useState<string>("")
+  const [additionalItemsJson, setAdditionalItemsJson] = useState("")
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("")
@@ -551,19 +552,19 @@ export default function DispFormPage() {
   const handleProcess = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId)
     if (!order) return
-
+  
     setSelectedOrder(orderId)
     setCalibrationRequired("")
     setCalibrationType("")
     setInstallationRequired("")
-
-    // Extract items from the order data (columns M to AF)
+  
+    // Extract items from the order data (columns M to AF) - first 10 items
     const extractedItems: Array<{ name: string; qty: number }> = []
     for (let i = 12; i <= 31; i += 2) {
       // Columns M (12) to AF (31)
       const nameCol = order.fullRowData[i]
       const qtyCol = order.fullRowData[i + 1]
-
+  
       if (nameCol && nameCol.v && nameCol.v.toString().trim() !== "") {
         extractedItems.push({
           name: nameCol.v.toString(),
@@ -571,8 +572,29 @@ export default function DispFormPage() {
         })
       }
     }
-
+  
+    // Extract additional items from column AI (index 34) if it contains JSON data
+    try {
+      const aiColumnData = order.fullRowData[34] // Column AI
+      if (aiColumnData && aiColumnData.v) {
+        const jsonData = JSON.parse(aiColumnData.v)
+        if (Array.isArray(jsonData)) {
+          jsonData.forEach(item => {
+            if (item.name && item.quantity !== undefined) {
+              extractedItems.push({
+                name: item.name,
+                qty: Number(item.quantity) || 0
+              })
+            }
+          })
+        }
+      }
+    } catch (error) {
+      console.log("No valid JSON data found in column AI or error parsing:", error)
+    }
+  
     setItems(extractedItems)
+    setAdditionalItemsJson("")
     setEwayBillDetails("")
     setEwayBillAttachment(null)
     setSrnNumber("")
@@ -596,123 +618,15 @@ export default function DispFormPage() {
     setItems(updated)
   }
 
-  const updateOrderStatus = async (order: any, dispatchData: any) => {
-    try {
-      setUploading(true)
-
-      const formData = new FormData()
-      formData.append("sheetName", "DISPATCH-DELIVERY")
-      formData.append("action", "insert")
-      formData.append("orderNo", order.id)
-
-      // Handle file uploads
-      if (ewayBillAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(ewayBillAttachment)
-          formData.append("ewayBillFile", base64Data)
-          formData.append("ewayBillFileName", ewayBillAttachment.name)
-          formData.append("ewayBillMimeType", ewayBillAttachment.type)
-        } catch (error) {
-          console.error("Error converting Eway Bill file:", error)
-        }
-      }
-
-      if (srnNumberAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(srnNumberAttachment)
-          formData.append("srnFile", base64Data)
-          formData.append("srnFileName", srnNumberAttachment.name)
-          formData.append("srnMimeType", srnNumberAttachment.type)
-        } catch (error) {
-          console.error("Error converting SRN file:", error)
-        }
-      }
-
-      if (paymentAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(paymentAttachment)
-          formData.append("paymentFile", base64Data)
-          formData.append("paymentFileName", paymentAttachment.name)
-          formData.append("paymentMimeType", paymentAttachment.type)
-        } catch (error) {
-          console.error("Error converting Payment file:", error)
-        }
-      }
-
-      const rowData = new Array(100).fill("")
-
-      // Add today's date in column A (index 0)
-      const today = new Date()
-      const formattedDate =
-        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
-
-      rowData[0] = formattedDate
-      rowData[1] = order.id
-      rowData[22] = dispatchData.calibrationRequired
-      rowData[23] = dispatchData.calibrationType || ""
-      rowData[24] = dispatchData.installationRequired
-      rowData[25] = dispatchData.ewayBillDetails
-      rowData[27] = dispatchData.srnNumber
-      rowData[61] = dispatchData.remarks || ""
-
-      // Process items array
-      const processedItems = dispatchData.items.map((item: any) => ({
-        name: item.name || "",
-        qty: item.qty || 0,
-      }))
-
-      // Assign items to columns starting from AA (index 30)
-      let columnIndex = 30
-      processedItems.forEach((item: any) => {
-        if (columnIndex + 1 < rowData.length) {
-          rowData[columnIndex] = item.name
-          rowData[columnIndex + 1] = item.qty
-          columnIndex += 2
-        }
-      })
-
-      formData.append("rowData", JSON.stringify(rowData))
-
-      const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        body: formData,
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
-      }
-
-      let result
-      try {
-        const responseText = await updateResponse.text()
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        result = { success: true }
-      }
-
-      if (result.success !== false) {
-        await fetchPendingOrders()
-        return { success: true, fileUrls: result.fileUrls }
-      } else {
-        throw new Error(result.error || "Update failed")
-      }
-    } catch (err: any) {
-      console.error("Error updating order:", err)
-      setError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setUploading(false)
-    }
-  }
-
   const handleSubmit = async () => {
-    if (!selectedOrder || !calibrationRequired || !installationRequired) return
-
-    const order = orders.find((o: any) => o.id === selectedOrder)
-    if (!order) return
-
+    if (!selectedOrder || !calibrationRequired || !installationRequired) return;
+  
+    const order = orders.find((o: any) => o.id === selectedOrder);
+    if (!order) return;
+  
+    // Calculate total quantity - Fixed syntax
+    const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+  
     const dispatchData = {
       calibrationRequired,
       calibrationType: calibrationRequired === "YES" ? calibrationType : "",
@@ -721,26 +635,148 @@ export default function DispFormPage() {
       ewayBillDetails,
       srnNumber,
       remarks,
+      totalQty,
       processedAt: new Date().toISOString(),
-    }
-
-    const result = await updateOrderStatus(order, dispatchData)
-
+    };
+  
+    const result = await updateOrderStatus(order, dispatchData);
+  
     if (result.success) {
-      setIsDialogOpen(false)
-      setSelectedOrder("")
-      let message = `Order ${selectedOrder} dispatch form has been processed successfully`
+      setIsDialogOpen(false);
+      setSelectedOrder("");
+      let message = `Order ${selectedOrder} dispatch form has been processed successfully`;
       if (result.fileUrls) {
-        message += "\n\nFiles uploaded to Google Drive:"
-        if (result.fileUrls.ewayBillUrl) message += "\n- Eway Bill attachment"
-        if (result.fileUrls.srnUrl) message += "\n- SRN Number attachment"
-        if (result.fileUrls.paymentUrl) message += "\n- Payment attachment"
+        message += "\n\nFiles uploaded to Google Drive:";
+        if (result.fileUrls.ewayBillUrl) message += "\n- Eway Bill attachment";
+        if (result.fileUrls.srnUrl) message += "\n- SRN Number attachment";
+        if (result.fileUrls.paymentUrl) message += "\n- Payment attachment";
       }
-      alert(message)
+      alert(message);
     } else {
-      alert(`Error processing order: ${result.error}`)
+      alert(`Error processing order: ${result.error}`);
     }
-  }
+  };
+  
+  const updateOrderStatus = async (order: any, dispatchData: any) => {
+    try {
+      setUploading(true);
+  
+      const formData = new FormData();
+      formData.append("sheetName", "DISPATCH-DELIVERY");
+      formData.append("action", "insert");
+      formData.append("orderNo", order.id);
+  
+      // Handle file uploads (keep existing file upload code)
+      if (ewayBillAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(ewayBillAttachment);
+          formData.append("ewayBillFile", base64Data);
+          formData.append("ewayBillFileName", ewayBillAttachment.name);
+          formData.append("ewayBillMimeType", ewayBillAttachment.type);
+        } catch (error) {
+          console.error("Error converting Eway Bill file:", error);
+        }
+      }
+  
+      if (srnNumberAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(srnNumberAttachment);
+          formData.append("srnFile", base64Data);
+          formData.append("srnFileName", srnNumberAttachment.name);
+          formData.append("srnMimeType", srnNumberAttachment.type);
+        } catch (error) {
+          console.error("Error converting SRN file:", error);
+        }
+      }
+  
+      if (paymentAttachment) {
+        try {
+          const base64Data = await convertFileToBase64(paymentAttachment);
+          formData.append("paymentFile", base64Data);
+          formData.append("paymentFileName", paymentAttachment.name);
+          formData.append("paymentMimeType", paymentAttachment.type);
+        } catch (error) {
+          console.error("Error converting Payment file:", error);
+        }
+      }
+  
+      const rowData = new Array(100).fill("");
+  
+      // Add today's date in column A (index 0)
+      const today = new Date();
+      const formattedDate =
+        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+  
+      rowData[0] = formattedDate;
+      rowData[1] = order.id;
+      rowData[22] = dispatchData.calibrationRequired;
+      rowData[23] = dispatchData.calibrationType || "";
+      rowData[24] = dispatchData.installationRequired;
+      rowData[25] = dispatchData.ewayBillDetails;
+      rowData[27] = dispatchData.srnNumber;
+  
+      // Process first 14 items in individual columns (AE-BB: index 30-57)
+      const first14Items = dispatchData.items.slice(0, 14);
+      let columnIndex = 30;
+      first14Items.forEach((item: any) => {
+        if (columnIndex + 1 < 58) { // Stop at column BB (index 57)
+          rowData[columnIndex] = item.name;
+          rowData[columnIndex + 1] = item.qty;
+          columnIndex += 2;
+        }
+      });
+  
+      // Items 15+ go to column BC (index 58) as JSON
+      const remainingItems = dispatchData.items.slice(14);
+      if (remainingItems.length > 0) {
+        const jsonItems = remainingItems.map(item => ({
+          name: item.name,
+          quantity: item.qty.toString()
+        }));
+        rowData[58] = JSON.stringify(jsonItems); // Column BC
+      }
+  
+      // Total quantity goes to column BD (index 59)
+      rowData[59] = dispatchData.totalQty;
+  
+      // Remarks go to column BE (index 60)
+      rowData[60] = dispatchData.remarks || "";
+  
+      formData.append("rowData", JSON.stringify(rowData));
+  
+      const updateResponse = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        body: formData,
+      });
+  
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}`);
+      }
+  
+      let result;
+      try {
+        const responseText = await updateResponse.text();
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        result = { success: true };
+      }
+  
+      if (result.success !== false) {
+        await fetchPendingOrders();
+        return { success: true, fileUrls: result.fileUrls };
+      } else {
+        throw new Error(result.error || "Update failed");
+      }
+    } catch (err: any) {
+      console.error("Error updating order:", err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleView = (order: any) => {
     setViewOrder(order)
@@ -1140,40 +1176,75 @@ const renderCellContent = (order, columnKey) => {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Items (Max 15)</Label>
-                  <Button type="button" size="sm" onClick={addItem} disabled={items.length >= 15}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Item ({items.length}/15)
-                  </Button>
-                </div>
-                {items.map((item, index) => (
-                  <div key={index} className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <Label htmlFor={`itemName-${index}`}>Item Name</Label>
-                      <Input
-                        id={`itemName-${index}`}
-                        value={item.name}
-                        onChange={(e) => updateItem(index, "name", e.target.value)}
-                        placeholder="Enter item name"
-                      />
-                    </div>
-                    <div className="w-24">
-                      <Label htmlFor={`qty-${index}`}>QTY</Label>
-                      <Input
-                        id={`qty-${index}`}
-                        type="number"
-                        value={item.qty}
-                        onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-                        placeholder="0"
-                      />
-                    </div>
-                    <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+  {/* <div className="flex items-center justify-between">
+    <Label>Items (Total: {items.length}, First 15 individual, Rest as JSON)</Label>
+    <Button type="button" size="sm" onClick={addItem}>
+      <Plus className="h-4 w-4 mr-1" />
+      Add Item ({items.length})
+    </Button>
+  </div> */}
+  
+  {/* Show first 15 items normally */}
+  {items.slice(0, 15).map((item, index) => (
+    <div key={index} className="flex gap-2 items-end">
+      <div className="flex-1">
+        <Label htmlFor={`itemName-${index}`}>Item Name {index + 1}</Label>
+        <Input
+          id={`itemName-${index}`}
+          value={item.name}
+          onChange={(e) => updateItem(index, "name", e.target.value)}
+          placeholder="Enter item name"
+        />
+      </div>
+      <div className="w-24">
+        <Label htmlFor={`qty-${index}`}>QTY</Label>
+        <Input
+          id={`qty-${index}`}
+          type="number"
+          value={item.qty}
+          onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
+          placeholder="0"
+        />
+      </div>
+      <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  ))}
+  
+  {/* Show remaining items (16+) in a condensed format */}
+  {items.length > 15 && (
+    <div className="border-t pt-4">
+      <Label className="text-orange-600">Additional Items (16+) - Will be stored as JSON:</Label>
+      {items.slice(15).map((item, index) => (
+        <div key={index + 15} className="flex gap-2 items-end mt-2">
+          <div className="flex-1">
+            <Label htmlFor={`itemName-${index + 15}`}>Item Name {index + 16}</Label>
+            <Input
+              id={`itemName-${index + 15}`}
+              value={item.name}
+              onChange={(e) => updateItem(index + 15, "name", e.target.value)}
+              placeholder="Enter item name"
+            />
+          </div>
+          <div className="w-24">
+            <Label htmlFor={`qty-${index + 15}`}>QTY</Label>
+            <Input
+              id={`qty-${index + 15}`}
+              type="number"
+              value={item.qty}
+              onChange={(e) => updateItem(index + 15, "qty", Number.parseInt(e.target.value) || 0)}
+              placeholder="0"
+            />
+          </div>
+          <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index + 15)}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
               <div className="space-y-2">
                 <Label htmlFor="paymentDetails">Payment Details (Attachment) - In case of Advance</Label>
