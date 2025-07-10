@@ -675,6 +675,8 @@ export default function WarehousePage() {
 
   const renderCellContent = (order, columnKey) => {
     const value = order[columnKey]
+    // Handle Google Sheets API response format where value might be {v: actualValue}
+    const actualValue = value && typeof value === 'object' && 'v' in value ? value.v : value;
   
     switch (columnKey) {
       case "actions":
@@ -685,39 +687,39 @@ export default function WarehousePage() {
         )
       case "quotationCopy":
       case "quotationCopy2":
-        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
+        return <Badge variant={actualValue === "" ? "default" : ""}>{actualValue || ""}</Badge>
       case "acceptanceCopy":
       case "ewayBillAttachment":
       case "srnNumberAttachment":
       case "attachment":
       case "invoiceUpload":
       case "ewayBillUpload":
-        return value && (value.startsWith("http") || value.startsWith("https")) ? (
-          <a href={value} target="_blank" rel="noopener noreferrer">
+        return actualValue && (actualValue.startsWith("http") || actualValue.startsWith("https")) ? (
+          <a href={actualValue} target="_blank" rel="noopener noreferrer">
             <Badge variant="default">View Attachment</Badge>
           </a>
         ) : (
-          <Badge variant="secondary">{value || "N/A"}</Badge>
+          <Badge variant="secondary">{actualValue || "N/A"}</Badge>
         )
       case "calibrationCertRequired":
       case "installationRequired":
-        return <Badge variant={value === "Yes" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+        return <Badge variant={actualValue === "Yes" ? "default" : "secondary"}>{actualValue || "N/A"}</Badge>
       case "billingAddress":
       case "shippingAddress":
       case "remarks":
-        return <div className="max-w-[150px] truncate">{value || ""}</div>
+        return <div className="max-w-[150px] truncate">{actualValue || ""}</div>
       case "paymentMode":
         return (
           <div className="flex items-center gap-2">
-            {value}
-            {value === "Advance" && <Badge variant="secondary">Required</Badge>}
+            {actualValue}
+            {actualValue === "Advance" && <Badge variant="secondary">Required</Badge>}
           </div>
         )
       case "amount":
       case "totalBillAmount":
-        return value ? `₹${Number(value).toLocaleString()}` : ""
+        return actualValue ? `₹${Number(actualValue).toLocaleString()}` : ""
       default:
-        return value || ""
+        return actualValue || ""
     }
   }
 
