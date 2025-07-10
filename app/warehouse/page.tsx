@@ -685,8 +685,8 @@ export default function WarehousePage() {
             Process
           </Button>
         )
-      case "quotationCopy":
-      case "quotationCopy2":
+      // case "quotationCopy":
+      // case "quotationCopy2":
         return <Badge variant={actualValue === "" ? "default" : ""}>{actualValue || ""}</Badge>
       case "acceptanceCopy":
       case "ewayBillAttachment":
