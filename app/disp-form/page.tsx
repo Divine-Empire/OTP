@@ -76,6 +76,9 @@ const pendingColumns = [
   { key: "dispatchCompleteDate", label: "Dispatch Complete Date", searchable: true },
   { key: "deliveryCompleteDate", label: "Delivery Complete Date", searchable: true },
   { key: "seniorApproveName", label: "Senior Approval Name", searchable: true },
+  { key: "itemQty", label: "Item/Qty", searchable: true },
+  { key: "dispatchTotalQty", label: "Dispatch Total Qty", searchable: true },
+  { key: "dispatchPendingQty", label: "Dispatch Pending Qty", searchable: true },
 ]
 
 // Column definitions for History tab (DISPATCH-DELIVERY sheet, columns B to BZ)
@@ -408,6 +411,9 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
                 dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
                 deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
                 seniorApproveName: row.c[77] ? row.c[77].v : "",
+                itemQty: row.c[79] ? row.c[79].v : "",
+                dispatchTotalQty: row.c[80] ? row.c[80].v : "",
+                dispatchPendingQty: row.c[82] ? row.c[82].v : "",
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
