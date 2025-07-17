@@ -795,9 +795,9 @@ export default function CalibrationPage() {
             Process
           </Button>
         )
-      case "quotationCopy":
-      case "quotationCopy2":
-        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
+      // case "quotationCopy":
+      // case "quotationCopy2":
+      //   return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
         return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
@@ -815,7 +815,7 @@ export default function CalibrationPage() {
       case "remarks":
       case "warehouseRemarks":
       case "reason":
-        return <div className="max-w-[150px] truncate">{value || ""}</div>
+        return <div className="max-w-[200px] whitespace-normal break-words">{value || ""}</div>
         case "acceptanceCopy":
     case "ewayBillAttachment":
     case "srnNumberAttachment":

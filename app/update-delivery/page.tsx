@@ -767,12 +767,12 @@ export default function DeliveryPage() {
       case "actions":
         return (
           <Button size="sm" onClick={() => handleProcess(order.id)}>
-            Process Delivery
+            Process
           </Button>
         )
-      case "quotationCopy":
-      case "quotationCopy2":
-        return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
+      // case "quotationCopy":
+      // case "quotationCopy2":
+      //   return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
         return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
@@ -790,7 +790,7 @@ export default function DeliveryPage() {
       case "remarks":
       case "warehouseRemarks":
       case "reason":
-        return <div className="max-w-[150px] truncate">{value || ""}</div>
+        return <div className="max-w-[200px] whitespace-normal break-words">{value || ""}</div>
         case "acceptanceCopy":
     case "ewayBillAttachment":
     case "srnNumberAttachment":
@@ -903,39 +903,138 @@ export default function DeliveryPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {pendingColumns
-                          .filter((col) => visiblePendingColumns[col.key])
-                          .map((column) => (
-                            <TableHead key={column.key}>{column.label}</TableHead>
-                          ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPendingOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          {pendingColumns
-                            .filter((col) => visiblePendingColumns[col.key])
-                            .map((column) => (
-                              <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div style={{ minWidth: 'max-content' }}>
+                      <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                          <TableRow>
+                            {pendingColumns
+                              .filter((col) => visiblePendingColumns[col.key])
+                              .map((column) => (
+                                <TableHead 
+                                  key={column.key}
+                                  className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
+                                  style={{ 
+                                    width: column.key === 'actions' ? '120px' : 
+                                           column.key === 'orderNo' ? '120px' :
+                                           column.key === 'quotationNo' ? '150px' :
+                                           column.key === 'companyName' ? '250px' :
+                                           column.key === 'contactPersonName' ? '180px' :
+                                           column.key === 'contactNumber' ? '140px' :
+                                           column.key === 'billingAddress' ? '200px' :
+                                           column.key === 'shippingAddress' ? '200px' :
+                                           column.key === 'isOrderAcceptable' ? '150px' :
+                                           column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                           column.key === 'remarks' ? '200px' :
+                                           '160px',
+                                    minWidth: column.key === 'actions' ? '120px' : 
+                                             column.key === 'orderNo' ? '120px' :
+                                             column.key === 'quotationNo' ? '150px' :
+                                             column.key === 'companyName' ? '250px' :
+                                             column.key === 'contactPersonName' ? '180px' :
+                                             column.key === 'contactNumber' ? '140px' :
+                                             column.key === 'billingAddress' ? '200px' :
+                                             column.key === 'shippingAddress' ? '200px' :
+                                             column.key === 'isOrderAcceptable' ? '150px' :
+                                             column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                             column.key === 'remarks' ? '200px' :
+                                             '160px',
+                                    maxWidth: column.key === 'actions' ? '120px' : 
+                                             column.key === 'orderNo' ? '120px' :
+                                             column.key === 'quotationNo' ? '150px' :
+                                             column.key === 'companyName' ? '250px' :
+                                             column.key === 'contactPersonName' ? '180px' :
+                                             column.key === 'contactNumber' ? '140px' :
+                                             column.key === 'billingAddress' ? '200px' :
+                                             column.key === 'shippingAddress' ? '200px' :
+                                             column.key === 'isOrderAcceptable' ? '150px' :
+                                             column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                             column.key === 'remarks' ? '200px' :
+                                             '160px'
+                                  }}
+                                >
+                                  <div className="break-words">
+                                    {column.label}
+                                  </div>
+                                </TableHead>
+                              ))}
+                          </TableRow>
+                        </TableHeader>
+                      </Table>
+                      
+                      <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
+                        <Table>
+                          <TableBody>
+                            {filteredPendingOrders.map((order) => (
+                              <TableRow key={order.id} className="hover:bg-gray-50">
+                                {pendingColumns
+                                  .filter((col) => visiblePendingColumns[col.key])
+                                  .map((column) => (
+                                    <TableCell 
+                                      key={column.key} 
+                                      className="border-b px-4 py-3 align-top"
+                                      style={{ 
+                                        width: column.key === 'actions' ? '120px' : 
+                                               column.key === 'orderNo' ? '120px' :
+                                               column.key === 'quotationNo' ? '150px' :
+                                               column.key === 'companyName' ? '250px' :
+                                               column.key === 'contactPersonName' ? '180px' :
+                                               column.key === 'contactNumber' ? '140px' :
+                                               column.key === 'billingAddress' ? '200px' :
+                                               column.key === 'shippingAddress' ? '200px' :
+                                               column.key === 'isOrderAcceptable' ? '150px' :
+                                               column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                               column.key === 'remarks' ? '200px' :
+                                               '160px',
+                                        minWidth: column.key === 'actions' ? '120px' : 
+                                                 column.key === 'orderNo' ? '120px' :
+                                                 column.key === 'quotationNo' ? '150px' :
+                                                 column.key === 'companyName' ? '250px' :
+                                                 column.key === 'contactPersonName' ? '180px' :
+                                                 column.key === 'contactNumber' ? '140px' :
+                                                 column.key === 'billingAddress' ? '200px' :
+                                                 column.key === 'shippingAddress' ? '200px' :
+                                                 column.key === 'isOrderAcceptable' ? '150px' :
+                                                 column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                 column.key === 'remarks' ? '200px' :
+                                                 '160px',
+                                        maxWidth: column.key === 'actions' ? '120px' : 
+                                                 column.key === 'orderNo' ? '120px' :
+                                                 column.key === 'quotationNo' ? '150px' :
+                                                 column.key === 'companyName' ? '250px' :
+                                                 column.key === 'contactPersonName' ? '180px' :
+                                                 column.key === 'contactNumber' ? '140px' :
+                                                 column.key === 'billingAddress' ? '200px' :
+                                                 column.key === 'shippingAddress' ? '200px' :
+                                                 column.key === 'isOrderAcceptable' ? '150px' :
+                                                 column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                 column.key === 'remarks' ? '200px' :
+                                                 '160px'
+                                      }}
+                                    >
+                                      <div className="break-words whitespace-normal leading-relaxed">
+                                        {renderCellContent(order, column.key)}
+                                      </div>
+                                    </TableCell>
+                                  ))}
+                              </TableRow>
                             ))}
-                        </TableRow>
-                      ))}
-                      {filteredPendingOrders.length === 0 && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
-                            className="text-center text-muted-foreground"
-                          >
-                            {searchTerm ? "No orders match your search criteria" : "No pending orders found"}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                            {filteredPendingOrders.length === 0 && (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                                  className="text-center text-muted-foreground h-32"
+                                >
+                                  {searchTerm ? "No orders match your search criteria" : "No pending orders found"}
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -987,39 +1086,144 @@ export default function DeliveryPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {historyColumns
-                          .filter((col) => visibleHistoryColumns[col.key])
-                          .map((column) => (
-                            <TableHead key={column.key}>{column.label}</TableHead>
-                          ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredHistoryOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          {historyColumns
-                            .filter((col) => visibleHistoryColumns[col.key])
-                            .map((column) => (
-                              <TableCell key={column.key}>{renderCellContent(order, column.key)}</TableCell>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div style={{ minWidth: 'max-content' }}>
+                      <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                          <TableRow>
+                            {historyColumns
+                              .filter((col) => visibleHistoryColumns[col.key])
+                              .map((column) => (
+                                <TableHead 
+                                  key={column.key}
+                                  className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
+                                  style={{ 
+                                    width: column.key === 'orderNo' ? '120px' :
+                                           column.key === 'quotationNo' ? '150px' :
+                                           column.key === 'companyName' ? '250px' :
+                                           column.key === 'contactPersonName' ? '180px' :
+                                           column.key === 'contactNumber' ? '140px' :
+                                           column.key === 'billingAddress' ? '200px' :
+                                           column.key === 'shippingAddress' ? '200px' :
+                                           column.key === 'isOrderAcceptable' ? '150px' :
+                                           column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                           column.key === 'remarks' ? '200px' :
+                                           column.key === 'availabilityStatus' ? '150px' :
+                                           column.key === 'inventoryRemarks' ? '200px' :
+                                           '160px',
+                                    minWidth: column.key === 'orderNo' ? '120px' :
+                                             column.key === 'quotationNo' ? '150px' :
+                                             column.key === 'companyName' ? '250px' :
+                                             column.key === 'contactPersonName' ? '180px' :
+                                             column.key === 'contactNumber' ? '140px' :
+                                             column.key === 'billingAddress' ? '200px' :
+                                             column.key === 'shippingAddress' ? '200px' :
+                                             column.key === 'isOrderAcceptable' ? '150px' :
+                                             column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                             column.key === 'remarks' ? '200px' :
+                                             column.key === 'availabilityStatus' ? '150px' :
+                                             column.key === 'inventoryRemarks' ? '200px' :
+                                             '160px',
+                                    maxWidth: column.key === 'orderNo' ? '120px' :
+                                             column.key === 'quotationNo' ? '150px' :
+                                             column.key === 'companyName' ? '250px' :
+                                             column.key === 'contactPersonName' ? '180px' :
+                                             column.key === 'contactNumber' ? '140px' :
+                                             column.key === 'billingAddress' ? '200px' :
+                                             column.key === 'shippingAddress' ? '200px' :
+                                             column.key === 'isOrderAcceptable' ? '150px' :
+                                             column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                             column.key === 'remarks' ? '200px' :
+                                             column.key === 'availabilityStatus' ? '150px' :
+                                             column.key === 'inventoryRemarks' ? '200px' :
+                                             '160px'
+                                  }}
+                                >
+                                  <div className="break-words">
+                                    {column.label}
+                                  </div>
+                                </TableHead>
+                              ))}
+                          </TableRow>
+                        </TableHeader>
+                      </Table>
+                      
+                      <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
+                        <Table>
+                          <TableBody>
+                            {filteredHistoryOrders.map((order) => (
+                              <TableRow key={order.id} className="hover:bg-gray-50">
+                                {historyColumns
+                                  .filter((col) => visibleHistoryColumns[col.key])
+                                  .map((column) => (
+                                    <TableCell 
+                                      key={column.key} 
+                                      className="border-b px-4 py-3 align-top"
+                                      style={{ 
+                                        width: column.key === 'orderNo' ? '120px' :
+                                               column.key === 'quotationNo' ? '150px' :
+                                               column.key === 'companyName' ? '250px' :
+                                               column.key === 'contactPersonName' ? '180px' :
+                                               column.key === 'contactNumber' ? '140px' :
+                                               column.key === 'billingAddress' ? '200px' :
+                                               column.key === 'shippingAddress' ? '200px' :
+                                               column.key === 'isOrderAcceptable' ? '150px' :
+                                               column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                               column.key === 'remarks' ? '200px' :
+                                               column.key === 'availabilityStatus' ? '150px' :
+                                               column.key === 'inventoryRemarks' ? '200px' :
+                                               '160px',
+                                        minWidth: column.key === 'orderNo' ? '120px' :
+                                                 column.key === 'quotationNo' ? '150px' :
+                                                 column.key === 'companyName' ? '250px' :
+                                                 column.key === 'contactPersonName' ? '180px' :
+                                                 column.key === 'contactNumber' ? '140px' :
+                                                 column.key === 'billingAddress' ? '200px' :
+                                                 column.key === 'shippingAddress' ? '200px' :
+                                                 column.key === 'isOrderAcceptable' ? '150px' :
+                                                 column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                 column.key === 'remarks' ? '200px' :
+                                                 column.key === 'availabilityStatus' ? '150px' :
+                                                 column.key === 'inventoryRemarks' ? '200px' :
+                                                 '160px',
+                                        maxWidth: column.key === 'orderNo' ? '120px' :
+                                                 column.key === 'quotationNo' ? '150px' :
+                                                 column.key === 'companyName' ? '250px' :
+                                                 column.key === 'contactPersonName' ? '180px' :
+                                                 column.key === 'contactNumber' ? '140px' :
+                                                 column.key === 'billingAddress' ? '200px' :
+                                                 column.key === 'shippingAddress' ? '200px' :
+                                                 column.key === 'isOrderAcceptable' ? '150px' :
+                                                 column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                 column.key === 'remarks' ? '200px' :
+                                                 column.key === 'availabilityStatus' ? '150px' :
+                                                 column.key === 'inventoryRemarks' ? '200px' :
+                                                 '160px'
+                                      }}
+                                    >
+                                      <div className="break-words whitespace-normal leading-relaxed">
+                                        {renderCellContent(order, column.key)}
+                                      </div>
+                                    </TableCell>
+                                  ))}
+                              </TableRow>
                             ))}
-                        </TableRow>
-                      ))}
-                      {filteredHistoryOrders.length === 0 && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
-                            className="text-center text-muted-foreground"
-                          >
-                            {searchTerm ? "No orders match your search criteria" : "No history orders found"}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                            {filteredHistoryOrders.length === 0 && (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                                  className="text-center text-muted-foreground h-32"
+                                >
+                                  {searchTerm ? "No orders match your search criteria" : "No history orders found"}
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

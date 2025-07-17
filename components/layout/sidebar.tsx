@@ -30,7 +30,7 @@ const menuItems = [
   { href: "/check-inventory", label: "Check Inventory", icon: Package, step: "check-inventory" },
   { href: "/material-received", label: "Material Received", icon: Package, step: "material-received" },
   { href: "/senior-approval", label: "Senior Approval", icon: UserCheck, step: "senior-approval" },
-  { href: "/disp-form", label: "DISP Form", icon: FileText, step: "disp-form" },
+  { href: "/disp-form", label: "Pre Invoice Details", icon: FileText, step: "disp-form" },
   { href: "/make-invoice", label: "Make Invoice", icon: Receipt, step: "make-invoice" },
   // { href: "/make-pi", label: "Make PI", icon: FileSpreadsheet, step: "make-pi" },
   { href: "/warehouse", label: "Warehouse", icon: Warehouse, step: "warehouse" },
