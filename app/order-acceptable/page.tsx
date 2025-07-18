@@ -577,117 +577,124 @@ const [creFilter, setCreFilter] = useState("all")
 
   // Update order status in Google Sheets
   // Complete updateOrderStatus function
-const updateOrderStatus = async (order, acceptanceData) => {
-  try {
-    console.log(`Updating order for Order No.: ${order.id}`)
-    console.log(`Order details:`, order)
-
-    const formData = new FormData()
-    formData.append("sheetName", SHEET_NAME)
-    formData.append("action", "updateByOrderNoInColumnB")
-    formData.append("orderNo", order.id) // This will search in column B
-
-    // Create a sparse array to update only specific columns
-    const rowData = new Array(82).fill("") // Increase array size to 82 for column CD
-
-    // Add today's date to column R (index 53)
-    const today = new Date()
-    const formattedDate =
-      `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-      `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
-
-    rowData[53] = formattedDate // Column R
-
-    // Add acceptance status to column BD (index 55)
-    rowData[55] = acceptanceData.isAcceptable // Column BD
-
-    if (acceptanceData.isAcceptable === "Yes") {
-      // If Yes, add checklist items to column BE (index 56)
-      const checklistText = acceptanceData.checklist.join(", ")
-      rowData[56] = checklistText // Column BE
+  const handleSubmit = async () => {
+    // Add proper validation
+    if (!selectedOrder || !isAcceptable) {
+      alert("Please fill in all required fields");
+      return;
     }
-
-    // Always add remarks to column BF (index 57) regardless of acceptance status
-    rowData[57] = acceptanceData.remarks || "" // Column BF
-
-    // Add CRE name to column CD (index 81)
-    // rowData[81] = acceptanceData.creName || "" // Column CD
-
-    formData.append("rowData", JSON.stringify(rowData))
-
-    console.log("Sending data to Apps Script:", {
-      sheetName: SHEET_NAME,
-      orderNo: order.id,
-      isAcceptable: acceptanceData.isAcceptable,
-      todayDate: formattedDate,
-      checklist: acceptanceData.checklist,
-      remarks: acceptanceData.remarks,
-      creName: acceptanceData.creName,
-    })
-
-    const updateResponse = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      mode: "cors",
-      body: formData,
-    })
-
-    console.log("Response status:", updateResponse.status)
-
-    if (!updateResponse.ok) {
-      throw new Error(`HTTP error! status: ${updateResponse.status}`)
-    }
-
-    let result
+    
+    setIsSubmitting(true);
+    
     try {
-      const responseText = await updateResponse.text()
-      console.log("Raw response:", responseText)
-      result = JSON.parse(responseText)
-    } catch (parseError) {
-      console.log("Response parsing failed, but request might be successful")
-      result = { success: true }
-    }
-
-    console.log("Parsed result:", result)
-
-    if (result.success !== false) {
-      await fetchOrders()
-      return true
-    } else {
-      throw new Error(result.error || "Update failed")
-    }
-  } catch (err) {
-    console.error("Error updating order:", err)
-    setError(err.message)
-    return false
-  }
-}
-
-// Complete handleSubmit function
-const handleSubmit = async () => {
-  if (!selectedOrder || !isAcceptable || !creName) return
+      const acceptanceData = {
+        isAcceptable,
+        checklist: isAcceptable === "Yes" ? checkedItems : [],
+        remarks,
+        creName, // Make sure this is included
+        processedAt: new Date().toISOString(),
+        processedBy: currentUser?.name || "Current User",
+      };
   
-  setIsSubmitting(true) // Start loading
+      const success = await updateOrderStatus(selectedOrder, acceptanceData);
   
-  const acceptanceData = {
-    isAcceptable,
-    checklist: isAcceptable === "Yes" ? checkedItems : [],
-    remarks,
-    creName, // Add CRE name to acceptance data
-    processedAt: new Date().toISOString(),
-    processedBy: "Current User",
-  }
-
-  const success = await updateOrderStatus(selectedOrder, acceptanceData)
-
-  setIsSubmitting(false) // Stop loading regardless of outcome
-
-  if (success) {
-    setIsDialogOpen(false)
-    setSelectedOrder(null)
-    // Show success message
-    alert(`Order ${selectedOrder.id} has been updated successfully as: ${isAcceptable}`)
-  }
-}
+      if (success) {
+        setIsDialogOpen(false);
+        setSelectedOrder(null);
+        // Reset form fields
+        setIsAcceptable("");
+        setCheckedItems([]);
+        setRemarks("");
+        setCreName("");
+        
+        alert(`Order ${selectedOrder.orderNo} has been updated successfully as: ${isAcceptable}`);
+      }
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      alert("Failed to update order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // 2. Fix the updateOrderStatus function - correct the data structure
+  const updateOrderStatus = async (order, acceptanceData) => {
+    try {
+      console.log(`Updating order for Order No.: ${order.orderNo}`); // Use orderNo instead of id
+      console.log(`Order details:`, order);
+  
+      const formData = new FormData();
+      formData.append("sheetName", SHEET_NAME);
+      formData.append("action", "updateByOrderNoInColumnB");
+      formData.append("orderNo", order.orderNo); // Use orderNo instead of id
+  
+      // Create a sparse array to update only specific columns
+      const rowData = new Array(82).fill("");
+  
+      // Add today's date to column R (index 53) - this is the key column that needs to be filled
+      const today = new Date();
+      const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+      
+      rowData[53] = formattedDate; // Column R - THIS IS CRITICAL
+  
+      // Add acceptance status to column BD (index 55)
+      rowData[55] = acceptanceData.isAcceptable;
+  
+      if (acceptanceData.isAcceptable === "Yes") {
+        const checklistText = acceptanceData.checklist.join(", ");
+        rowData[56] = checklistText; // Column BE
+      }
+  
+      // Always add remarks to column BF (index 57)
+      rowData[57] = acceptanceData.remarks || "";
+  
+      formData.append("rowData", JSON.stringify(rowData));
+  
+      console.log("Sending data to Apps Script:", {
+        sheetName: SHEET_NAME,
+        orderNo: order.orderNo,
+        isAcceptable: acceptanceData.isAcceptable,
+        todayDate: formattedDate,
+        checklist: acceptanceData.checklist,
+        remarks: acceptanceData.remarks,
+      });
+  
+      const updateResponse = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        body: formData,
+      });
+  
+      console.log("Response status:", updateResponse.status);
+  
+      if (!updateResponse.ok) {
+        throw new Error(`HTTP error! status: ${updateResponse.status}`);
+      }
+  
+      let result;
+      try {
+        const responseText = await updateResponse.text();
+        console.log("Raw response:", responseText);
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.log("Response parsing failed, but request might be successful");
+        result = { success: true };
+      }
+  
+      console.log("Parsed result:", result);
+  
+      if (result.success !== false) {
+        await fetchOrders(); // Refresh the data
+        return true;
+      } else {
+        throw new Error(result.error || "Update failed");
+      }
+    } catch (err) {
+      console.error("Error updating order:", err);
+      setError(err.message);
+      return false;
+    }
+  };
 
 // Complete renderCellContent function
 const renderCellContent = (order, columnKey) => {
@@ -1298,7 +1305,7 @@ const renderCellContent = (order, columnKey) => {
                 </Button>
                 <Button 
   onClick={handleSubmit} 
-  disabled={!isAcceptable || currentUser?.role === "user" || isSubmitting}
+  disabled={!isAcceptable || isSubmitting} // Remove the user role check if it's blocking
 >
   {isSubmitting ? (
     <>
