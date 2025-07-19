@@ -711,7 +711,7 @@ const renderCellContent = (order, columnKey) => {
     case "shippingAddress":
       return <div className="address-cell">{value}</div>
     case "quotationCopy":
-      return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
     case "acceptanceCopy":
       return value && (value.startsWith("http") || value.startsWith("https")) ? (
         <a href={value} target="_blank" rel="noopener noreferrer">

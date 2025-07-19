@@ -827,7 +827,7 @@ export default function CheckInventoryPage() {
           </Button>
         )
       case "quotationCopy":
-        return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+        // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
       case "acceptanceCopy":
         return value && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">

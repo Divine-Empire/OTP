@@ -650,8 +650,8 @@ export default function MakeInvoicePage() {
             Process
           </Button>
         )
-      // case "quotationCopy":
-      // case "quotationCopy2":
+      case "quotationCopy":
+      case "quotationCopy2":
       //   return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
       case "ewayBillAttachment":

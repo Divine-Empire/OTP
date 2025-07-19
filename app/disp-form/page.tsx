@@ -832,7 +832,7 @@ const renderCellContent = (order, columnKey) => {
       )
     case "quotationCopy":
     case "quotationCopyHistory":
-      return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
     case "acceptanceCopy":
     case "ewayBillAttachment":
     case "srnNumberAttachment":

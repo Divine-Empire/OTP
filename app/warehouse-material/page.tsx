@@ -630,8 +630,8 @@ export default function WarehouseMaterialPage() {
             Process
           </Button>
         )
-      // case "quotationCopy":
-      // case "quotationCopy2":
+      case "quotationCopy":
+      case "quotationCopy2":
       //   return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
       case "acceptanceCopy":
         return value && typeof value === "string" && (value.startsWith("http") || value.startsWith("https")) ? (
