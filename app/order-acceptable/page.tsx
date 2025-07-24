@@ -141,62 +141,59 @@ const [creFilter, setCreFilter] = useState("all")
   const { user: currentUser } = useAuth()
 
   const formatGoogleSheetsDate = (dateValue) => {
-    if (!dateValue) return "";
-  
-    // Handle the case where date comes as "Date(2025,5,21)"
-    if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
-      try {
-        // Extract the numbers between parentheses
-        const dateParts = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
-        if (dateParts && dateParts.length === 4) {
-          const year = parseInt(dateParts[1]);
-          const month = parseInt(dateParts[2]); // Note: months are 0-indexed in JS
-          const day = parseInt(dateParts[3]);
-          
-          // Create a date object (month is 0-indexed in JS, so no need to subtract 1)
-          const date = new Date(year, month, day);
-          
-          // Format as dd/mm/yyyy
-          const formattedDay = String(date.getDate()).padStart(2, '0');
-          const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // +1 because months are 0-indexed
-          const formattedYear = date.getFullYear();
-          
-          return `${formattedDay}/${formattedMonth}/${formattedYear}`;
-        }
-      } catch (e) {
-        console.error("Error parsing date string:", e);
-      }
-    }
-  
-    // Handle case where date comes as a serial number or string
+  if (!dateValue) return "";
+
+  // Handle the case where date comes as "Date(2025,5,21)" or "Date(2025,6,23,0,0,0)"
+  if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
     try {
-      // If it's a number (serial date value from Google Sheets)
-      if (typeof dateValue === 'number') {
-        // Google Sheets serial date starts from Dec 30, 1899
-        const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
-        const formattedDay = String(date.getDate()).padStart(2, '0');
-        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
-        const formattedYear = date.getFullYear();
+      // Extract the numbers between parentheses
+      const dateParts = dateValue.match(/Date\((\d+),(\d+),(\d+)/);
+      if (dateParts && dateParts.length >= 4) {
+        const year = parseInt(dateParts[1]);
+        const month = parseInt(dateParts[2]); // Note: months are 0-indexed in JS
+        const day = parseInt(dateParts[3]);
         
-        return `${formattedDay}/${formattedMonth}/${formattedYear}`;
-      }
-      
-      // If it's already a date string in some format
-      const date = new Date(dateValue);
-      if (!isNaN(date.getTime())) {
-        const formattedDay = String(date.getDate()).padStart(2, '0');
-        const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
-        const formattedYear = date.getFullYear();
+        // Format as dd/mm/yyyy
+        const formattedDay = String(day).padStart(2, '0');
+        const formattedMonth = String(month + 1).padStart(2, '0'); // +1 because months are 0-indexed
+        const formattedYear = year;
         
         return `${formattedDay}/${formattedMonth}/${formattedYear}`;
       }
     } catch (e) {
-      console.error("Error parsing date value:", e);
+      console.error("Error parsing date string:", e);
     }
-  
-    // If all else fails, return the original value
-    return dateValue;
-  };
+  }
+
+  // Handle case where date comes as a serial number or string
+  try {
+    // If it's a number (serial date value from Google Sheets)
+    if (typeof dateValue === 'number') {
+      // Google Sheets serial date starts from Dec 30, 1899
+      const date = new Date(Math.round((dateValue - 25569) * 86400 * 1000));
+      const formattedDay = String(date.getDate()).padStart(2, '0');
+      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+      const formattedYear = date.getFullYear();
+      
+      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+    }
+    
+    // If it's already a date string in some format
+    const date = new Date(dateValue);
+    if (!isNaN(date.getTime())) {
+      const formattedDay = String(date.getDate()).padStart(2, '0');
+      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+      const formattedYear = date.getFullYear();
+      
+      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
+    }
+  } catch (e) {
+    console.error("Error parsing date value:", e);
+  }
+
+  // If all else fails, return the original value
+  return dateValue;
+};
 
   // Fetch data from Google Sheets - condition: column Q is not null and column R is null
   const fetchOrders = async () => {

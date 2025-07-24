@@ -352,10 +352,13 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
             // if (hasColumnBR && hasColumnBS) {
             // Column AX (index 49) - Dispatch Status should be "PENDING"
             const dispatchStatus = row.c[49] && row.c[49].v ? row.c[49].v.toString().toUpperCase() : ""
+          
+          // Column BX (index 75) - Should not be null or empty
+          const columnBX = row.c[75] && row.c[75].v ? row.c[75].v.toString().trim() : ""
 
-            // For pending orders: show rows where AX column has "PENDING" value
-            if (dispatchStatus === "PENDING") {
-              const order = {
+          // For pending orders: show rows where AX column has "PENDING" value AND BX column is not empty
+          if (dispatchStatus === "PENDING" && columnBX !== "") {
+            const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
                 // Map all columns B to BZ
