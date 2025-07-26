@@ -246,8 +246,8 @@ export default function CalibrationPage() {
                 billingAddress: row.c[6] ? row.c[6].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
-                paymentTerms: row.c[9] ? row.c[9].v : "",
-                qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
+                paymentTerms: row.c[10] ? row.c[10].v : "",
+                qty: row.c[19] ? row.c[19].v : "", // Map to qty field for column definition
                 transportMode: row.c[11] ? row.c[11].v : "",
                 freightType: row.c[12] ? row.c[12].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
@@ -261,7 +261,7 @@ export default function CalibrationPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: row.c[15] ? row.c[15].v : "",
+                quotationCopy: row.c[9] ? row.c[9].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
