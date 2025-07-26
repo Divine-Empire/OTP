@@ -417,7 +417,7 @@ export default function CalibrationPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: row.c[15] ? row.c[15].v : "",
+                quotationCopy: row.c[9] ? row.c[9].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
