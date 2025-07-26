@@ -62,7 +62,7 @@ export default function CalibrationPage() {
     { key: "freightType", label: "Freight Type", searchable: true },
     { key: "destination", label: "Destination", searchable: true },
     { key: "poNumber", label: "Po Number", searchable: true },
-    { key: "quotationCopy2", label: "Quotation Copy", searchable: true },
+    { key: "quotationCopy2", label: "Invoice Upload", searchable: true },
     { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
     { key: "offer", label: "Offer", searchable: true },
     { key: "conveyedForRegistration", label: "Conveyed For Registration Form", searchable: true },
@@ -304,7 +304,7 @@ export default function CalibrationPage() {
                 itemName15: row.c[58] ? row.c[58].v : "",
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
-                quotationCopy2: row.c[15] ? row.c[15].v : "",
+                quotationCopy2: row.c[66] ? row.c[66].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // Warehouse material history headers (BV to CC)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
