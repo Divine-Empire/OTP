@@ -1302,7 +1302,8 @@ const renderCellContent = (order, columnKey) => {
                 </Button>
                 <Button 
   onClick={handleSubmit} 
-  disabled={!isAcceptable || isSubmitting} // Remove the user role check if it's blocking
+  // disabled={!isAcceptable || isSubmitting} // Remove the user role check if it's blocking
+  disabled={!isAcceptable || isSubmitting || currentUser?.role === "user"}
 >
   {isSubmitting ? (
     <>
