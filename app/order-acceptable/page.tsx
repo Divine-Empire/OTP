@@ -41,7 +41,7 @@ const checklistItems = [
 
 const creOptions = [
   "Sarita Baghel",
-  "Khushani Khemani"
+  "Khushi Khemani"
 ];
 
 
