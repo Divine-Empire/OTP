@@ -282,7 +282,7 @@ const [creFilter, setCreFilter] = useState("all")
   dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
   dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
   deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
-  status: row.c[24] ? row.c[24].v : "pending",
+  status: row.c[53] ? row.c[53].v : "pending",    // for pending is particular column 52 condition is required
   completeDate: row.c[51] ? row.c[51].v : "",
   creName: row.c[81] ? row.c[81].v : "", 
   // Keep the old field names for backward compatibility in dialog
