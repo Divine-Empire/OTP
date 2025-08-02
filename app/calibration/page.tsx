@@ -232,7 +232,7 @@ export default function CalibrationPage() {
 
             // Check if column X matches the calibration type and CK is not null and CL is null
             const isLabOrder = xColumn && xColumn.toLowerCase() === "lab" && ckColumn && !clColumn
-            const isTotalStationOrder = xColumn && xColumn.toLowerCase() === "total station" && ckColumn && !clColumn
+            const isTotalStationOrder = xColumn && xColumn.toLowerCase() === "surevey instruments" && ckColumn && !clColumn
 
             if (isLabOrder || isTotalStationOrder) {
               const order = {
