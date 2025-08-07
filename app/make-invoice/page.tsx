@@ -65,8 +65,8 @@ export default function MakeInvoicePage() {
     { key: "calibrationCertRequired", label: "Calibration Certificate Required", searchable: true },
     { key: "certificateCategory", label: "Certificate Category", searchable: true },
     { key: "installationRequired", label: "Installation Required", searchable: true },
-    { key: "ewayBillDetails", label: "Eway Bill Details", searchable: true },
-    { key: "ewayBillAttachment", label: "Eway Bill Attachment", searchable: true },
+    { key: "ewayBillDetails", label: "Transport Id", searchable: true },
+    { key: "ewayBillAttachment", label: "Vehicle No.", searchable: true },
     { key: "srnNumber", label: "Srn Number", searchable: true },
     { key: "srnNumberAttachment", label: "Srn Number Attachment", searchable: true },
     { key: "attachment", label: "Attachment", searchable: true },
@@ -179,7 +179,7 @@ export default function MakeInvoicePage() {
                 quantity: row.c[10] ? row.c[10].v : "",
                 paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A",
                 seniorApproval: row.c[16] ? row.c[16].v : "Approved",
-                totalQty: row.c[60] ? row.c[60].v : "",
+                totalQty: row.c[59] ? row.c[59].v : "",
                 billingQty: row.c[10] ? row.c[10].v : "",
                 quotationCopy: row.c[15] ? row.c[15].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
@@ -293,7 +293,7 @@ export default function MakeInvoicePage() {
                 quantity: row.c[10] ? row.c[10].v : "",
                 paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A",
                 seniorApproval: row.c[16] ? row.c[16].v : "Approved",
-                totalQty: row.c[60] ? row.c[60].v : "",
+                totalQty: row.c[59] ? row.c[59].v : "",
                 billingQty: row.c[10] ? row.c[10].v : "",
                 quotationCopy: row.c[15] ? row.c[15].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
@@ -553,8 +553,8 @@ export default function MakeInvoicePage() {
 
     setSelectedOrder(orderId)
     setInvoiceNumber("")
-    setQty(order.quantity || 0) // Auto-fill from sheet data
-    setTotalBillAmount(order.amount || 0) // Auto-fill amount if available
+    setQty(order.totalQty || 0) // Auto-fill from sheet data
+    setTotalBillAmount(0) // Auto-fill amount if available
     setInvoiceAttachment(null)
     setEwayBillAttachment(null)
     setIsDialogOpen(true)
