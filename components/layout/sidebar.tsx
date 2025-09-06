@@ -22,6 +22,8 @@ import {
   Settings,
   LogOut,
   Menu,
+  ReceiptText,
+  XOctagon
 } from "lucide-react"
 
 const menuItems = [
@@ -37,6 +39,8 @@ const menuItems = [
   { href: "/warehouse-material", label: "Warehouse (Material RCVD)", icon: PackageCheck, step: "warehouse-material" },
   { href: "/calibration", label: "Calibration Certificate", icon: Award, step: "calibration" },
   { href: "/update-delivery", label: "Update Delivery", icon: Bell, step: "update-delivery" },
+  { href: "/order-cancel", label: "Order Cancel", icon: XOctagon, step: "order-cancel" },
+  { href: "/credit-note", label: "Credit Note", icon: ReceiptText, step: "credit-note" },
   { href: "/settings", label: "Settings", icon: Settings, step: "settings" },
 ]
 
