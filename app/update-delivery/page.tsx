@@ -121,6 +121,7 @@ export default function DeliveryPage() {
     { key: "stCalibrationPeriod", label: "ST Calibration Period", searchable: true },
     { key: "labDueDate", label: "Lab Due Date", searchable: true },
     { key: "stDueDate", label: "ST Due Date", searchable: true },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true }, 
   ]
 
   // Column definitions for History tab (includes Upload DN column CX)
@@ -128,6 +129,7 @@ export default function DeliveryPage() {
     ...pendingColumns.filter((col) => col.key !== "actions"),
     // Upload DN column (CX)
     { key: "uploadDN", label: "Upload DN", searchable: false },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true }, 
   ]
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -237,6 +239,7 @@ export default function DeliveryPage() {
                 contactPersonName: row.c[4] ? row.c[4].v : "", // Fix field name to match column definition
                 contactNumber: row.c[5] ? row.c[5].v : "",
                 billingAddress: row.c[6] ? row.c[6].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
                 paymentTerms: row.c[9] ? row.c[9].v : "",
@@ -408,6 +411,7 @@ export default function DeliveryPage() {
                 transportMode: row.c[11] ? row.c[11].v : "",
                 freightType: row.c[12] ? row.c[12].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 poNumber: row.c[14] ? row.c[14].v : "",
                 offer: row.c[15] ? row.c[15].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
@@ -590,125 +594,100 @@ export default function DeliveryPage() {
     })
   }
 
-  const updateOrderStatus = async (order: any) => {
-    try {
-      setUploading(true)
+const updateOrderStatus = async (order: any) => {
+  try {
+    setUploading(true)
 
-      const formData = new FormData()
-      formData.append("sheetName", SHEET_NAME)
-      formData.append("action", "updateByOrderNoInColumnB")
-      formData.append("orderNo", order.id)
+    const formData = new FormData()
+    formData.append("sheetName", SHEET_NAME)
+    formData.append("action", "updateByDSrNumber")
+    
+    // Make sure we're using the D-Sr number, not order ID
+    const dSrNumber = order.dSrNumber || order.id
+    formData.append("dSrNumber", dSrNumber)
 
-      // Handle delivery photo upload
-      if (deliveryPhoto) {
-        try {
-          const base64Data = await convertFileToBase64(deliveryPhoto)
-          formData.append("deliveryPhotoFile", base64Data)
-          formData.append("deliveryPhotoFileName", deliveryPhoto.name)
-          formData.append("deliveryPhotoMimeType", deliveryPhoto.type)
-        } catch (error) {
-          console.error("Error converting delivery photo:", error)
-        }
-      }
-
-      const rowData = new Array(110).fill("") // Array size to accommodate all columns
-
-      // Add today's date to CV column (index 100) - Column CV for delivery processed date
-      const today = new Date()
-
-      const formattedDate =
-        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
-
-      rowData[99] = formattedDate // Column CV (index 99)
-
-      // Add delivery data to columns CW to DD (indexes 100-107)
-      // rowData[100] = deliveryPersonName // Column CW
-      // rowData[101] = deliveryPersonContact // Column CX
-      // rowData[102] = deliveryDate // Column CY
-      // rowData[103] = deliveryTime // Column CZ
-      // rowData[104] = receiverName // Column DA
-      // rowData[105] = receiverContact // Column DB
-      // rowData[106] = deliveryRemarks // Column DC
-      // rowData[107] = deliveryStatus // Column DD
-
-      formData.append("rowData", JSON.stringify(rowData))
-
-      const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        body: formData,
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
-      }
-
-      let result
+    // Handle delivery photo upload
+    if (deliveryPhoto) {
       try {
-        const responseText = await updateResponse.text()
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        result = { success: true }
+        const base64Data = await convertFileToBase64(deliveryPhoto)
+        formData.append("deliveryPhotoFile", base64Data)
+        formData.append("deliveryPhotoFileName", deliveryPhoto.name)
+        formData.append("deliveryPhotoMimeType", deliveryPhoto.type)
+      } catch (error) {
+        console.error("Error converting delivery photo:", error)
       }
-
-      if (result.success !== false) {
-        await fetchPendingOrders()
-        await fetchHistoryOrders()
-        return { success: true, fileUrls: result.fileUrls }
-      } else {
-        throw new Error(result.error || "Update failed")
-      }
-    } catch (err: any) {
-      console.error("Error updating order:", err)
-      setError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleProcess = (orderId: string) => {
-    setSelectedOrder(orderId)
-    setDeliveryPhoto(null)
-    setIsDialogOpen(true)
-  }
-
-  const handleSubmit = async () => {
-    if (!selectedOrder) return
-
-    const order = pendingOrders.find((o) => o.id === selectedOrder)
-    if (!order) {
-      // Fallback to legacy orders
-      const deliveryData = {
-        processedAt: new Date().toISOString(),
-        processedBy: "Current User",
-      }
-
-      updateOrder(selectedOrder, {
-        status: "delivery-processed",
-        deliveryData,
-      })
-
-      setIsDialogOpen(false)
-      setSelectedOrder("")
-      return
     }
 
-    const result = await updateOrderStatus(order)
+    const rowData = new Array(110).fill("") 
 
-    if (result.success) {
-      setIsDialogOpen(false)
-      setSelectedOrder("")
-      let message = `Delivery processing for order ${selectedOrder} has been completed successfully`
-      if (result.fileUrls && result.fileUrls.deliveryPhotoUrl) {
-        message += "\n\nDelivery photo uploaded to Google Drive"
-      }
-      alert(message)
+    // Add today's date to CV column (index 100) - Column CV for delivery processed date
+    const today = new Date()
+    const formattedDate =
+      `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+      `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
+    rowData[99] = formattedDate // Column CV (index 99)
+
+    formData.append("rowData", JSON.stringify(rowData))
+
+    const updateResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: formData,
+    })
+
+    if (!updateResponse.ok) {
+      throw new Error(`HTTP error! status: ${updateResponse.status}`)
+    }
+
+    let result
+    try {
+      const responseText = await updateResponse.text()
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      result = { success: true }
+    }
+
+    if (result.success !== false) {
+      await fetchPendingOrders()
+      await fetchHistoryOrders()
+      return { success: true, fileUrls: result.fileUrls }
     } else {
-      alert(`Error processing delivery operation: ${result.error}`)
+      throw new Error(result.error || "Update failed")
     }
+  } catch (err: any) {
+    console.error("Error updating order:", err)
+    setError(err.message)
+    return { success: false, error: err.message }
+  } finally {
+    setUploading(false)
   }
+}
+
+  const handleProcess = (order: any) => {
+  setSelectedOrder(order)
+  setDeliveryPhoto(null)
+  setIsDialogOpen(true)
+}
+
+const handleSubmit = async () => {
+  if (!selectedOrder) return
+
+  // Use the D-Sr number from the selected order
+  const result = await updateOrderStatus(selectedOrder)
+
+  if (result.success) {
+    setIsDialogOpen(false)
+    setSelectedOrder(null)
+    let message = `Delivery processing for D-Sr Number ${selectedOrder.dSrNumber} has been completed successfully`
+    if (result.fileUrls && result.fileUrls.deliveryPhotoUrl) {
+      message += "\n\nDelivery photo uploaded to Google Drive"
+    }
+    alert(message)
+  } else {
+    alert(`Error processing delivery operation: ${result.error}`)
+  }
+}
 
   const handleView = (order: any) => {
     setViewOrder(order)
@@ -766,10 +745,10 @@ export default function DeliveryPage() {
     switch (columnKey) {
       case "actions":
         return (
-          <Button size="sm" onClick={() => handleProcess(order.id)}>
+          <Button size="sm" onClick={() => handleProcess(order)}>
             Process
           </Button>
-        )
+        );
       case "quotationCopy":
       case "quotationCopy2":
       //   return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
@@ -1238,10 +1217,18 @@ export default function DeliveryPage() {
               <DialogDescription>Complete delivery documentation and enter delivery details</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="orderNumber">Order Number</Label>
                 <Input id="orderNumber" value={selectedOrder} disabled />
-              </div>
+              </div> */}
+              <div className="space-y-2">
+  <Label htmlFor="orderNumber">Order Number</Label>
+  <Input id="orderNumber" value={selectedOrder?.orderNo || selectedOrder} disabled />
+</div>
+<div className="space-y-2">
+  <Label htmlFor="dSrNumber">D-Sr Number</Label>
+  <Input id="dSrNumber" value={selectedOrder?.dSrNumber || "N/A"} disabled />
+</div>
 
               {/* File Upload Section */}
               <div className="border-t pt-4">

@@ -108,6 +108,7 @@ export default function WarehousePage() {
     { key: "ewayBillUpload", label: "Eway Bill Upload", searchable: true },
     { key: "totalQtyHistory", label: "Total Qty", searchable: true },
     { key: "totalBillAmount", label: "Total Bill Amount", searchable: true },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true },
   ]
 
   // Column definitions for History tab (includes BN to BR and BV to CC)
@@ -204,6 +205,7 @@ export default function WarehousePage() {
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
                 quotationCopy: row.c[9] ? row.c[9] : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -492,93 +494,93 @@ export default function WarehousePage() {
 
   const updateOrderStatus = async (order: any) => {
     try {
-      setUploading(true)
+      setUploading(true);
 
-      const formData = new FormData()
-      formData.append("sheetName", SHEET_NAME)
-      formData.append("action", "updateByOrderNoInColumnB")
-      formData.append("orderNo", order.id)
+      const formData = new FormData();
+      formData.append("sheetName", SHEET_NAME);
+      formData.append("action", "updateByDSrNumber");
+      formData.append("dSrNumber", order.dSrNumber);
 
       // Handle before photo upload
       if (beforePhoto) {
         try {
-          const base64Data = await convertFileToBase64(beforePhoto)
-          formData.append("beforePhotoFile", base64Data)
-          formData.append("beforePhotoFileName", beforePhoto.name)
-          formData.append("beforePhotoMimeType", beforePhoto.type)
+          const base64Data = await convertFileToBase64(beforePhoto);
+          formData.append("beforePhotoFile", base64Data);
+          formData.append("beforePhotoFileName", beforePhoto.name);
+          formData.append("beforePhotoMimeType", beforePhoto.type);
         } catch (error) {
-          console.error("Error converting before photo:", error)
+          console.error("Error converting before photo:", error);
         }
       }
 
       // Handle after photo upload
       if (afterPhoto) {
         try {
-          const base64Data = await convertFileToBase64(afterPhoto)
-          formData.append("afterPhotoFile", base64Data)
-          formData.append("afterPhotoFileName", afterPhoto.name)
-          formData.append("afterPhotoMimeType", afterPhoto.type)
+          const base64Data = await convertFileToBase64(afterPhoto);
+          formData.append("afterPhotoFile", base64Data);
+          formData.append("afterPhotoFileName", afterPhoto.name);
+          formData.append("afterPhotoMimeType", afterPhoto.type);
         } catch (error) {
-          console.error("Error converting after photo:", error)
+          console.error("Error converting after photo:", error);
         }
       }
 
       // Handle bilty upload
       if (biltyUpload) {
         try {
-          const base64Data = await convertFileToBase64(biltyUpload)
-          formData.append("biltyFile", base64Data)
-          formData.append("biltyFileName", biltyUpload.name)
-          formData.append("biltyMimeType", biltyUpload.type)
+          const base64Data = await convertFileToBase64(biltyUpload);
+          formData.append("biltyFile", base64Data);
+          formData.append("biltyFileName", biltyUpload.name);
+          formData.append("biltyMimeType", biltyUpload.type);
         } catch (error) {
-          console.error("Error converting bilty file:", error)
+          console.error("Error converting bilty file:", error);
         }
       }
 
-      const rowData = new Array(110).fill("") // Increased array size to accommodate new columns
+      const rowData = new Array(110).fill(""); // Increased array size to accommodate new columns
 
       // Add today's date to BU column (index 72)
-      const today = new Date()
+      const today = new Date();
 
       const formattedDate =
         `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
 
-      rowData[71] = formattedDate
+      rowData[71] = formattedDate;
 
       // Add new warehouse data to columns BZ to CD (indexes 77-81)
-      rowData[76] = transporterName // Column BZ
-      rowData[77] = transporterContact // Column CA
-      rowData[78] = biltyNumber // Column CB
-      rowData[79] = totalCharges // Column CC
-      rowData[80] = warehouseRemarks // Column CD
+      rowData[76] = transporterName; // Column BZ
+      rowData[77] = transporterContact; // Column CA
+      rowData[78] = biltyNumber; // Column CB
+      rowData[79] = totalCharges; // Column CC
+      rowData[80] = warehouseRemarks; // Column CD
 
-      formData.append("rowData", JSON.stringify(rowData))
+      formData.append("rowData", JSON.stringify(rowData));
 
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
-      })
+      });
 
       if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
+        throw new Error(`HTTP error! status: ${updateResponse.status}`);
       }
 
-      let result
+      let result;
       try {
-        const responseText = await updateResponse.text()
-        result = JSON.parse(responseText)
+        const responseText = await updateResponse.text();
+        result = JSON.parse(responseText);
       } catch (parseError) {
-        result = { success: true }
+        result = { success: true };
       }
 
       if (result.success !== false) {
-        await fetchPendingOrders()
-        await fetchHistoryOrders()
-        return { success: true, fileUrls: result.fileUrls }
+        await fetchPendingOrders();
+        await fetchHistoryOrders();
+        return { success: true, fileUrls: result.fileUrls };
       } else {
-        throw new Error(result.error || "Update failed")
+        throw new Error(result.error || "Update failed");
       }
     } catch (err: any) {
       console.error("Error updating order:", err)
@@ -627,6 +629,7 @@ export default function WarehousePage() {
     const result = await updateOrderStatus(order)
 
     if (result.success) {
+      console.log("Successfully processed D-Sr Number:", order.dSrNumber)
       setIsDialogOpen(false)
       setSelectedOrder("")
       let message = `Warehouse processing for order ${selectedOrder} has been completed successfully`

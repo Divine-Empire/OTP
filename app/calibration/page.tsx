@@ -122,6 +122,7 @@ export default function CalibrationPage() {
     { key: "materialReceivingStatus", label: "Material Receiving Status", searchable: true },
     { key: "reason", label: "Reason", searchable: true },
     { key: "installationRequiredHistory", label: "Installation Required", searchable: true },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true },
   ]
 
   // Column definitions for History tab (includes CM to CT)
@@ -274,6 +275,7 @@ export default function CalibrationPage() {
                 srnNumberAttachment: row.c[28] ? row.c[28].v : "",
                 attachment: row.c[29] ? row.c[29].v : "",
                 itemName1: row.c[30] ? row.c[30].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 quantity1: row.c[31] ? row.c[31].v : "",
                 itemName2: row.c[32] ? row.c[32].v : "",
                 quantity2: row.c[33] ? row.c[33].v : "",
@@ -403,6 +405,7 @@ export default function CalibrationPage() {
                 shippingAddress: row.c[7] ? row.c[7].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
                 paymentTerms: row.c[9] ? row.c[9].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
                 transportMode: row.c[11] ? row.c[11].v : "",
                 freightType: row.c[12] ? row.c[12].v : "",
@@ -593,89 +596,84 @@ export default function CalibrationPage() {
     })
   }
 
-  const updateOrderStatus = async (order: any) => {
-    try {
-      setUploading(true)
+const updateOrderStatus = async (order: any) => {
+  try {
+    setUploading(true)
 
-      const formData = new FormData()
-      formData.append("sheetName", SHEET_NAME)
-      formData.append("action", "updateByOrderNoInColumnB")
-      formData.append("orderNo", order.id)
+    const formData = new FormData()
+    formData.append("sheetName", SHEET_NAME)
+    formData.append("action", "updateByDSrNumber") // Changed from updateByOrderNoInColumnB
+    formData.append("dSrNumber", order.dSrNumber || order.id) // Use D-Sr Number instead of order number
 
-      // Add calibration type parameter so Apps Script knows which columns to use
-      formData.append("calibrationType", activeSection) // This will be either "LAB" or "TOTAL STATION"
+    // Add calibration type parameter so Apps Script knows which columns to use
+    formData.append("calibrationType", activeSection) // This will be either "LAB" or "TOTAL STATION"
 
-      // Also add calibration date and period as separate parameters
-      if (calibrationDate) {
-        formData.append("calibrationDate", calibrationDate)
-      }
-      if (calibrationPeriod) {
-        formData.append("calibrationPeriod", calibrationPeriod)
-      }
-
-      // Handle certificate file upload
-      if (certificateFile) {
-        try {
-          const base64Data = await convertFileToBase64(certificateFile)
-          formData.append("certificateFile", base64Data)
-          formData.append("certificateFileName", certificateFile.name)
-          formData.append("certificateMimeType", certificateFile.type)
-        } catch (error) {
-          console.error("Error converting certificate file:", error)
-        }
-      }
-
-      const rowData = new Array(120).fill("")
-
-      // Add today's date to CL column (index 89)
-      const today = new Date()
-
-      const formattedDate =
-        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
-
-      rowData[88] = formattedDate
-
-      // Remove these lines - Apps Script handles calibration data placement
-      // rowData[91] = calibrationDate // Column CN
-      // rowData[92] = calibrationPeriod // Column CO
-      // rowData[93] = dueDate // Column CP
-
-      formData.append("rowData", JSON.stringify(rowData))
-
-      const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        body: formData,
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
-      }
-
-      let result
-      try {
-        const responseText = await updateResponse.text()
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        result = { success: true }
-      }
-
-      if (result.success !== false) {
-        await fetchPendingOrders()
-        await fetchHistoryOrders()
-        return { success: true, fileUrls: result.fileUrls }
-      } else {
-        throw new Error(result.error || "Update failed")
-      }
-    } catch (err: any) {
-      console.error("Error updating order:", err)
-      setError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setUploading(false)
+    // Also add calibration date and period as separate parameters
+    if (calibrationDate) {
+      formData.append("calibrationDate", calibrationDate)
     }
+    if (calibrationPeriod) {
+      formData.append("calibrationPeriod", calibrationPeriod)
+    }
+
+    // Handle certificate file upload
+    if (certificateFile) {
+      try {
+        const base64Data = await convertFileToBase64(certificateFile)
+        formData.append("certificateFile", base64Data)
+        formData.append("certificateFileName", certificateFile.name)
+        formData.append("certificateMimeType", certificateFile.type)
+      } catch (error) {
+        console.error("Error converting certificate file:", error)
+      }
+    }
+
+    const rowData = new Array(120).fill("")
+
+    // Add today's date to CL column (index 89)
+    const today = new Date()
+
+    const formattedDate =
+      `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+      `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
+    rowData[88] = formattedDate
+
+    formData.append("rowData", JSON.stringify(rowData))
+
+    const updateResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: formData,
+    })
+
+    if (!updateResponse.ok) {
+      throw new Error(`HTTP error! status: ${updateResponse.status}`)
+    }
+
+    let result
+    try {
+      const responseText = await updateResponse.text()
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      result = { success: true }
+    }
+
+    if (result.success !== false) {
+      await fetchPendingOrders()
+      await fetchHistoryOrders()
+      return { success: true, fileUrls: result.fileUrls }
+    } else {
+      throw new Error(result.error || "Update failed")
+    }
+  } catch (err: any) {
+    console.error("Error updating order:", err)
+    setError(err.message)
+    return { success: false, error: err.message }
+  } finally {
+    setUploading(false)
   }
+}
 
   const handleProcess = (orderId: string, section: "LAB" | "TOTAL STATION") => {
     setSelectedOrder(orderId)

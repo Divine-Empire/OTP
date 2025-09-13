@@ -249,7 +249,9 @@ export default function OrderCancelPage() {
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
               Order Cancellation
             </h1>
-            <p className="text-muted-foreground">Manage and track cancelled orders</p>
+            <p className="text-muted-foreground">
+              Manage and track cancelled orders
+            </p>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleRefresh} variant="outline">
@@ -266,7 +268,9 @@ export default function OrderCancelPage() {
         <Card>
           <CardHeader>
             <CardTitle>Cancelled Orders</CardTitle>
-            <CardDescription>List of all cancelled orders ({filteredCancelledOrders.length})</CardDescription>
+            <CardDescription>
+              List of all cancelled orders ({filteredCancelledOrders.length})
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="border rounded-lg overflow-hidden">
@@ -287,16 +291,20 @@ export default function OrderCancelPage() {
                         <TableCell className="text-sm text-muted-foreground">
                           {parseGoogleSheetsDate(order.timestamp)}
                         </TableCell>
-                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                        <TableCell className="font-medium">
+                          {order.orderNumber}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{order.cancelStage}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge 
+                          <Badge
                             variant={
-                              order.cancelReason === "Customer Request" ? "default" :
-                              order.cancelReason === "Quality Issues" ? "destructive" :
-                              "secondary"
+                              order.cancelReason === "Customer Request"
+                                ? "default"
+                                : order.cancelReason === "Quality Issues"
+                                ? "destructive"
+                                : "secondary"
                             }
                           >
                             {order.cancelReason}
@@ -311,8 +319,13 @@ export default function OrderCancelPage() {
                     ))}
                     {filteredCancelledOrders.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground h-32">
-                          {searchTerm ? "No orders match your search criteria" : "No cancelled orders found"}
+                        <TableCell
+                          colSpan={5}
+                          className="text-center text-muted-foreground h-32"
+                        >
+                          {searchTerm
+                            ? "No orders match your search criteria"
+                            : "No cancelled orders found"}
                         </TableCell>
                       </TableRow>
                     )}
@@ -328,7 +341,9 @@ export default function OrderCancelPage() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Cancel Order</DialogTitle>
-              <DialogDescription>Fill in the details to cancel an order</DialogDescription>
+              <DialogDescription>
+                Fill in the details to cancel an order
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -340,15 +355,32 @@ export default function OrderCancelPage() {
                   placeholder="Enter order number"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="cancelStage">Order Cancel Stage *</Label>
-                <Input
-                  id="cancelStage"
-                  value={cancelStage}
-                  onChange={(e) => setCancelStage(e.target.value)}
-                  placeholder="Enter cancel stage"
-                />
+                <Select value={cancelStage} onValueChange={setCancelStage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select cancel stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Order Acceptable">
+                      Order Acceptable
+                    </SelectItem>
+                    <SelectItem value="Check Inventory">
+                      Check Inventory
+                    </SelectItem>
+                    <SelectItem value="Pending Material Received">
+                      Pending Material Received
+                    </SelectItem>
+                    <SelectItem value="Senior Approval">
+                      Senior Approval
+                    </SelectItem>
+                    <SelectItem value="Pre Invoice Form">
+                      Pre Invoice Form
+                    </SelectItem>
+                    <SelectItem value="Warehouse">Warehouse</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -361,8 +393,8 @@ export default function OrderCancelPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="remarks">Remarks</Label>
+              {/* <div className="space-y-2">
+                <Label htmlFor="remarks">Quantity</Label>
                 <Textarea
                   id="remarks"
                   value={remarks}
@@ -370,15 +402,30 @@ export default function OrderCancelPage() {
                   placeholder="Additional comments or notes..."
                   rows={3}
                 />
+              </div> */}
+              <div className="space-y-2">
+                <Label htmlFor="remarks">Quantity</Label>
+                <Input
+                  id="remarks"
+                  type="number"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Enter quantity..."
+                />
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button 
-                  onClick={submitCancellation} 
-                  disabled={!orderNumber || !cancelStage || !cancelReason || submitting}
+                <Button
+                  onClick={submitCancellation}
+                  disabled={
+                    !orderNumber || !cancelStage || !cancelReason || submitting
+                  }
                   variant="destructive"
                 >
                   {submitting ? (
@@ -396,5 +443,5 @@ export default function OrderCancelPage() {
         </Dialog>
       </div>
     </MainLayout>
-  )
+  );
 }

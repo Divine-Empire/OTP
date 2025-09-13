@@ -32,6 +32,7 @@ export default function MakeInvoicePage() {
   const [pendingOrders, setPendingOrders] = useState<any[]>([])
   const [historyOrders, setHistoryOrders] = useState<any[]>([])
   const [totalBillAmount, setTotalBillAmount] = useState<number>(0)
+  const [currentOrder, setCurrentOrder] = useState<any>(null)
 
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
@@ -102,6 +103,7 @@ export default function MakeInvoicePage() {
     { key: "quantity15", label: "Quantity 15", searchable: true },
     { key: "totalQty", label: "Total Qty", searchable: true },
     { key: "remarks", label: "Remarks", searchable: true },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true },
   ]
 
   // Column definitions for History tab (includes BN to BR)
@@ -203,6 +205,7 @@ export default function MakeInvoicePage() {
                 itemName4: row.c[36] ? row.c[36].v : "",
                 quantity4: row.c[37] ? row.c[37].v : "",
                 itemName5: row.c[38] ? row.c[38].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "", 
                 quantity5: row.c[39] ? row.c[39].v : "",
                 itemName6: row.c[40] ? row.c[40].v : "",
                 quantity6: row.c[41] ? row.c[41].v : "",
@@ -297,6 +300,7 @@ export default function MakeInvoicePage() {
                 billingQty: row.c[10] ? row.c[10].v : "",
                 quotationCopy: row.c[9] ? row.c[9].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -460,135 +464,159 @@ export default function MakeInvoicePage() {
     })
   }
 
-  const updateOrderStatus = async (order: any, invoiceData: any) => {
-    try {
-      setUploading(true)
+const updateOrderStatus = async (order: any, invoiceData: any) => {
+  try {
+    setUploading(true)
 
-      const formData = new FormData()
-      formData.append("sheetName", SHEET_NAME)
-      formData.append("action", "updateByOrderNoInColumnB")
-      formData.append("orderNo", order.id)
+    const formData = new FormData()
+    formData.append("sheetName", SHEET_NAME)
+    formData.append("action", "updateByDSrNumber")
+    formData.append("dSrNumber", order.dSrNumber)
 
-      // Handle invoice file upload
-      if (invoiceAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(invoiceAttachment)
-          formData.append("invoiceFile", base64Data)
-          formData.append("invoiceFileName", invoiceAttachment.name)
-          formData.append("invoiceMimeType", invoiceAttachment.type)
-        } catch (error) {
-          console.error("Error converting invoice file:", error)
-        }
-      }
-
-      // Handle eway bill file upload
-      if (ewayBillAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(ewayBillAttachment)
-          formData.append("ewayBillFile", base64Data)
-          formData.append("ewayBillFileName", ewayBillAttachment.name)
-          formData.append("ewayBillMimeType", ewayBillAttachment.type)
-        } catch (error) {
-          console.error("Error converting E-way Bill file:", error)
-        }
-      }
-
-      const rowData = new Array(70).fill("")
-
-      // Add today's date to BK column (index 62)
-      const today = new Date()
-
-      const formattedDate =
-        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
-
-      rowData[63] = formattedDate
-
-      // Add invoice data to specific columns
-      rowData[65] = invoiceData.invoiceNumber // Column BO (invoice number)
-      rowData[68] = invoiceData.qty // Column BQ (quantity)
-      rowData[69] = totalBillAmount.toString() // Column BS (total bill amount)
-      // rowData[69] = "Invoice Created" // Column BR (status)
-      // rowData[70] = today.toISOString() // Column BS (timestamp)
-
-      formData.append("rowData", JSON.stringify(rowData))
-
-      const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        body: formData,
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
-      }
-
-      let result
+    // Handle invoice file upload
+    if (invoiceAttachment) {
       try {
-        const responseText = await updateResponse.text()
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        result = { success: true }
+        const base64Data = await convertFileToBase64(invoiceAttachment)
+        formData.append("invoiceFile", base64Data)
+        formData.append("invoiceFileName", invoiceAttachment.name)
+        formData.append("invoiceMimeType", invoiceAttachment.type)
+      } catch (error) {
+        console.error("Error converting invoice file:", error)
       }
-
-      if (result.success !== false) {
-        await fetchPendingOrders()
-        await fetchHistoryOrders()
-        return { success: true, fileUrls: result.fileUrls }
-      } else {
-        throw new Error(result.error || "Update failed")
-      }
-    } catch (err: any) {
-      console.error("Error updating order:", err)
-      setError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleProcess = (orderId: string) => {
-    const order = pendingOrders.find((o) => o.id === orderId)
-    if (!order) return
-
-    setSelectedOrder(orderId)
-    setInvoiceNumber("")
-    setQty(order.totalQty || 0) // Auto-fill from sheet data
-    setTotalBillAmount(0) // Auto-fill amount if available
-    setInvoiceAttachment(null)
-    setEwayBillAttachment(null)
-    setIsDialogOpen(true)
-  }
-
-  const handleSubmit = async () => {
-    if (!selectedOrder || !invoiceNumber) return
-
-    const order = pendingOrders.find((o) => o.id === selectedOrder)
-    if (!order) return
-
-    const invoiceData = {
-      invoiceNumber,
-      qty,
-      processedAt: new Date().toISOString(),
-      processedBy: "Current User",
     }
 
-    const result = await updateOrderStatus(order, invoiceData)
-
-    if (result.success) {
-      setIsDialogOpen(false)
-      setSelectedOrder("")
-      let message = `Invoice for order ${selectedOrder} has been created successfully`
-      if (result.fileUrls) {
-        message += "\n\nFiles uploaded to Google Drive:"
-        if (result.fileUrls.invoiceUrl) message += "\n- Invoice attachment"
-        if (result.fileUrls.ewayBillUrl1) message += "\n- E-Way Bill attachment"
+    // Handle eway bill file upload
+    if (ewayBillAttachment) {
+      try {
+        const base64Data = await convertFileToBase64(ewayBillAttachment)
+        formData.append("ewayBillFile", base64Data)
+        formData.append("ewayBillFileName", ewayBillAttachment.name)
+        formData.append("ewayBillMimeType", ewayBillAttachment.type)
+      } catch (error) {
+        console.error("Error converting E-way Bill file:", error)
       }
-      alert(message)
+    }
+
+    // Create rowData array with proper length (should match your sheet columns)
+    const rowData = new Array(120).fill("") // Increased to 120 to cover all columns
+
+    // Add today's date to BK column (index 63)
+    const today = new Date()
+    const formattedDate =
+      `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+      `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+
+    rowData[63] = formattedDate // Column BK (index 63)
+
+    // Add invoice data to specific columns (correct indexes)
+    rowData[65] = invoiceData.invoiceNumber // Column BO (index 65) - Invoice Number
+    rowData[68] = invoiceData.qty // Column BR (index 68) - Total Qty History
+    rowData[69] = totalBillAmount.toString() // Column BS (index 69) - Total Bill Amount
+
+    formData.append("rowData", JSON.stringify(rowData))
+
+    console.log("Sending data:", {
+      dSrNumber: order.dSrNumber,
+      invoiceNumber: invoiceData.invoiceNumber,
+      qty: invoiceData.qty,
+      totalBillAmount: totalBillAmount
+    })
+
+    const updateResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: formData,
+    })
+
+    if (!updateResponse.ok) {
+      throw new Error(`HTTP error! status: ${updateResponse.status}`)
+    }
+
+    let result
+    try {
+      const responseText = await updateResponse.text()
+      console.log("Response:", responseText)
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error("Parse error:", parseError)
+      result = { success: true }
+    }
+
+    if (result.success !== false) {
+      await fetchPendingOrders()
+      await fetchHistoryOrders()
+      return { success: true, fileUrls: result.fileUrls }
     } else {
-      alert(`Error creating invoice: ${result.error}`)
+      throw new Error(result.error || "Update failed")
     }
+  } catch (err: any) {
+    console.error("Error updating order:", err)
+    setError(err.message)
+    return { success: false, error: err.message }
+  } finally {
+    setUploading(false)
   }
+}
+
+const handleProcess = (orderId: string) => {
+  const order = pendingOrders.find((o) => o.id === orderId)
+  if (!order) return
+
+  // Check if D-Sr Number exists
+  if (!order.dSrNumber) {
+    alert("D-Sr Number not found for this order. Cannot process invoice.")
+    return
+  }
+
+  setSelectedOrder(order.dSrNumber)
+  setInvoiceNumber("")
+  setQty(order.totalQty || 0)
+  setTotalBillAmount(0)
+  setInvoiceAttachment(null)
+  setEwayBillAttachment(null)
+  setIsDialogOpen(true)
+  
+  // Store the order object for dialog display
+  setCurrentOrder(order)
+}
+
+
+const handleSubmit = async () => {
+  if (!selectedOrder || !invoiceNumber) {
+    alert("Please fill in all required fields")
+    return
+  }
+
+  const order = pendingOrders.find((o) => o.dSrNumber === selectedOrder)
+  if (!order) {
+    alert("Order not found with D-Sr Number: " + selectedOrder)
+    return
+  }
+
+  const invoiceData = {
+    invoiceNumber,
+    qty,
+    processedAt: new Date().toISOString(),
+    processedBy: "Current User",
+  }
+
+  const result = await updateOrderStatus(order, invoiceData)
+
+  if (result.success) {
+    setIsDialogOpen(false)
+    setSelectedOrder("")
+    let message = `Invoice for D-Sr Number ${selectedOrder} has been created successfully`
+    if (result.fileUrls) {
+      message += "\n\nFiles uploaded to Google Drive:"
+      if (result.fileUrls.invoiceUrl) message += "\n- Invoice attachment"
+      if (result.fileUrls.ewayBillUrl1) message += "\n- E-Way Bill attachment"
+    }
+    alert(message)
+  } else {
+    alert(`Error creating invoice: ${result.error}`)
+  }
+}
+
 
   const handleView = (order: any) => {
     setViewOrder(order)
@@ -1111,9 +1139,13 @@ export default function MakeInvoicePage() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="orderNo">Order No</Label>
-                <Input id="orderNo" value={selectedOrder} disabled />
-              </div>
+    <Label htmlFor="orderNo">Order No</Label>
+    <Input id="orderNo" value={currentOrder?.orderNo || selectedOrder} disabled />
+  </div>
+              {/* <div className="space-y-2">
+  <Label htmlFor="dSrNumber">D-Sr Number</Label>
+  <Input id="dSrNumber" value={selectedOrder} disabled />
+</div> */}
               <div className="space-y-2">
                 <Label htmlFor="invoiceNumber">Invoice Number</Label>
                 <Input

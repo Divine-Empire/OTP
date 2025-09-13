@@ -117,6 +117,7 @@ export default function WarehouseMaterialPage() {
     { key: "biltyNumber", label: "Transporter/Courier/Flight-Bilty No./Docket No.", searchable: true },
     { key: "totalCharges", label: "Total Charges", searchable: true },
     { key: "warehouseRemarks", label: "Warehouse Remarks", searchable: true },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true },
   ]
 
   // Column definitions for History tab (includes CG to CI)
@@ -126,6 +127,7 @@ export default function WarehouseMaterialPage() {
     { key: "materialReceivingStatus", label: "Material Receiving Status", searchable: true },
     { key: "reason", label: "Reason", searchable: true },
     { key: "installationRequiredHistory", label: "Installation Required", searchable: true },
+    { key: "dSrNumber", label: "D-Sr Number", searchable: true },
   ]
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -181,6 +183,7 @@ export default function WarehouseMaterialPage() {
                 destination: row.c[13] ? row.c[13].v : "",
                 poNumber: row.c[14] ? row.c[14].v : "",
                 offer: row.c[15] ? row.c[15].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
                 warehouseProcessedDate: ceColumn, // Column CE contains the warehouse processing date
@@ -302,6 +305,7 @@ export default function WarehouseMaterialPage() {
                 freightType: row.c[12] ? row.c[12].v : "",
                 destination: row.c[13] ? row.c[13].v : "",
                 poNumber: row.c[14] ? row.c[14].v : "",
+                dSrNumber: row.c[105] ? row.c[105].v : "",
                 offer: row.c[15] ? row.c[15].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "", // Column BO (invoice number)
@@ -466,66 +470,65 @@ export default function WarehouseMaterialPage() {
   const legacyPendingOrders = orders.filter((order) => order.status === "warehouse-processed")
   const legacyProcessedOrders = orders.filter((order) => order.materialRcvdData)
 
-  const updateOrderStatus = async (order: any) => {
-    try {
-      setUploading(true)
+const updateOrderStatus = async (order: any) => {
+  try {
+    setUploading(true)
 
-      const formData = new FormData()
-      formData.append("sheetName", SHEET_NAME)
-      formData.append("action", "updateByOrderNoInColumnB")
-      formData.append("orderNo", order.id)
+    const formData = new FormData()
+    formData.append("sheetName", SHEET_NAME)
+    formData.append("action", "updateByDSrNumber") // Changed from updateByOrderNoInColumnB
+    formData.append("dSrNumber", order.dSrNumber) // Changed from orderNo to dSrNumber
 
-      const rowData = new Array(110).fill("")
+    const rowData = new Array(110).fill("")
 
-      // Add today's date to CF column (index 83)
-      const today = new Date()
+    // Add today's date to CF column (index 83)
+    const today = new Date()
+    const formattedDate =
+      `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+      `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
 
-      const formattedDate =
-        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
-        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
+    rowData[82] = formattedDate
 
-      rowData[82] = formattedDate
+    // Add material data to columns CG onwards (indexes 84-86)
+    rowData[84] = materialReceived // Column CG
+    rowData[85] = transporterFollowup // Column CH
+    rowData[86] = installationRequired // Column CI
 
-      // Add material data to columns CG onwards (indexes 84-86)
-      rowData[84] = materialReceived // Column CG
-      rowData[85] = transporterFollowup // Column CH
-      rowData[86] = installationRequired // Column CI
+    formData.append("rowData", JSON.stringify(rowData))
 
-      formData.append("rowData", JSON.stringify(rowData))
+    const updateResponse = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: formData,
+    })
 
-      const updateResponse = await fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        body: formData,
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error(`HTTP error! status: ${updateResponse.status}`)
-      }
-
-      let result
-      try {
-        const responseText = await updateResponse.text()
-        result = JSON.parse(responseText)
-      } catch (parseError) {
-        result = { success: true }
-      }
-
-      if (result.success !== false) {
-        await fetchPendingOrders()
-        await fetchHistoryOrders()
-        return { success: true }
-      } else {
-        throw new Error(result.error || "Update failed")
-      }
-    } catch (err: any) {
-      console.error("Error updating order:", err)
-      setError(err.message)
-      return { success: false, error: err.message }
-    } finally {
-      setUploading(false)
+    if (!updateResponse.ok) {
+      throw new Error(`HTTP error! status: ${updateResponse.status}`)
     }
+
+    let result
+    try {
+      const responseText = await updateResponse.text()
+      result = JSON.parse(responseText)
+    } catch (parseError) {
+      result = { success: true }
+    }
+
+    if (result.success !== false) {
+      await fetchPendingOrders()
+      await fetchHistoryOrders()
+      return { success: true }
+    } else {
+      throw new Error(result.error || "Update failed")
+    }
+  } catch (err: any) {
+    console.error("Error updating order:", err)
+    setError(err.message)
+    return { success: false, error: err.message }
+  } finally {
+    setUploading(false)
   }
+}
 
   const handleProcess = (orderId: string) => {
     setSelectedOrder(orderId)
@@ -535,40 +538,46 @@ export default function WarehouseMaterialPage() {
     setIsDialogOpen(true)
   }
 
-  const handleSubmit = async () => {
-    if (!selectedOrder || !materialReceived || !installationRequired) return
+const handleSubmit = async () => {
+  if (!selectedOrder || !materialReceived || !installationRequired) return
 
-    const order = pendingOrders.find((o) => o.id === selectedOrder)
-    if (!order) {
-      // Fallback to legacy orders
-      const materialRcvdData = {
-        materialReceived,
-        installationRequired,
-        processedAt: new Date().toISOString(),
-        processedBy: "Current User",
-        transporterFollowup,
-      }
-
-      updateOrder(selectedOrder, {
-        status: "material-received",
-        materialRcvdData,
-      })
-
-      setIsDialogOpen(false)
-      setSelectedOrder("")
-      return
+  const order = pendingOrders.find((o) => o.id === selectedOrder)
+  if (!order) {
+    // Fallback to legacy orders
+    const materialRcvdData = {
+      materialReceived,
+      installationRequired,
+      processedAt: new Date().toISOString(),
+      processedBy: "Current User",
+      transporterFollowup,
     }
 
-    const result = await updateOrderStatus(order)
+    updateOrder(selectedOrder, {
+      status: "material-received",
+      materialRcvdData,
+    })
 
-    if (result.success) {
-      setIsDialogOpen(false)
-      setSelectedOrder("")
-      alert(`Material receipt processing for order ${selectedOrder} has been completed successfully`)
-    } else {
-      alert(`Error processing material receipt: ${result.error}`)
-    }
+    setIsDialogOpen(false)
+    setSelectedOrder("")
+    return
   }
+
+  // Check if D-Sr Number exists
+  if (!order.dSrNumber) {
+    alert("D-Sr Number not found for this order. Cannot process.")
+    return
+  }
+
+  const result = await updateOrderStatus(order)
+
+  if (result.success) {
+    setIsDialogOpen(false)
+    setSelectedOrder("")
+    alert(`Material receipt processing for D-Sr Number ${order.dSrNumber} has been completed successfully`)
+  } else {
+    alert(`Error processing material receipt: ${result.error}`)
+  }
+}
 
   const handleView = (order: any) => {
     setViewOrder(order)
