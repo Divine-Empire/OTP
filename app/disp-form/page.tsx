@@ -1405,6 +1405,7 @@ const renderCellContent = (order, columnKey) => {
       <SelectItem value="By Head office">By Head office</SelectItem>
       <SelectItem value="By N.E Warehouse">By N.E Warehouse</SelectItem>
       <SelectItem value="Direct Dispatch">Direct Dispatch</SelectItem>
+      <SelectItem value="Maniquip store">Maniquip store</SelectItem>
     </SelectContent>
   </Select>
 </div>
