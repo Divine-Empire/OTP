@@ -181,7 +181,7 @@ export default function WarehousePage() {
             if (btColumn && !buColumn) {
               const order = {
                 rowIndex: actualRowIndex,
-                id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                id: row.c[105] ? row.c[105].v : `ORDER-${actualRowIndex}`,
                 orderNo: row.c[1] ? row.c[1].v : "", // Column B - Order No
                 quotationNo: row.c[2] ? row.c[2].v : "", // Column C
                 companyName: row.c[3] ? row.c[3].v : "",
@@ -302,7 +302,7 @@ export default function WarehousePage() {
             if (btColumn && buColumn) {
               const order = {
                 rowIndex: actualRowIndex,
-                id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
+                id: row.c[105] ? row.c[105].v : `ORDER-${actualRowIndex}`,
                 orderNo: row.c[1] ? row.c[1].v : "", // Column B - Order No
                 quotationNo: row.c[2] ? row.c[2].v : "", // Column C
                 companyName: row.c[3] ? row.c[3].v : "",
@@ -592,6 +592,17 @@ export default function WarehousePage() {
   }
 
   const handleProcess = (orderId: string) => {
+
+    const order = pendingOrders.find((o) => o.id === orderId)
+  
+  // Add this debug check:
+  if (!order || !order.dSrNumber) {
+    alert(`Error: D-Sr Number not found for order ${orderId}. Please ensure column DB has a value.`);
+    return;
+  }
+  
+  console.log("Processing order with D-Sr Number:", order.dSrNumber);
+
     setSelectedOrder(orderId)
     setBeforePhoto(null)
     setAfterPhoto(null)
