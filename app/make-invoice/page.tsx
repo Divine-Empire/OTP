@@ -203,7 +203,7 @@ export default function MakeInvoicePage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2;
-            const bjColumn = row.c[61] ? row.c[61].v : null; // Column BJ (index 61)
+            const bjColumn = row.c[62] ? row.c[62].v : null; // Column BJ (index 61)
             const bkColumn = row.c[63] ? row.c[63].v : null; // Column BK (index 62)
 
             // Only include rows where BJ is not null and BK is null
@@ -319,7 +319,7 @@ export default function MakeInvoicePage() {
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
             const actualRowIndex = index + 2;
-            const bjColumn = row.c[61] ? row.c[61].v : null; // Column BJ (index 61)
+            const bjColumn = row.c[62] ? row.c[62].v : null; // Column BJ (index 61)
             const bkColumn = row.c[63] ? row.c[63].v : null; // Column BK (index 62)
 
             // Only include rows where both BJ and BK are not null
