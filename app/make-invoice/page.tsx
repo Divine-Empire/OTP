@@ -39,6 +39,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/components/auth-provider";
 
 export default function MakeInvoicePage() {
   const { orders, updateOrder } = useData();
@@ -52,6 +53,8 @@ export default function MakeInvoicePage() {
   const [historyOrders, setHistoryOrders] = useState<any[]>([]);
   const [totalBillAmount, setTotalBillAmount] = useState<number>(0);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
+
+  const {user: currentUser} = useAuth();
 
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec";
@@ -280,6 +283,7 @@ export default function MakeInvoicePage() {
                 itemName15: row.c[58] ? row.c[58].v : "",
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[60] ? row.c[60].v : "",
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
               };
               pendingOrders.push(order);
@@ -397,7 +401,7 @@ export default function MakeInvoicePage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[60] ? row.c[60].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
-
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
                 quantity: row.c[10] ? row.c[10].v : "",
                 paymentDetails: row.c[8] === "Advance" ? "Attached" : "N/A",
                 seniorApproval: row.c[16] ? row.c[16].v : "Approved",
@@ -446,10 +450,27 @@ export default function MakeInvoicePage() {
   }, []);
 
   // Filter orders based on search term and selected column
-  const filteredPendingOrders = useMemo(() => {
-    if (!searchTerm) return pendingOrders;
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
+  
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
+  
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
 
-    return pendingOrders.filter((order) => {
+// Update the filteredPendingOrders useMemo to include role-based filtering
+const filteredPendingOrders = useMemo(() => {
+  let filtered = pendingOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = pendingColumns
           .filter((col) => col.searchable)
@@ -462,12 +483,20 @@ export default function MakeInvoicePage() {
         return fieldValue.includes(searchTerm.toLowerCase());
       }
     });
-  }, [pendingOrders, searchTerm, selectedColumn]);
+  }
 
-  const filteredHistoryOrders = useMemo(() => {
-    if (!searchTerm) return historyOrders;
+  return filtered;
+}, [pendingOrders, searchTerm, selectedColumn, currentUser]);
 
-    return historyOrders.filter((order) => {
+// Update the filteredHistoryOrders useMemo to include role-based filtering
+const filteredHistoryOrders = useMemo(() => {
+  let filtered = historyOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = historyColumns
           .filter((col) => col.searchable)
@@ -480,7 +509,10 @@ export default function MakeInvoicePage() {
         return fieldValue.includes(searchTerm.toLowerCase());
       }
     });
-  }, [historyOrders, searchTerm, selectedColumn]);
+  }
+
+  return filtered;
+}, [historyOrders, searchTerm, selectedColumn, currentUser]);
 
   // Column visibility handlers
   const togglePendingColumn = (columnKey) => {
@@ -802,19 +834,21 @@ export default function MakeInvoicePage() {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Make Invoice (Accounts Part)
-            </h1>
-            <p className="text-muted-foreground">
-              Create invoices for processed orders
-            </p>
-          </div>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Make Invoice (Accounts Part)
+    </h1>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={handleRefresh} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh
+  </Button>
+</div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1539,19 +1573,19 @@ export default function MakeInvoicePage() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!invoiceNumber || uploading}
-                >
-                  {uploading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
+              <Button
+  onClick={handleSubmit}
+  disabled={!invoiceNumber || uploading || currentUser?.role === "user"}
+>
+  {uploading ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Uploading...
+    </>
+  ) : (
+    "Submit"
+  )}
+</Button>
               </div>
             </div>
           </DialogContent>

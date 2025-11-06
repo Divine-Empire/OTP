@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { RefreshCw, Search, Settings } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
 
 export default function CalibrationPage() {
   const { orders, updateOrder } = useData()
@@ -39,6 +40,8 @@ export default function CalibrationPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+
+  const {user: currentUser} = useAuth();
 
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
@@ -321,6 +324,7 @@ export default function CalibrationPage() {
                 materialReceivingStatus: row.c[84] ? row.c[84].v : "", // Column CG
                 reason: row.c[85] ? row.c[85].v : "", // Column CH
                 installationRequiredHistory: row.c[86] ? row.c[86].v : "", // Column CI
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
               }
               pendingOrders.push(order)
             }
@@ -487,6 +491,7 @@ export default function CalibrationPage() {
                 stCalibrationPeriod: row.c[95] ? row.c[95].v : "", // Column CR
                 labDueDate: formatGoogleSheetsDate(row.c[96] ? row.c[96].v : ""), // Column CS
                 stDueDate: formatGoogleSheetsDate(row.c[97] ? row.c[97].v : ""), // Column CT
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
                 calibrationData: {
                   section: ckColumn || "UNKNOWN",
                   calibrationDate: row.c[89] ? row.c[89].v : "",
@@ -518,37 +523,65 @@ export default function CalibrationPage() {
   }, [])
 
   // Filter orders based on search term and selected column
-  const filteredPendingOrders = useMemo(() => {
-    if (!searchTerm) return pendingOrders
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
+  
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
+  
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
 
-    return pendingOrders.filter((order) => {
+// Update the filteredPendingOrders useMemo to include role-based filtering
+const filteredPendingOrders = useMemo(() => {
+  let filtered = pendingOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = pendingColumns
           .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+          .map((col) => String(order[col.key] || "").toLowerCase());
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
       } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
-        return fieldValue.includes(searchTerm.toLowerCase())
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase();
+        return fieldValue.includes(searchTerm.toLowerCase());
       }
-    })
-  }, [pendingOrders, searchTerm, selectedColumn])
+    });
+  }
 
-  const filteredHistoryOrders = useMemo(() => {
-    if (!searchTerm) return historyOrders
+  return filtered;
+}, [pendingOrders, searchTerm, selectedColumn, currentUser]);
 
-    return historyOrders.filter((order) => {
+// Update the filteredHistoryOrders useMemo to include role-based filtering
+const filteredHistoryOrders = useMemo(() => {
+  let filtered = historyOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = historyColumns
           .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+          .map((col) => String(order[col.key] || "").toLowerCase());
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
       } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
-        return fieldValue.includes(searchTerm.toLowerCase())
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase();
+        return fieldValue.includes(searchTerm.toLowerCase());
       }
-    })
-  }, [historyOrders, searchTerm, selectedColumn])
+    });
+  }
+
+  return filtered;
+}, [historyOrders, searchTerm, selectedColumn, currentUser]);
 
   // Column visibility handlers
   const togglePendingColumn = (columnKey) => {
@@ -1017,18 +1050,22 @@ const updateOrderStatus = async (order: any) => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Calibration Certificate Required
-            </h1>
-            <p className="text-muted-foreground">Manage calibration certificates for different equipment types</p>
-          </div>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+       <div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Calibration Certificate Required
+    </h1>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={handleRefresh} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh
+  </Button>
+</div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1140,16 +1177,19 @@ const updateOrderStatus = async (order: any) => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!calibrationDate || !calibrationPeriod || uploading}>
-                  {uploading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
+               <Button 
+  onClick={handleSubmit} 
+  disabled={!calibrationDate || !calibrationPeriod || uploading || currentUser?.role === "user"}
+>
+  {uploading ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Uploading...
+    </>
+  ) : (
+    "Submit"
+  )}
+</Button>
               </div>
             </div>
           </DialogContent>
