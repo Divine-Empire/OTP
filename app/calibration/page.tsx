@@ -1050,24 +1050,28 @@ const updateOrderStatus = async (order: any) => {
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
-            <Tabs defaultValue="LAB" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="LAB">LAB</TabsTrigger>
-                <TabsTrigger value="TOTAL STATION">TOTAL STATION</TabsTrigger>
-              </TabsList>
+         <Tabs defaultValue="LAB" className="space-y-4">
+  <TabsList>
+    <TabsTrigger value="LAB">
+      LAB ({filteredPendingOrders.filter(order => order.calibrationType === "LAB").length})
+    </TabsTrigger>
+    <TabsTrigger value="TOTAL STATION">
+      TOTAL STATION ({filteredPendingOrders.filter(order => order.calibrationType === "TOTAL STATION").length})
+    </TabsTrigger>
+  </TabsList>
 
-              <TabsContent value="LAB">
-                {renderTable("LAB Calibration", "Pending LAB calibration certificates", "LAB")}
-              </TabsContent>
+  <TabsContent value="LAB">
+    {renderTable("LAB Calibration", "Pending LAB calibration certificates", "LAB")}
+  </TabsContent>
 
-              <TabsContent value="TOTAL STATION">
-                {renderTable(
-                  "TOTAL STATION Calibration",
-                  "Pending TOTAL STATION calibration certificates",
-                  "TOTAL STATION",
-                )}
-              </TabsContent>
-            </Tabs>
+  <TabsContent value="TOTAL STATION">
+    {renderTable(
+      "TOTAL STATION Calibration",
+      "Pending TOTAL STATION calibration certificates",
+      "TOTAL STATION",
+    )}
+  </TabsContent>
+</Tabs>
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
