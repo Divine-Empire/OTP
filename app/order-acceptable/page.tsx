@@ -457,26 +457,42 @@ const [creFilter, setCreFilter] = useState("all")
   }, [])
 
   // Filter orders based on search term
-  const filteredOrders = useMemo(() => {
-    let filtered = orders
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
   
-    if (searchTerm) {
-      filtered = filtered.filter((order) => {
-        const searchableFields = pendingColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
   
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
-      })
-    }
-  
-    // Apply CRE filter - only filter if pendingCreFilter is not empty and not "all"
-    if (pendingCreFilter && pendingCreFilter !== "all") {
-      filtered = filtered.filter((order) => order.creName === pendingCreFilter)
-    }
-  
-    return filtered
-  }, [orders, searchTerm, pendingCreFilter])
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
+
+// Update the filteredOrders useMemo to include role-based filtering
+const filteredOrders = useMemo(() => {
+  let filtered = orders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
+      const searchableFields = pendingColumns
+        .filter((col) => col.searchable)
+        .map((col) => String(order[col.key] || "").toLowerCase());
+
+      return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
+    });
+  }
+
+  // Apply CRE filter - only filter if pendingCreFilter is not empty and not "all"
+  if (pendingCreFilter && pendingCreFilter !== "all") {
+    filtered = filtered.filter((order) => order.creName === pendingCreFilter);
+  }
+
+  return filtered;
+}, [orders, searchTerm, pendingCreFilter, currentUser]);
 
   // Filter orders based on status
   const pendingOrders = filteredOrders.filter((order) => order.status === "pending")
@@ -485,25 +501,28 @@ const [creFilter, setCreFilter] = useState("all")
   const [processedOrders, setProcessedOrders] = useState([])
   const [processedLoading, setProcessedLoading] = useState(false)
 
-  const filteredProcessedOrders = useMemo(() => {
-    let filtered = processedOrders
-  
-    if (searchTerm) {
-      filtered = filtered.filter((order) => {
-        const searchableFields = historyColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-  
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
-      })
-    }
-  
-    if (historyCreFilter && historyCreFilter !== "all") {
-      filtered = filtered.filter((order) => order.creName === historyCreFilter)
-    }
-  
-    return filtered
-  }, [processedOrders, searchTerm, historyCreFilter])
+const filteredProcessedOrders = useMemo(() => {
+  let filtered = processedOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
+      const searchableFields = historyColumns
+        .filter((col) => col.searchable)
+        .map((col) => String(order[col.key] || "").toLowerCase());
+
+      return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
+    });
+  }
+
+  if (historyCreFilter && historyCreFilter !== "all") {
+    filtered = filtered.filter((order) => order.creName === historyCreFilter);
+  }
+
+  return filtered;
+}, [processedOrders, searchTerm, historyCreFilter, currentUser]);
 
   // const filteredOrders = useMemo(() => {
   //   let filtered = orders
@@ -767,17 +786,22 @@ const renderCellContent = (order, columnKey) => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Order Acceptable
-            </h1>
-          </div>
-          <Button onClick={fetchOrders} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh from Sheets
-          </Button>
-        </div>
+<div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Order Acceptable
+    </h1>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={fetchOrders} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh from Sheets
+  </Button>
+</div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1300,10 +1324,9 @@ const renderCellContent = (order, columnKey) => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button 
+<Button 
   onClick={handleSubmit} 
-  // disabled={!isAcceptable || isSubmitting} // Remove the user role check if it's blocking
-  disabled={!isAcceptable || isSubmitting || currentUser?.role === "user"}
+  disabled={!isAcceptable || isSubmitting || (currentUser?.role === "user")}
 >
   {isSubmitting ? (
     <>

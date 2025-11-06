@@ -264,6 +264,7 @@ export default function SeniorApprovalPage() {
                 // BJ, BK columns (indices 61, 62)
                 availabilityStatus: row.c[61] ? row.c[61].v : "", // Column BJ
                 availabilityRemarks: row.c[62] ? row.c[62].v : "", // Column BK
+                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
                 // BO column (index 66)
                 receivedDate: formatGoogleSheetsDate(row.c[73] ? row.c[73].v : ""), // Column BO
                 // Keep the old field names for backward compatibility in dialog
@@ -297,10 +298,28 @@ export default function SeniorApprovalPage() {
   }, [])
 
   // Filter orders based on search term and selected column
-  const filteredOrders = useMemo(() => {
-    if (!searchTerm) return orders
+// Add this function after the useAuth hook
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
+  
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
+  
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
 
-    return orders.filter((order) => {
+// Update the filteredOrders useMemo to include role-based filtering
+const filteredOrders = useMemo(() => {
+  let filtered = orders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = pendingColumns
           .filter((col) => col.searchable)
@@ -311,7 +330,10 @@ export default function SeniorApprovalPage() {
         return fieldValue.includes(searchTerm.toLowerCase())
       }
     })
-  }, [orders, searchTerm, selectedColumn])
+  }
+
+  return filtered
+}, [orders, searchTerm, selectedColumn, currentUser])
 
   // Filter orders based on status
   const pendingOrders = filteredOrders.filter((order) => order.approvalStatus && !order.approvalDate)
@@ -321,21 +343,27 @@ export default function SeniorApprovalPage() {
   const [processedLoading, setProcessedLoading] = useState(false)
 
   // Filter processed orders based on search term
-  const filteredProcessedOrders = useMemo(() => {
-    if (!searchTerm) return processedOrders
+// Update the filteredProcessedOrders useMemo
+const filteredProcessedOrders = useMemo(() => {
+  let filtered = processedOrders;
 
-    return processedOrders.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = historyColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
-        return fieldValue.includes(searchTerm.toLowerCase())
-      }
-    })
-  }, [processedOrders, searchTerm, selectedColumn])
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (!searchTerm) return filtered
+
+  return filtered.filter((order) => {
+    if (selectedColumn === "all") {
+      const searchableFields = historyColumns
+        .filter((col) => col.searchable)
+        .map((col) => String(order[col.key] || "").toLowerCase())
+      return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+    } else {
+      const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+      return fieldValue.includes(searchTerm.toLowerCase())
+    }
+  })
+}, [processedOrders, searchTerm, selectedColumn, currentUser])
 
   const handleProcessedTabClick = async () => {
     setProcessedLoading(true)
@@ -445,6 +473,7 @@ export default function SeniorApprovalPage() {
                 offerShow: row.c[38] ? row.c[38].v : "", // Column AM
                 conveyedForRegistration: row.c[39] ? row.c[39].v : "", // Column AN
                 totalOrderQty: row.c[40] ? row.c[40].v : "", // Column AO
+                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
                 amount: row.c[41] ? row.c[41].v : "", // Column AP
                 totalDispatch: row.c[42] ? row.c[42].v : "", // Column AQ
                 quantityDelivered: row.c[43] ? row.c[43].v : "", // Column AR
@@ -659,18 +688,23 @@ export default function SeniorApprovalPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Senior Approval
-            </h1>
-            <p className="text-muted-foreground">Review and approve orders after inventory check</p>
-          </div>
-          <Button onClick={fetchOrders} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh from Sheets
-          </Button>
-        </div>
+<div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Senior Approval
+    </h1>
+    <p className="text-muted-foreground">Review and approve orders after inventory check</p>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={fetchOrders} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh from Sheets
+  </Button>
+</div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1120,19 +1154,20 @@ export default function SeniorApprovalPage() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!approvalStatus || currentUser?.role === "user" || isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
+              // In the Process Dialog submit button, update to:
+<Button
+  onClick={handleSubmit}
+  disabled={!approvalStatus || currentUser?.role === "user" || isSubmitting}
+>
+  {isSubmitting ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Processing...
+    </>
+  ) : (
+    "Submit"
+  )}
+</Button>
               </div>
             </div>
           </DialogContent>

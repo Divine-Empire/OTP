@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useAuth } from "@/components/auth-provider"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -192,6 +193,8 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
     historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
   )
 
+  const {user: currentUser} = useAuth();
+
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
   const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
@@ -256,11 +259,28 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
     return dateValue
   }
 
-  // Filter orders based on search term and selected column
-  const filteredOrders = useMemo(() => {
-    if (!searchTerm) return orders
 
-    return orders.filter((order) => {
+  // Add this function after the useAuth hook
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
+  
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
+  
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
+  // Filter orders based on search term and selected column
+const filteredOrders = useMemo(() => {
+  let filtered = orders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = pendingColumns
           .filter((col) => col.searchable)
@@ -271,13 +291,20 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
         return fieldValue.includes(searchTerm.toLowerCase())
       }
     })
-  }, [orders, searchTerm, selectedColumn])
+  }
+
+  return filtered
+}, [orders, searchTerm, selectedColumn, currentUser])
 
   // Filter processed orders based on search term
-  const filteredProcessedOrders = useMemo(() => {
-    if (!searchTerm) return processedOrders
+const filteredProcessedOrders = useMemo(() => {
+  let filtered = processedOrders;
 
-    return processedOrders.filter((order) => {
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = historyColumns
           .filter((col) => col.searchable)
@@ -288,7 +315,10 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
         return fieldValue.includes(searchTerm.toLowerCase())
       }
     })
-  }, [processedOrders, searchTerm, selectedColumn])
+  }
+
+  return filtered
+}, [processedOrders, searchTerm, selectedColumn, currentUser])
 
   // Column visibility handlers
   const togglePendingColumn = (columnKey) => {
@@ -416,6 +446,7 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
                 seniorApproveName: row.c[77] ? row.c[77].v : "",
                 itemQty: row.c[79] ? row.c[79].v : "",
                 dispatchTotalQty: row.c[80] ? row.c[80].v : "",
+                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
                 dispatchPendingQty: row.c[82] ? row.c[82].v : "",
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
@@ -530,6 +561,7 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
                 quantity14: row.c[57] ? row.c[57].v : "", // Column BF
                 itemName15: row.c[58] ? row.c[58].v : "", // Column BG
                 quantity15: row.c[59] ? row.c[59].v : "", // Column BH
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
                 totalQty: row.c[60] ? row.c[60].v : "", // Column BI
                 remarks: row.c[61] ? row.c[61].v : "", // Column BJ
                 // Keep old field names for backward compatibility
@@ -827,12 +859,16 @@ const renderCellContent = (order, columnKey) => {
   const value = order[columnKey]
 
   switch (columnKey) {
-    case "actions":
-      return (
-        <Button size="sm" onClick={() => handleProcess(order.id)}>
-          Process
-        </Button>
-      )
+case "actions":
+  return (
+    <Button 
+      size="sm" 
+      onClick={() => handleProcess(order.id)}
+      disabled={currentUser?.role === "user"}
+    >
+      {currentUser?.role === "user" ? "View Only" : "Process"}
+    </Button>
+  )
     case "quotationCopy":
     case "quotationCopyHistory":
       // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
@@ -892,18 +928,22 @@ const renderCellContent = (order, columnKey) => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Pre Invoice Form
-            </h1>
-            <p className="text-muted-foreground">Process dispatch forms for approved orders</p>
-          </div>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+      <div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Pre Invoice Form
+    </h1>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={handleRefresh} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh
+  </Button>
+</div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1543,16 +1583,19 @@ const renderCellContent = (order, columnKey) => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={!calibrationRequired || !installationRequired || uploading}>
-                  {uploading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
+               <Button 
+  onClick={handleSubmit} 
+  disabled={!calibrationRequired || !installationRequired || uploading || currentUser?.role === "user"}
+>
+  {uploading ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Uploading...
+    </>
+  ) : (
+    currentUser?.role === "user" ? "View Only" : "Submit"
+  )}
+</Button>
               </div>
             </div>
           </DialogContent>

@@ -46,6 +46,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { RefreshCw, Search, Settings } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 
 export default function WarehouseMaterialPage() {
   const { orders, updateOrder } = useData();
@@ -63,6 +64,8 @@ export default function WarehouseMaterialPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const {user: currentUser} = useAuth();
 
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec";
@@ -321,6 +324,7 @@ export default function WarehouseMaterialPage() {
                 // BV to CC columns (warehouse specific data)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
                 afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
                 biltyUpload: row.c[75] ? row.c[75].v : "", // Column BX
                 transporterName: row.c[76] ? row.c[76].v : "", // Column BY
                 transporterContact: row.c[77] ? row.c[77].v : "", // Column BZ
@@ -459,6 +463,7 @@ export default function WarehouseMaterialPage() {
                 totalCharges: row.c[79] ? row.c[79].v : "", // Column CB
                 warehouseRemarks: row.c[80] ? row.c[80].v : "", // Column CC
                 // CG to CI columns
+                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
                 materialReceivingStatus: row.c[84] ? row.c[84].v : "", // Column CG
                 reason: row.c[85] ? row.c[85].v : "", // Column CH
                 installationRequiredHistory: row.c[86] ? row.c[86].v : "", // Column CI
@@ -484,11 +489,28 @@ export default function WarehouseMaterialPage() {
     fetchHistoryOrders();
   }, []);
 
-  // Filter orders based on search term and selected column
-  const filteredPendingOrders = useMemo(() => {
-    if (!searchTerm) return pendingOrders;
+  // Add this function after the useAuth hook
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
+  
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
+  
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
 
-    return pendingOrders.filter((order) => {
+  // Filter orders based on search term and selected column
+const filteredPendingOrders = useMemo(() => {
+  let filtered = pendingOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = pendingColumns
           .filter((col) => col.searchable)
@@ -501,12 +523,19 @@ export default function WarehouseMaterialPage() {
         return fieldValue.includes(searchTerm.toLowerCase());
       }
     });
-  }, [pendingOrders, searchTerm, selectedColumn]);
+  }
 
-  const filteredHistoryOrders = useMemo(() => {
-    if (!searchTerm) return historyOrders;
+  return filtered;
+}, [pendingOrders, searchTerm, selectedColumn, currentUser]);
 
-    return historyOrders.filter((order) => {
+const filteredHistoryOrders = useMemo(() => {
+  let filtered = historyOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = historyColumns
           .filter((col) => col.searchable)
@@ -519,7 +548,10 @@ export default function WarehouseMaterialPage() {
         return fieldValue.includes(searchTerm.toLowerCase());
       }
     });
-  }, [historyOrders, searchTerm, selectedColumn]);
+  }
+
+  return filtered;
+}, [historyOrders, searchTerm, selectedColumn, currentUser]);
 
   // Column visibility handlers
   const togglePendingColumn = (columnKey) => {
@@ -738,12 +770,17 @@ export default function WarehouseMaterialPage() {
     const value = order[columnKey];
 
     switch (columnKey) {
-      case "actions":
-        return (
-          <Button size="sm" onClick={() => handleProcess(order.id)}>
-            Process
-          </Button>
-        );
+      // In the actions column renderer, update the Process button:
+case "actions":
+  return (
+    <Button 
+      size="sm" 
+      onClick={() => handleProcess(order.id)}
+      disabled={currentUser?.role === "user"}
+    >
+      Process
+    </Button>
+  );
       case "quotationCopy":
       case "quotationCopy2":
       //   return <Badge variant={value === "" ? "default" : ""}>{value || ""}</Badge>
@@ -806,20 +843,23 @@ export default function WarehouseMaterialPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Warehouse (Material RCVD)
-            </h1>
-            <p className="text-muted-foreground">
-              Confirm material receipt and installation requirements
-            </p>
-          </div>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+        // Update the header section:
+<div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Warehouse (Material RCVD)
+    </h1>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={handleRefresh} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh
+  </Button>
+</div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1512,21 +1552,25 @@ export default function WarehouseMaterialPage() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={
-                    !materialReceived || !installationRequired || uploading
-                  }
-                >
-                  {uploading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
+                // In the Process Dialog submit button:
+<Button
+  onClick={handleSubmit}
+  disabled={
+    !materialReceived || 
+    !installationRequired || 
+    uploading ||
+    currentUser?.role === "user"
+  }
+>
+  {uploading ? (
+    <>
+      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+      Submitting...
+    </>
+  ) : (
+    "Submit"
+  )}
+</Button>
               </div>
             </div>
           </DialogContent>

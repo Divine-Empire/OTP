@@ -8,7 +8,7 @@ interface User {
   id: string
   username: string
   fullName: string
-  role: "admin" | "user"
+  role: "super_admin" | "admin" | "user"
   assignedSteps: string[]
 }
 
@@ -61,64 +61,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Replace the login function with this implementation that works with your existing Apps Script
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      setIsLoading(true)
+// In the login function, update the user data parsing:
+const login = async (username: string, password: string): Promise<boolean> => {
+  try {
+    setIsLoading(true)
 
-      // Fetch users from Google Sheets
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${LOGIN_SHEET_NAME}`
-      const response = await fetch(sheetUrl)
-      const text = await response.text()
+    // Fetch users from Google Sheets
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${LOGIN_SHEET_NAME}`
+    const response = await fetch(sheetUrl)
+    const text = await response.text()
 
-      const jsonStart = text.indexOf("{")
-      const jsonEnd = text.lastIndexOf("}") + 1
-      const jsonData = text.substring(jsonStart, jsonEnd)
+    const jsonStart = text.indexOf("{")
+    const jsonEnd = text.lastIndexOf("}") + 1
+    const jsonData = text.substring(jsonStart, jsonEnd)
 
-      const data = JSON.parse(jsonData)
+    const data = JSON.parse(jsonData)
 
-      if (data && data.table && data.table.rows) {
-        // Skip header row
-        for (let i = 1; i < data.table.rows.length; i++) {
-          const row = data.table.rows[i]
+    if (data && data.table && data.table.rows) {
+      // Skip header row
+      for (let i = 1; i < data.table.rows.length; i++) {
+        const row = data.table.rows[i]
 
-          if (row.c) {
-            const rowUsername = row.c[0]?.v || ""
-            const rowFullName = row.c[1]?.v || ""
-            const rowPassword = row.c[2]?.v || ""
-            const rowRole = row.c[3]?.v || "user"
-            const rowAssignedSteps = row.c[4]?.v || ""
+        if (row.c) {
+          const rowUsername = row.c[0]?.v || ""
+          const rowFullName = row.c[1]?.v || ""
+          const rowPassword = row.c[2]?.v || ""
+          const rowRole = row.c[3]?.v || "user"
+          const rowAssignedSteps = row.c[4]?.v || ""
 
-            // Check if username and password match
-            if (rowUsername === username && rowPassword === password) {
-              // Parse assigned steps from comma-separated string
-              const assignedSteps = rowAssignedSteps.split(",").map((step: string) => step.trim())
+          // Check if username and password match
+          if (rowUsername === username && rowPassword === password) {
+            // Parse assigned steps from comma-separated string
+            const assignedSteps = rowAssignedSteps.split(",").map((step: string) => step.trim())
 
-              const userData: User = {
-                id: `user_${Date.now()}`,
-                username: rowUsername,
-                fullName: rowFullName,
-                role: rowRole === "admin" ? "admin" : "user",
-                assignedSteps: assignedSteps.length > 0 ? assignedSteps : ["all"],
-              }
+            // Determine role - support super_admin, admin, user
+            let userRole: "super_admin" | "admin" | "user" = "user"
+            if (rowRole === "super_admin") userRole = "super_admin"
+            else if (rowRole === "admin") userRole = "admin"
 
-              setUser(userData)
-              setIsAuthenticated(true)
-              localStorage.setItem("otp-user", JSON.stringify(userData))
-              localStorage.setItem("otp-authenticated", "true")
-              return true
+            const userData: User = {
+              id: `user_${Date.now()}`,
+              username: rowUsername,
+              fullName: rowFullName,
+              role: userRole,
+              assignedSteps: assignedSteps.length > 0 ? assignedSteps : ["all"],
             }
+
+            setUser(userData)
+            setIsAuthenticated(true)
+            localStorage.setItem("otp-user", JSON.stringify(userData))
+            localStorage.setItem("otp-authenticated", "true")
+            return true
           }
         }
       }
-
-      return false
-    } catch (error) {
-      console.error("Login error:", error)
-      return false
-    } finally {
-      setIsLoading(false)
     }
+
+    return false
+  } catch (error) {
+    console.error("Login error:", error)
+    return false
+  } finally {
+    setIsLoading(false)
   }
+}
 
   const logout = () => {
     setUser(null)

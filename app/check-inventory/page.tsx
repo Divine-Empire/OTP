@@ -274,6 +274,7 @@ export default function CheckInventoryPage() {
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[55] ? row.c[55].v : "",
+                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
                 inventoryStatus: row.c[58] ? row.c[58].v : null, // Column BG
                 inventoryRemarks: row.c[59] ? row.c[59].v : "", // Column BH
                 processedDate: row.c[60] ? row.c[60].v : "", // Column BI
@@ -412,10 +413,28 @@ export default function CheckInventoryPage() {
   }, [])
 
   // Filter orders based on search term and selected column
-  const filteredOrders = useMemo(() => {
-    if (!searchTerm) return orders
+// Add this function after the useAuth hook
+const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+  if (!currentUser) return orders;
+  
+  // Super admin sees all data
+  if (currentUser.role === "super_admin") {
+    return orders;
+  }
+  
+  // Admin and regular users only see data where CRE Name matches their username
+  return orders.filter(order => order.creName === currentUser.username);
+};
 
-    return orders.filter((order) => {
+// Update the filteredOrders useMemo to include role-based filtering
+const filteredOrders = useMemo(() => {
+  let filtered = orders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
       if (selectedColumn === "all") {
         const searchableFields = pendingColumns
           .filter((col) => col.searchable)
@@ -426,7 +445,10 @@ export default function CheckInventoryPage() {
         return fieldValue.includes(searchTerm.toLowerCase())
       }
     })
-  }, [orders, searchTerm, selectedColumn])
+  }
+
+  return filtered
+}, [orders, searchTerm, selectedColumn, currentUser])
 
   // Filter orders based on status
   const pendingOrders = filteredOrders.filter(
@@ -440,33 +462,37 @@ export default function CheckInventoryPage() {
   const [processedLoading, setProcessedLoading] = useState(false)
 
   // Filter processed orders based on search term
-  const filteredProcessedOrders = useMemo(() => {
-    let filtered = processedOrders;
-    
-    // Apply availability filter if not "all"
-    if (availabilityFilter !== "all") {
-      filtered = filtered.filter(order => 
-        (order.availabilityStatus || order.inventoryStatus) === availabilityFilter
-      );
-    }
-    
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter((order) => {
-        if (selectedColumn === "all") {
-          const searchableFields = historyColumns
-            .filter((col) => col.searchable)
-            .map((col) => String(order[col.key] || "").toLowerCase());
-          return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
-        } else {
-          const fieldValue = String(order[selectedColumn] || "").toLowerCase();
-          return fieldValue.includes(searchTerm.toLowerCase());
-        }
-      });
-    }
-    
-    return filtered;
-  }, [processedOrders, searchTerm, selectedColumn, availabilityFilter]);
+// Update the filteredProcessedOrders useMemo
+const filteredProcessedOrders = useMemo(() => {
+  let filtered = processedOrders;
+
+  // Apply user role-based filtering
+  filtered = filterOrdersByUserRole(filtered, currentUser);
+  
+  // Apply availability filter if not "all"
+  if (availabilityFilter !== "all") {
+    filtered = filtered.filter(order => 
+      (order.availabilityStatus || order.inventoryStatus) === availabilityFilter
+    );
+  }
+  
+  // Apply search filter
+  if (searchTerm) {
+    filtered = filtered.filter((order) => {
+      if (selectedColumn === "all") {
+        const searchableFields = historyColumns
+          .filter((col) => col.searchable)
+          .map((col) => String(order[col.key] || "").toLowerCase());
+        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
+      } else {
+        const fieldValue = String(order[selectedColumn] || "").toLowerCase();
+        return fieldValue.includes(searchTerm.toLowerCase());
+      }
+    });
+  }
+  
+  return filtered;
+}, [processedOrders, searchTerm, selectedColumn, availabilityFilter, currentUser]);
 
   const handleProcessedTabClick = async () => {
     setProcessedLoading(true)
@@ -886,18 +912,23 @@ export default function CheckInventoryPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Check Inventory
-            </h1>
-          </div>
-          <Button onClick={fetchOrders} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh from Sheets
-          </Button>
-        </div>
 
+<div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+      Check Inventory
+    </h1>
+    {currentUser && (
+      <p className="text-sm text-muted-foreground mt-1">
+        Logged in as: {currentUser.fullName} ({currentUser.role})
+      </p>
+    )}
+  </div>
+  <Button onClick={fetchOrders} variant="outline">
+    <RefreshCw className="h-4 w-4 mr-2" />
+    Refresh from Sheets
+  </Button>
+</div>
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
           <div className="relative flex-1 max-w-md">
@@ -1619,7 +1650,8 @@ export default function CheckInventoryPage() {
         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
           Cancel
         </Button>
-        <Button
+     // In the Process Dialog submit button, update to:
+<Button
   onClick={handleSubmit}
   disabled={!availabilityStatus || currentUser?.role === "user" || isSubmitting}
 >
