@@ -671,53 +671,67 @@ export default function WarehousePage() {
         throw new Error(`HTTP error! status: ${updateResponse.status}`);
       }
 
+      // === SECOND CALL - Insert to Warehouse sheet with dynamic columns ===
       const formData2 = new FormData();
       formData2.append("sheetName", "Warehouse");
-      formData2.append("action", "insert");
+      formData2.append("action", "insertWarehouseWithDynamicColumns");
       formData2.append("orderNo", order.orderNo);
 
-      // Warehouse sheet data - exactly as per your columns
+      // Find highest item number by checking object keys
+      const itemKeys = Object.keys(order).filter(
+        (key) => key.startsWith("itemName") || key.startsWith("quantity")
+      );
+      let totalItems = 0;
+
+      itemKeys.forEach((key) => {
+        const match = key.match(/\d+$/);
+        if (match) {
+          const num = parseInt(match[0]);
+          if (
+            num > totalItems &&
+            (order[`itemName${num}`] || order[`quantity${num}`])
+          ) {
+            totalItems = num;
+          }
+        }
+      });
+
+      console.log(`Found ${totalItems} items in order ${order.orderNo}`);
+      formData2.append("totalItems", totalItems.toString());
+
+      // Build warehouse row data according to your sheet structure:
+      // Col 1: Time Stamp
+      // Col 2: Order No.
+      // Col 3: Quotation No.
+      // Col 4: Before Photo Upload (placeholder - will be filled by backend)
+      // Col 5: After Photo Upload (placeholder - will be filled by backend)
+      // Col 6: Bilty Upload (placeholder - will be filled by backend)
+      // Col 7: Transporter Name
+      // Col 8: Transporter Contact
+      // Col 9: Bilty No.
+      // Col 10: Total Charges
+      // Col 11: Warehouse Remarks
+      // Col 12+: Item Name 1, Quantity 1, Item Name 2, Quantity 2, ...
+
       const warehouseRowData = [
-        formattedDate, // Time Stamp
-        order.orderNo, // Order No.
-        order.quotationNo, // Quotation No.
-        order.itemName1 || "", // Item Name 1
-        order.quantity1 || "", // Quantity 1
-        order.itemName2 || "", // Item Name 2
-        order.quantity2 || "", // Quantity 2
-        order.itemName3 || "", // Item Name 3
-        order.quantity3 || "", // Quantity 3
-        order.itemName4 || "", // Item Name 4
-        order.quantity4 || "", // Quantity 4
-        order.itemName5 || "", // Item Name 5
-        order.quantity5 || "", // Quantity 5
-        order.itemName6 || "", // Item Name 6
-        order.quantity6 || "", // Quantity 6
-        order.itemName7 || "", // Item Name 7
-        order.quantity7 || "", // Quantity 7
-        order.itemName8 || "", // Item Name 8
-        order.quantity8 || "", // Quantity 8
-        order.itemName9 || "", // Item Name 9
-        order.quantity9 || "", // Quantity 9
-        order.itemName10 || "", // Item Name 10
-        order.quantity10 || "", // Quantity 10
-        order.itemName11 || "", // Item Name 11
-        order.quantity11 || "", // Quantity 11
-        order.itemName12 || "", // Item Name 12
-        order.quantity12 || "", // Quantity 12
-        order.itemName13 || "", // Item Name 13
-        order.quantity13 || "", // Quantity 13
-        order.itemName14 || "", // Item Name 14
-        order.quantity14 || "", // Quantity 14
-        "", // Before Photo Upload (URL will be added after upload)
-        "", // After Photo Upload (URL will be added after upload)
-        "", // Bilty Upload (URL will be added after upload)
-        transporterName, // Transporter Name
-        transporterContact, // Transporter Contact
-        biltyNumber, // Bilty No.
-        totalCharges, // Total Charges
-        warehouseRemarks, // Warehouse Remarks
+        formattedDate, // 1. Time Stamp
+        order.orderNo, // 2. Order No.
+        order.quotationNo, // 3. Quotation No.
+        "", // 4. Before Photo (will be filled by backend)
+        "", // 5. After Photo (will be filled by backend)
+        "", // 6. Bilty Upload (will be filled by backend)
+        "", // 7. Transporter Name
+        "", // 8. Transporter Contact
+        "", // 9. Bilty No.
+        "", // 10. Total Charges
+        "", // 11. Warehouse Remarks
       ];
+
+      // Add all items dynamically after the fixed columns
+      for (let i = 1; i <= totalItems; i++) {
+        warehouseRowData.push(order[`itemName${i}`] || ""); // Item Name
+        warehouseRowData.push(order[`quantity${i}`] || ""); // Quantity
+      }
 
       formData2.append("rowData", JSON.stringify(warehouseRowData));
 
@@ -726,6 +740,12 @@ export default function WarehousePage() {
         mode: "cors",
         body: formData2,
       });
+
+      if (!updateResponse2.ok) {
+        throw new Error(
+          `Warehouse insert HTTP error! status: ${updateResponse2.status}`
+        );
+      }
 
       let result;
       try {
@@ -1594,6 +1614,7 @@ export default function WarehousePage() {
                   <Label htmlFor="orderNumber">Order Number</Label>
                   <Input
                     id="orderNumber"
+                    className="font-bold"
                     value={selectedOrder?.orderNo}
                     disabled
                   />
@@ -1601,7 +1622,7 @@ export default function WarehousePage() {
 
                 <div className="space-y-2">
                   <Label>Quotation No.</Label>
-                  <Input value={selectedOrder?.quotationNo || ""} disabled />
+                  <Input className="font-bold" value={selectedOrder?.quotationNo || ""} disabled />
                 </div>
               </div>
 
@@ -1618,11 +1639,11 @@ export default function WarehousePage() {
                         <div key={num} className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>Item Name {num}</Label>
-                            <Input value={itemName || ""} disabled />
+                            <Input className="font-bold" value={itemName || ""} disabled />
                           </div>
                           <div className="space-y-2">
                             <Label>Quantity {num}</Label>
-                            <Input value={quantity || ""} disabled />
+                            <Input className="font-bold" value={quantity || ""} disabled />
                           </div>
                         </div>
                       );
