@@ -645,6 +645,10 @@ const filteredProcessedOrders = useMemo(() => {
     setSrnNumber("")
     setSrnNumberAttachment(null)
     setPaymentAttachment(null)
+    setGstNumber("")
+    setVehicleNumber("")
+    setDispatchLocation("")
+    setDirectDispatch("")
     setIsDialogOpen(true)
     setRemarks("")
   }
@@ -664,7 +668,7 @@ const filteredProcessedOrders = useMemo(() => {
   }
 
   const handleSubmit = async () => {
-    if (!selectedOrder || !calibrationRequired || !installationRequired) return;
+    if (!selectedOrder || !calibrationRequired || !installationRequired || !dispatchLocation) return;
   
     const order = orders.find((o: any) => o.id === selectedOrder);
     if (!order) return;
@@ -1435,7 +1439,7 @@ case "actions":
 </div>
 
 <div className="space-y-2">
-  <Label htmlFor="dispatchLocation">Dispatch Location</Label>
+  <Label htmlFor="dispatchLocation">Dispatch Location <span className="text-red-500">*</span></Label>
   <Select value={dispatchLocation} onValueChange={setDispatchLocation}>
     <SelectTrigger>
       <SelectValue placeholder="Select dispatch location" />
@@ -1585,7 +1589,7 @@ case "actions":
                 </Button>
                <Button 
   onClick={handleSubmit} 
-  disabled={!calibrationRequired || !installationRequired || uploading || currentUser?.role === "user"}
+  disabled={!calibrationRequired || !installationRequired || !dispatchLocation || uploading || currentUser?.role === "user"}
 >
   {uploading ? (
     <>

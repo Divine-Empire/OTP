@@ -23,8 +23,8 @@ import {
 import { Trash2, RefreshCw, Search, Settings } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 
-const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+
 const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
 const SHEET_NAME = "ORDER-DISPATCH"
 
@@ -119,12 +119,12 @@ export default function CheckInventoryPage() {
 
   const [inventoryPhotoAttachment, setInventoryPhotoAttachment] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  
+
   const { user: currentUser } = useAuth()
 
   const formatGoogleSheetsDate = (dateValue) => {
     if (!dateValue) return "";
-  
+
     // Handle the case where date comes as "Date(2025,5,21)"
     if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
       try {
@@ -134,22 +134,22 @@ export default function CheckInventoryPage() {
           const year = parseInt(dateParts[1]);
           const month = parseInt(dateParts[2]); // Note: months are 0-indexed in JS
           const day = parseInt(dateParts[3]);
-          
+
           // Create a date object (month is 0-indexed in JS, so no need to subtract 1)
           const date = new Date(year, month, day);
-          
+
           // Format as dd/mm/yyyy
           const formattedDay = String(date.getDate()).padStart(2, '0');
           const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // +1 because months are 0-indexed
           const formattedYear = date.getFullYear();
-          
+
           return `${formattedDay}/${formattedMonth}/${formattedYear}`;
         }
       } catch (e) {
         console.error("Error parsing date string:", e);
       }
     }
-  
+
     // Handle case where date comes as a serial number or string
     try {
       // If it's a number (serial date value from Google Sheets)
@@ -159,23 +159,23 @@ export default function CheckInventoryPage() {
         const formattedDay = String(date.getDate()).padStart(2, '0');
         const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
         const formattedYear = date.getFullYear();
-        
+
         return `${formattedDay}/${formattedMonth}/${formattedYear}`;
       }
-      
+
       // If it's already a date string in some format
       const date = new Date(dateValue);
       if (!isNaN(date.getTime())) {
         const formattedDay = String(date.getDate()).padStart(2, '0');
         const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
         const formattedYear = date.getFullYear();
-        
+
         return `${formattedDay}/${formattedMonth}/${formattedYear}`;
       }
     } catch (e) {
       console.error("Error parsing date value:", e);
     }
-  
+
     // If all else fails, return the original value
     return dateValue;
   };
@@ -413,42 +413,42 @@ export default function CheckInventoryPage() {
   }, [])
 
   // Filter orders based on search term and selected column
-// Add this function after the useAuth hook
-const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
-  if (!currentUser) return orders;
-  
-  // Super admin sees all data
-  if (currentUser.role === "super_admin") {
-    return orders;
-  }
-  
-  // Admin and regular users only see data where CRE Name matches their username
-  return orders.filter(order => order.creName === currentUser.username);
-};
+  // Add this function after the useAuth hook
+  const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+    if (!currentUser) return orders;
 
-// Update the filteredOrders useMemo to include role-based filtering
-const filteredOrders = useMemo(() => {
-  let filtered = orders;
+    // Super admin sees all data
+    if (currentUser.role === "super_admin") {
+      return orders;
+    }
 
-  // Apply user role-based filtering
-  filtered = filterOrdersByUserRole(filtered, currentUser);
+    // Admin and regular users only see data where CRE Name matches their username
+    return orders.filter(order => order.creName === currentUser.username);
+  };
 
-  if (searchTerm) {
-    filtered = filtered.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = pendingColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
-        return fieldValue.includes(searchTerm.toLowerCase())
-      }
-    })
-  }
+  // Update the filteredOrders useMemo to include role-based filtering
+  const filteredOrders = useMemo(() => {
+    let filtered = orders;
 
-  return filtered
-}, [orders, searchTerm, selectedColumn, currentUser])
+    // Apply user role-based filtering
+    filtered = filterOrdersByUserRole(filtered, currentUser);
+
+    if (searchTerm) {
+      filtered = filtered.filter((order) => {
+        if (selectedColumn === "all") {
+          const searchableFields = pendingColumns
+            .filter((col) => col.searchable)
+            .map((col) => String(order[col.key] || "").toLowerCase())
+          return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+        } else {
+          const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+          return fieldValue.includes(searchTerm.toLowerCase())
+        }
+      })
+    }
+
+    return filtered
+  }, [orders, searchTerm, selectedColumn, currentUser])
 
   // Filter orders based on status
   const pendingOrders = filteredOrders.filter(
@@ -462,37 +462,37 @@ const filteredOrders = useMemo(() => {
   const [processedLoading, setProcessedLoading] = useState(false)
 
   // Filter processed orders based on search term
-// Update the filteredProcessedOrders useMemo
-const filteredProcessedOrders = useMemo(() => {
-  let filtered = processedOrders;
+  // Update the filteredProcessedOrders useMemo
+  const filteredProcessedOrders = useMemo(() => {
+    let filtered = processedOrders;
 
-  // Apply user role-based filtering
-  filtered = filterOrdersByUserRole(filtered, currentUser);
-  
-  // Apply availability filter if not "all"
-  if (availabilityFilter !== "all") {
-    filtered = filtered.filter(order => 
-      (order.availabilityStatus || order.inventoryStatus) === availabilityFilter
-    );
-  }
-  
-  // Apply search filter
-  if (searchTerm) {
-    filtered = filtered.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = historyColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase());
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase();
-        return fieldValue.includes(searchTerm.toLowerCase());
-      }
-    });
-  }
-  
-  return filtered;
-}, [processedOrders, searchTerm, selectedColumn, availabilityFilter, currentUser]);
+    // Apply user role-based filtering
+    filtered = filterOrdersByUserRole(filtered, currentUser);
+
+    // Apply availability filter if not "all"
+    if (availabilityFilter !== "all") {
+      filtered = filtered.filter(order =>
+        (order.availabilityStatus || order.inventoryStatus) === availabilityFilter
+      );
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter((order) => {
+        if (selectedColumn === "all") {
+          const searchableFields = historyColumns
+            .filter((col) => col.searchable)
+            .map((col) => String(order[col.key] || "").toLowerCase());
+          return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()));
+        } else {
+          const fieldValue = String(order[selectedColumn] || "").toLowerCase();
+          return fieldValue.includes(searchTerm.toLowerCase());
+        }
+      });
+    }
+
+    return filtered;
+  }, [processedOrders, searchTerm, selectedColumn, availabilityFilter, currentUser]);
 
   const handleProcessedTabClick = async () => {
     setProcessedLoading(true)
@@ -532,7 +532,7 @@ const filteredProcessedOrders = useMemo(() => {
     setVisibleHistoryColumns(historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: false }), {}))
   }
 
-  
+
 
   // Update order status by finding the correct row that matches the order ID in column B
   const updateOrderStatus = async (order, inventoryData) => {
@@ -540,12 +540,12 @@ const filteredProcessedOrders = useMemo(() => {
       console.log(`Updating order for company: ${order.companyName}`);
       console.log(`Looking for Order No.: ${order.id}`);
       console.log(`Order details:`, order);
-  
+
       const formData = new FormData();
       formData.append("sheetName", SHEET_NAME);
       formData.append("action", "updateByOrderNoInColumnB");
       formData.append("orderNo", order.id);
-  
+
       // Handle inventory photo upload
       if (inventoryPhotoAttachment) {
         try {
@@ -557,57 +557,57 @@ const filteredProcessedOrders = useMemo(() => {
           console.error("Error converting inventory photo file:", error);
         }
       }
-  
+
       // Create a sparse array to update only specific columns
       const rowData = new Array(70).fill(""); // Make sure array is large enough for all columns
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-  
+
       // Set inventory status (column BJ - index 61)
       rowData[61] = inventoryData.availabilityStatus;
-  
+
       // Set processed date (column BI - index 59)
       rowData[59] = formattedDate;
-  
+
       // Set remarks in column BK (index 62)
       rowData[62] = inventoryData.remarks || "";
-  
+
       // For Not Available or Partial status, set additional columns
       if (inventoryData.availabilityStatus === "Not Available" || inventoryData.availabilityStatus === "Partial") {
         // Customer wants material as (column BL - index 63)
         rowData[63] = inventoryData.partialDetails?.customerDecision || "";
-        
+
         // Created by (column BM - index 64) - will be set by the file upload
         // rowData[64] = inventoryData.partialDetails?.createdBy || "";
-        
+
         // Warehouse location (column BN - index 65)
         rowData[65] = inventoryData.partialDetails?.warehouseLocation || "";
-        
+
         // Create indent if not available (column BO - index 66)
         rowData[66] = inventoryData.partialDetails?.createIndent ? "File Uploaded" : "";
-        
+
         // Line item number (column BP - index 67)
         rowData[67] = inventoryData.partialDetails?.lineItemNumber || "";
-        
+
         // Total qty (column BQ - index 68)
         rowData[68] = inventoryData.partialDetails?.totalQty || "";
-        
+
         // Material received lead time (column BR - index 69)
         rowData[69] = inventoryData.partialDetails?.leadTime || "";
       }
-  
+
       formData.append("rowData", JSON.stringify(rowData));
-  
+
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       });
-  
+
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`);
       }
-  
+
       let result;
       try {
         const responseText = await updateResponse.text();
@@ -615,7 +615,7 @@ const filteredProcessedOrders = useMemo(() => {
       } catch (parseError) {
         result = { success: true };
       }
-  
+
       if (result.success !== false) {
         await fetchOrders();
         return { success: true, fileUrls: result.fileUrls };
@@ -648,20 +648,20 @@ const filteredProcessedOrders = useMemo(() => {
   const calculateTotalQty = (items) => {
     return items.reduce((total, item) => total + (Number(item.qty) || 0), 0);
   };
-  
+
   const handleSubmit = async () => {
     if (!selectedOrder || !availabilityStatus) return;
-  
+
     setUploading(true);
     setIsSubmitting(true); // Start loading
-  setError(null);
-  
+    setError(null);
+
     try {
       const formData = new FormData();
       formData.append("sheetName", SHEET_NAME);
       formData.append("action", "updateByOrderNoInColumnB");
       formData.append("orderNo", selectedOrder.id);
-  
+
       // Handle inventory photo upload
       if (inventoryPhotoAttachment) {
         const base64Data = await convertFileToBase64(inventoryPhotoAttachment);
@@ -669,21 +669,21 @@ const filteredProcessedOrders = useMemo(() => {
         formData.append("inventoryPhotoFileName", inventoryPhotoAttachment.name);
         formData.append("inventoryPhotoMimeType", inventoryPhotoAttachment.type);
       }
-  
+
       // Prepare row data
       const rowData = new Array(70).fill("");
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-  
+
       // Set inventory status (column BJ - index 61)
       rowData[61] = availabilityStatus;
-  
+
       // Set processed date (column BI - index 59)
       rowData[59] = formattedDate;
-  
+
       // Set remarks in column BK (index 62)
       rowData[62] = remarks || "";
-  
+
       // For Not Available or Partial status
       if (availabilityStatus === "Not Available" || availabilityStatus === "Partial") {
         rowData[63] = partialDetails.customerDecision || "";
@@ -700,40 +700,80 @@ const filteredProcessedOrders = useMemo(() => {
         qty: item.qty
       }));
       rowData[79] = JSON.stringify(itemsData);
-  
+
       formData.append("rowData", JSON.stringify(rowData));
-  
+
       const response = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const result = await response.json();
-  
+
       if (!result.success) {
         throw new Error(result.error || "Update failed");
       }
-  
+
+      // ── Secondary submission to INDENT-LIFT sheet ──────────────────────────
+      // Fires only when status is Partial or Not Available (primary must succeed first)
+      if (availabilityStatus === "Partial" || availabilityStatus === "Not Available") {
+        try {
+          const indentFormData = new FormData();
+          indentFormData.append("action", "insertIndentLift");
+          indentFormData.append(
+            "items",
+            JSON.stringify(
+              unavailableItems
+                .filter((item) => item.name && item.name.trim() !== "")
+                .map((item) => ({ name: item.name, qty: item.qty }))
+            )
+          );
+          indentFormData.append("createdBy", partialDetails.createdBy || "");
+          indentFormData.append("warehouseLocation", partialDetails.warehouseLocation || "");
+          indentFormData.append("lineItemNumber", partialDetails.lineItemNumber || "");
+          indentFormData.append("leadTime", partialDetails.leadTime || "");
+
+          const indentResponse = await fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            mode: "cors",
+            body: indentFormData,
+          });
+
+          if (indentResponse.ok) {
+            const indentResult = await indentResponse.json();
+            if (indentResult.success) {
+              console.log("✅ INDENT-LIFT rows inserted:", indentResult.generatedIds);
+            } else {
+              console.warn("⚠️ INDENT-LIFT insertion warning:", indentResult.error);
+            }
+          }
+        } catch (indentErr) {
+          // Non-blocking — primary submission already succeeded
+          console.error("❌ Error submitting to INDENT-LIFT (non-blocking):", indentErr);
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────────
+
       // Success handling
       setIsDialogOpen(false);
       setSelectedOrder(null);
       setInventoryPhotoAttachment(null);
-      
+
       // Refresh data
       await fetchOrders();
-      
+
       // Show success message
       let message = `Inventory check for order ${selectedOrder.id} updated successfully`;
       if (result.fileUrls?.inventoryPhotoUrl) {
         message += `\n\nPhoto uploaded: ${result.fileUrls.inventoryPhotoUrl}`;
       }
       alert(message);
-  
+
     } catch (err) {
       console.error("Submission error:", err);
       setError(err.message);
@@ -756,13 +796,13 @@ const filteredProcessedOrders = useMemo(() => {
       totalQty: "",
       leadTime: ""
     })
-    
+
     // Extract items from the order data (columns M to AF) - first 10 items
     const extractedItems: Array<{ name: string; qty: number }> = []
     for (let i = 12; i <= 31; i += 2) { // Columns M (12) to AF (31)
       const nameCol = order.fullRowData[i]
       const qtyCol = order.fullRowData[i + 1]
-  
+
       if (nameCol && nameCol.v && nameCol.v.toString().trim() !== "") {
         extractedItems.push({
           name: nameCol.v.toString(),
@@ -770,11 +810,11 @@ const filteredProcessedOrders = useMemo(() => {
         })
       }
     }
-  
+
     setUnavailableItems(extractedItems)
     setIsDialogOpen(true)
   }
-  
+
 
 
   const addUnavailableItem = () => {
@@ -789,7 +829,7 @@ const filteredProcessedOrders = useMemo(() => {
     const updated = [...unavailableItems];
     updated[index] = { ...updated[index], [field]: value };
     setUnavailableItems(updated);
-    
+
     // Update total qty whenever quantity changes
     if (field === "qty") {
       setPartialDetails(prev => ({
@@ -853,7 +893,7 @@ const filteredProcessedOrders = useMemo(() => {
           </Button>
         )
       case "quotationCopy":
-        // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
+      // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
       case "acceptanceCopy":
         return value && (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
@@ -913,22 +953,22 @@ const filteredProcessedOrders = useMemo(() => {
     <MainLayout>
       <div className="space-y-6">
 
-<div className="flex justify-between items-center">
-  <div>
-    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-      Check Inventory
-    </h1>
-    {currentUser && (
-      <p className="text-sm text-muted-foreground mt-1">
-        Logged in as: {currentUser.fullName} ({currentUser.role})
-      </p>
-    )}
-  </div>
-  <Button onClick={fetchOrders} variant="outline">
-    <RefreshCw className="h-4 w-4 mr-2" />
-    Refresh from Sheets
-  </Button>
-</div>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              Check Inventory
+            </h1>
+            {currentUser && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Logged in as: {currentUser.fullName} ({currentUser.role})
+              </p>
+            )}
+          </div>
+          <Button onClick={fetchOrders} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh from Sheets
+          </Button>
+        </div>
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
           <div className="relative flex-1 max-w-md">
@@ -966,467 +1006,467 @@ const filteredProcessedOrders = useMemo(() => {
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
-  <Card>
-    <CardHeader>
-      <div className="flex justify-between items-center">
-        <div>
-          <CardTitle>Pending Inventory Check</CardTitle>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Column Visibility
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
-            <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="flex gap-2 p-2">
-              <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
-                Show All
-              </Button>
-              <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
-                Hide All
-              </Button>
-            </div>
-            <DropdownMenuSeparator />
-            <div className="p-2 space-y-2">
-              {pendingColumns.map((column) => (
-                <div key={column.key} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`pending-${column.key}`}
-                    checked={visiblePendingColumns[column.key]}
-                    onCheckedChange={() => togglePendingColumn(column.key)}
-                  />
-                  <Label htmlFor={`pending-${column.key}`} className="text-sm">
-                    {column.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <div style={{ minWidth: 'max-content' }}>
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-gray-50">
-                <TableRow>
-                  {pendingColumns
-                    .filter((col) => visiblePendingColumns[col.key])
-                    .map((column) => (
-                      <TableHead 
-                        key={column.key}
-                        className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
-                        style={{ 
-                          width: column.key === 'actions' ? '120px' : 
-                                 column.key === 'orderNo' ? '120px' :
-                                 column.key === 'quotationNo' ? '150px' :
-                                 column.key === 'companyName' ? '250px' :
-                                 column.key === 'contactPersonName' ? '180px' :
-                                 column.key === 'contactNumber' ? '140px' :
-                                 column.key === 'billingAddress' ? '200px' :
-                                 column.key === 'shippingAddress' ? '200px' :
-                                 column.key === 'isOrderAcceptable' ? '150px' :
-                                 column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                 column.key === 'remarks' ? '200px' :
-                                 '160px',
-                          minWidth: column.key === 'actions' ? '120px' : 
-                                   column.key === 'orderNo' ? '120px' :
-                                   column.key === 'quotationNo' ? '150px' :
-                                   column.key === 'companyName' ? '250px' :
-                                   column.key === 'contactPersonName' ? '180px' :
-                                   column.key === 'contactNumber' ? '140px' :
-                                   column.key === 'billingAddress' ? '200px' :
-                                   column.key === 'shippingAddress' ? '200px' :
-                                   column.key === 'isOrderAcceptable' ? '150px' :
-                                   column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                   column.key === 'remarks' ? '200px' :
-                                   '160px',
-                          maxWidth: column.key === 'actions' ? '120px' : 
-                                   column.key === 'orderNo' ? '120px' :
-                                   column.key === 'quotationNo' ? '150px' :
-                                   column.key === 'companyName' ? '250px' :
-                                   column.key === 'contactPersonName' ? '180px' :
-                                   column.key === 'contactNumber' ? '140px' :
-                                   column.key === 'billingAddress' ? '200px' :
-                                   column.key === 'shippingAddress' ? '200px' :
-                                   column.key === 'isOrderAcceptable' ? '150px' :
-                                   column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                   column.key === 'remarks' ? '200px' :
-                                   '160px'
-                        }}
-                      >
-                        <div className="break-words">
-                          {column.label}
-                        </div>
-                      </TableHead>
-                    ))}
-                </TableRow>
-              </TableHeader>
-            </Table>
-            
-            <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
-              <Table>
-                <TableBody>
-                  {pendingOrders.map((order) => (
-                    <TableRow key={order.rowIndex} className="hover:bg-gray-50">
-                      {pendingColumns
-                        .filter((col) => visiblePendingColumns[col.key])
-                        .map((column) => (
-                          <TableCell 
-                            key={column.key} 
-                            className="border-b px-4 py-3 align-top"
-                            style={{ 
-                              width: column.key === 'actions' ? '120px' : 
-                                     column.key === 'orderNo' ? '120px' :
-                                     column.key === 'quotationNo' ? '150px' :
-                                     column.key === 'companyName' ? '250px' :
-                                     column.key === 'contactPersonName' ? '180px' :
-                                     column.key === 'contactNumber' ? '140px' :
-                                     column.key === 'billingAddress' ? '200px' :
-                                     column.key === 'shippingAddress' ? '200px' :
-                                     column.key === 'isOrderAcceptable' ? '150px' :
-                                     column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                     column.key === 'remarks' ? '200px' :
-                                     '160px',
-                              minWidth: column.key === 'actions' ? '120px' : 
-                                       column.key === 'orderNo' ? '120px' :
-                                       column.key === 'quotationNo' ? '150px' :
-                                       column.key === 'companyName' ? '250px' :
-                                       column.key === 'contactPersonName' ? '180px' :
-                                       column.key === 'contactNumber' ? '140px' :
-                                       column.key === 'billingAddress' ? '200px' :
-                                       column.key === 'shippingAddress' ? '200px' :
-                                       column.key === 'isOrderAcceptable' ? '150px' :
-                                       column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                       column.key === 'remarks' ? '200px' :
-                                       '160px',
-                              maxWidth: column.key === 'actions' ? '120px' : 
-                                       column.key === 'orderNo' ? '120px' :
-                                       column.key === 'quotationNo' ? '150px' :
-                                       column.key === 'companyName' ? '250px' :
-                                       column.key === 'contactPersonName' ? '180px' :
-                                       column.key === 'contactNumber' ? '140px' :
-                                       column.key === 'billingAddress' ? '200px' :
-                                       column.key === 'shippingAddress' ? '200px' :
-                                       column.key === 'isOrderAcceptable' ? '150px' :
-                                       column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                       column.key === 'remarks' ? '200px' :
-                                       '160px'
-                            }}
-                          >
-                            <div className="break-words whitespace-normal leading-relaxed">
-                              {renderCellContent(order, column.key)}
-                            </div>
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  ))}
-                  {pendingOrders.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
-                        className="text-center text-muted-foreground h-32"
-                      >
-                        {searchTerm
-                          ? "No orders match your search criteria"
-                          : "No pending orders found in Google Sheets"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
-         <TabsContent value="history" className="space-y-4">
-  <Card>
-    <CardHeader>
-      <div className="flex justify-between items-center">
-        <div>
-          <CardTitle>Inventory Check History</CardTitle>
-          <CardDescription>
-            Previously processed inventory checks (where both BG and BH columns have data)
-          </CardDescription>
-        </div>
-        <div className="flex gap-4">
-          <Select 
-            value={availabilityFilter} 
-            onValueChange={setAvailabilityFilter}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Available">Available</SelectItem>
-              <SelectItem value="Not Available">Not Available</SelectItem>
-              <SelectItem value="Partial">Partial</SelectItem>
-            </SelectContent>
-          </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Column Visibility
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
-              <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="flex gap-2 p-2">
-                <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
-                  Show All
-                </Button>
-                <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
-                  Hide All
-                </Button>
-              </div>
-              <DropdownMenuSeparator />
-              <div className="p-2 space-y-2">
-                {historyColumns.map((column) => (
-                  <div key={column.key} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`history-${column.key}`}
-                      checked={visibleHistoryColumns[column.key]}
-                      onCheckedChange={() => toggleHistoryColumn(column.key)}
-                    />
-                    <Label htmlFor={`history-${column.key}`} className="text-sm">
-                      {column.label}
-                    </Label>
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Pending Inventory Check</CardTitle>
                   </div>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </CardHeader>
-    <CardContent>
-      {processedLoading ? (
-        <div className="flex items-center justify-center h-32">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Loading processed orders...</span>
-        </div>
-      ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: 'max-content' }}>
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-gray-50">
-                  <TableRow>
-                    {historyColumns
-                      .filter((col) => visibleHistoryColumns[col.key])
-                      .map((column) => (
-                        <TableHead 
-                          key={column.key}
-                          className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
-                          style={{ 
-                            width: column.key === 'orderNo' ? '120px' :
-                                   column.key === 'quotationNo' ? '150px' :
-                                   column.key === 'companyName' ? '250px' :
-                                   column.key === 'contactPersonName' ? '180px' :
-                                   column.key === 'contactNumber' ? '140px' :
-                                   column.key === 'billingAddress' ? '200px' :
-                                   column.key === 'shippingAddress' ? '200px' :
-                                   column.key === 'isOrderAcceptable' ? '150px' :
-                                   column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                   column.key === 'remarks' ? '200px' :
-                                   column.key === 'availabilityStatus' ? '150px' :
-                                   column.key === 'inventoryRemarks' ? '200px' :
-                                   '160px',
-                            minWidth: column.key === 'orderNo' ? '120px' :
-                                     column.key === 'quotationNo' ? '150px' :
-                                     column.key === 'companyName' ? '250px' :
-                                     column.key === 'contactPersonName' ? '180px' :
-                                     column.key === 'contactNumber' ? '140px' :
-                                     column.key === 'billingAddress' ? '200px' :
-                                     column.key === 'shippingAddress' ? '200px' :
-                                     column.key === 'isOrderAcceptable' ? '150px' :
-                                     column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                     column.key === 'remarks' ? '200px' :
-                                     column.key === 'availabilityStatus' ? '150px' :
-                                     column.key === 'inventoryRemarks' ? '200px' :
-                                     '160px',
-                            maxWidth: column.key === 'orderNo' ? '120px' :
-                                     column.key === 'quotationNo' ? '150px' :
-                                     column.key === 'companyName' ? '250px' :
-                                     column.key === 'contactPersonName' ? '180px' :
-                                     column.key === 'contactNumber' ? '140px' :
-                                     column.key === 'billingAddress' ? '200px' :
-                                     column.key === 'shippingAddress' ? '200px' :
-                                     column.key === 'isOrderAcceptable' ? '150px' :
-                                     column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                     column.key === 'remarks' ? '200px' :
-                                     column.key === 'availabilityStatus' ? '150px' :
-                                     column.key === 'inventoryRemarks' ? '200px' :
-                                     '160px'
-                          }}
-                        >
-                          <div className="break-words">
-                            {column.label}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {pendingColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`pending-${column.key}`}
+                              checked={visiblePendingColumns[column.key]}
+                              onCheckedChange={() => togglePendingColumn(column.key)}
+                            />
+                            <Label htmlFor={`pending-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
                           </div>
-                        </TableHead>
-                      ))}
-                  </TableRow>
-                </TableHeader>
-              </Table>
-              
-              <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
-                <Table>
-                  <TableBody>
-                    {filteredProcessedOrders.map((order) => (
-                      <TableRow key={order.rowIndex} className="hover:bg-gray-50">
-                        {historyColumns
-                          .filter((col) => visibleHistoryColumns[col.key])
-                          .map((column) => (
-                            <TableCell 
-                              key={column.key} 
-                              className="border-b px-4 py-3 align-top"
-                              style={{ 
-                                width: column.key === 'orderNo' ? '120px' :
-                                       column.key === 'quotationNo' ? '150px' :
-                                       column.key === 'companyName' ? '250px' :
-                                       column.key === 'contactPersonName' ? '180px' :
-                                       column.key === 'contactNumber' ? '140px' :
-                                       column.key === 'billingAddress' ? '200px' :
-                                       column.key === 'shippingAddress' ? '200px' :
-                                       column.key === 'isOrderAcceptable' ? '150px' :
-                                       column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                       column.key === 'remarks' ? '200px' :
-                                       column.key === 'availabilityStatus' ? '150px' :
-                                       column.key === 'inventoryRemarks' ? '200px' :
-                                       '160px',
-                                minWidth: column.key === 'orderNo' ? '120px' :
-                                         column.key === 'quotationNo' ? '150px' :
-                                         column.key === 'companyName' ? '250px' :
-                                         column.key === 'contactPersonName' ? '180px' :
-                                         column.key === 'contactNumber' ? '140px' :
-                                         column.key === 'billingAddress' ? '200px' :
-                                         column.key === 'shippingAddress' ? '200px' :
-                                         column.key === 'isOrderAcceptable' ? '150px' :
-                                         column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                         column.key === 'remarks' ? '200px' :
-                                         column.key === 'availabilityStatus' ? '150px' :
-                                         column.key === 'inventoryRemarks' ? '200px' :
-                                         '160px',
-                                maxWidth: column.key === 'orderNo' ? '120px' :
-                                         column.key === 'quotationNo' ? '150px' :
-                                         column.key === 'companyName' ? '250px' :
-                                         column.key === 'contactPersonName' ? '180px' :
-                                         column.key === 'contactNumber' ? '140px' :
-                                         column.key === 'billingAddress' ? '200px' :
-                                         column.key === 'shippingAddress' ? '200px' :
-                                         column.key === 'isOrderAcceptable' ? '150px' :
-                                         column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                         column.key === 'remarks' ? '200px' :
-                                         column.key === 'availabilityStatus' ? '150px' :
-                                         column.key === 'inventoryRemarks' ? '200px' :
-                                         '160px'
-                              }}
-                            >
-                              <div className="break-words whitespace-normal leading-relaxed">
-                                {renderCellContent(order, column.key)}
-                              </div>
-                            </TableCell>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div style={{ minWidth: 'max-content' }}>
+                      <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                          <TableRow>
+                            {pendingColumns
+                              .filter((col) => visiblePendingColumns[col.key])
+                              .map((column) => (
+                                <TableHead
+                                  key={column.key}
+                                  className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
+                                  style={{
+                                    width: column.key === 'actions' ? '120px' :
+                                      column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          '160px',
+                                    minWidth: column.key === 'actions' ? '120px' :
+                                      column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          '160px',
+                                    maxWidth: column.key === 'actions' ? '120px' :
+                                      column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          '160px'
+                                  }}
+                                >
+                                  <div className="break-words">
+                                    {column.label}
+                                  </div>
+                                </TableHead>
+                              ))}
+                          </TableRow>
+                        </TableHeader>
+                      </Table>
+
+                      <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
+                        <Table>
+                          <TableBody>
+                            {pendingOrders.map((order) => (
+                              <TableRow key={order.rowIndex} className="hover:bg-gray-50">
+                                {pendingColumns
+                                  .filter((col) => visiblePendingColumns[col.key])
+                                  .map((column) => (
+                                    <TableCell
+                                      key={column.key}
+                                      className="border-b px-4 py-3 align-top"
+                                      style={{
+                                        width: column.key === 'actions' ? '120px' :
+                                          column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              '160px',
+                                        minWidth: column.key === 'actions' ? '120px' :
+                                          column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              '160px',
+                                        maxWidth: column.key === 'actions' ? '120px' :
+                                          column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              '160px'
+                                      }}
+                                    >
+                                      <div className="break-words whitespace-normal leading-relaxed">
+                                        {renderCellContent(order, column.key)}
+                                      </div>
+                                    </TableCell>
+                                  ))}
+                              </TableRow>
+                            ))}
+                            {pendingOrders.length === 0 && (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                                  className="text-center text-muted-foreground h-32"
+                                >
+                                  {searchTerm
+                                    ? "No orders match your search criteria"
+                                    : "No pending orders found in Google Sheets"}
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Inventory Check History</CardTitle>
+                    <CardDescription>
+                      Previously processed inventory checks (where both BG and BH columns have data)
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-4">
+                    <Select
+                      value={availabilityFilter}
+                      onValueChange={setAvailabilityFilter}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Available">Available</SelectItem>
+                        <SelectItem value="Not Available">Not Available</SelectItem>
+                        <SelectItem value="Partial">Partial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Column Visibility
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                        <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <div className="flex gap-2 p-2">
+                          <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
+                            Show All
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
+                            Hide All
+                          </Button>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <div className="p-2 space-y-2">
+                          {historyColumns.map((column) => (
+                            <div key={column.key} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`history-${column.key}`}
+                                checked={visibleHistoryColumns[column.key]}
+                                onCheckedChange={() => toggleHistoryColumn(column.key)}
+                              />
+                              <Label htmlFor={`history-${column.key}`} className="text-sm">
+                                {column.label}
+                              </Label>
+                            </div>
                           ))}
-                      </TableRow>
-                    ))}
-                    {filteredProcessedOrders.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
-                          className="text-center text-muted-foreground h-32"
-                        >
-                          {searchTerm ? "No orders match your search criteria" : "No processed orders found"}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-</TabsContent>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {processedLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Loading processed orders...</span>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <div style={{ minWidth: 'max-content' }}>
+                        <Table>
+                          <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                            <TableRow>
+                              {historyColumns
+                                .filter((col) => visibleHistoryColumns[col.key])
+                                .map((column) => (
+                                  <TableHead
+                                    key={column.key}
+                                    className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
+                                    style={{
+                                      width: column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          column.key === 'availabilityStatus' ? '150px' :
+                                                            column.key === 'inventoryRemarks' ? '200px' :
+                                                              '160px',
+                                      minWidth: column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          column.key === 'availabilityStatus' ? '150px' :
+                                                            column.key === 'inventoryRemarks' ? '200px' :
+                                                              '160px',
+                                      maxWidth: column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          column.key === 'availabilityStatus' ? '150px' :
+                                                            column.key === 'inventoryRemarks' ? '200px' :
+                                                              '160px'
+                                    }}
+                                  >
+                                    <div className="break-words">
+                                      {column.label}
+                                    </div>
+                                  </TableHead>
+                                ))}
+                            </TableRow>
+                          </TableHeader>
+                        </Table>
+
+                        <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
+                          <Table>
+                            <TableBody>
+                              {filteredProcessedOrders.map((order) => (
+                                <TableRow key={order.rowIndex} className="hover:bg-gray-50">
+                                  {historyColumns
+                                    .filter((col) => visibleHistoryColumns[col.key])
+                                    .map((column) => (
+                                      <TableCell
+                                        key={column.key}
+                                        className="border-b px-4 py-3 align-top"
+                                        style={{
+                                          width: column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              column.key === 'availabilityStatus' ? '150px' :
+                                                                column.key === 'inventoryRemarks' ? '200px' :
+                                                                  '160px',
+                                          minWidth: column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              column.key === 'availabilityStatus' ? '150px' :
+                                                                column.key === 'inventoryRemarks' ? '200px' :
+                                                                  '160px',
+                                          maxWidth: column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              column.key === 'availabilityStatus' ? '150px' :
+                                                                column.key === 'inventoryRemarks' ? '200px' :
+                                                                  '160px'
+                                        }}
+                                      >
+                                        <div className="break-words whitespace-normal leading-relaxed">
+                                          {renderCellContent(order, column.key)}
+                                        </div>
+                                      </TableCell>
+                                    ))}
+                                </TableRow>
+                              ))}
+                              {filteredProcessedOrders.length === 0 && (
+                                <TableRow>
+                                  <TableCell
+                                    colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                                    className="text-center text-muted-foreground h-32"
+                                  >
+                                    {searchTerm ? "No orders match your search criteria" : "No processed orders found"}
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Process Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-    <DialogHeader>
-      <DialogTitle>Check Inventory</DialogTitle>
-      <DialogDescription>Verify item availability for the order</DialogDescription>
-    </DialogHeader>
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="orderNo">Order No.</Label>
-        <Input id="orderNo" value={selectedOrder?.orderNo || ""} disabled />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="companyName">Company Name</Label>
-        <Input id="companyName" value={selectedOrder?.companyName || ""} disabled />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="availability">Availability Status *</Label>
-        <Select value={availabilityStatus} onValueChange={setAvailabilityStatus}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Available">Available</SelectItem>
-            <SelectItem value="Not Available">Not Available</SelectItem>
-            <SelectItem value="Partial">Partial</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Check Inventory</DialogTitle>
+              <DialogDescription>Verify item availability for the order</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="orderNo">Order No.</Label>
+                <Input id="orderNo" value={selectedOrder?.orderNo || ""} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="companyName">Company Name</Label>
+                <Input id="companyName" value={selectedOrder?.companyName || ""} disabled />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="availability">Availability Status *</Label>
+                <Select value={availabilityStatus} onValueChange={setAvailabilityStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Available">Available</SelectItem>
+                    <SelectItem value="Not Available">Not Available</SelectItem>
+                    <SelectItem value="Partial">Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-      {availabilityStatus === "Available" && (
-        <div className="space-y-2">
-          <Label htmlFor="remarks">Remarks</Label>
-          <Textarea
-            id="remarks"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder="Enter remarks..."
-          />
-        </div>
-      )}
+              {availabilityStatus === "Available" && (
+                <div className="space-y-2">
+                  <Label htmlFor="remarks">Remarks</Label>
+                  <Textarea
+                    id="remarks"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Enter remarks..."
+                  />
+                </div>
+              )}
 
-      {(availabilityStatus === "Partial" || availabilityStatus === "Not Available") && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="customerDecision">Customer wants material as</Label>
-            <Select 
-              id="customerDecision"
-              value={partialDetails.customerDecision || ""}
-              onValueChange={(value) => setPartialDetails({...partialDetails, customerDecision: value})}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select option" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="When full material will available">When full material will available</SelectItem>
-                <SelectItem value="Order cancel">Order cancel</SelectItem>
-                <SelectItem value="Partial">Partial</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              {(availabilityStatus === "Partial" || availabilityStatus === "Not Available") && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerDecision">Customer wants material as</Label>
+                    <Select
+                      id="customerDecision"
+                      value={partialDetails.customerDecision || ""}
+                      onValueChange={(value) => setPartialDetails({ ...partialDetails, customerDecision: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="When full material will available">When full material will available</SelectItem>
+                        <SelectItem value="Order cancel">Order cancel</SelectItem>
+                        <SelectItem value="Partial">Partial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-          {/* <div className="space-y-4">
+                  {/* <div className="space-y-4">
   <Label>Items Not Available</Label>
   {unavailableItems.map((item, index) => (
     <div key={index} className="flex gap-2 items-end">
@@ -1472,132 +1512,132 @@ const filteredProcessedOrders = useMemo(() => {
   </div>
 </div> */}
 
-<div className="space-y-2">
-            <Label htmlFor="createdBy">Created by</Label>
-            <Select
-              id="createdBy"
-              value={partialDetails.createdBy || ""}
-              onValueChange={(value) => setPartialDetails({...partialDetails, createdBy: value})}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select person" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Sarita Baghel">Sarita Baghel</SelectItem>
-                <SelectItem value="Khushi Khemani">Khushi Khemani</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="createdBy">Created by</Label>
+                    <Select
+                      id="createdBy"
+                      value={partialDetails.createdBy || ""}
+                      onValueChange={(value) => setPartialDetails({ ...partialDetails, createdBy: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select person" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sarita Baghel">Sarita Baghel</SelectItem>
+                        <SelectItem value="Khushi Khemani">Khushi Khemani</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="warehouseLocation">Warehouse location</Label>
-            <Select
-              id="warehouseLocation"
-              value={partialDetails.warehouseLocation || ""}
-              onValueChange={(value) => setPartialDetails({...partialDetails, warehouseLocation: value})}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Chhattisgarh">Chhattisgarh</SelectItem>
-                <SelectItem value="Odisha">Odisha</SelectItem>
-                <SelectItem value="Assam">Assam</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="warehouseLocation">Warehouse location</Label>
+                    <Select
+                      id="warehouseLocation"
+                      value={partialDetails.warehouseLocation || ""}
+                      onValueChange={(value) => setPartialDetails({ ...partialDetails, warehouseLocation: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Chhattisgarh">Chhattisgarh</SelectItem>
+                        <SelectItem value="Odisha">Odisha</SelectItem>
+                        <SelectItem value="Assam">Assam</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-          <div className="space-y-2">
-  <Label htmlFor="inventoryPhoto">Inventory Photo</Label>
-  <Input 
-    id="inventoryPhoto" 
-    type="file" 
-    accept="image/*"
-    onChange={(e) => setInventoryPhotoAttachment(e.target.files?.[0] || null)}
-  />
-  {inventoryPhotoAttachment && (
-    <p className="text-sm text-muted-foreground">Selected: {inventoryPhotoAttachment.name}</p>
-  )}
-</div>
+                  <div className="space-y-2">
+                    <Label htmlFor="inventoryPhoto">Inventory Photo</Label>
+                    <Input
+                      id="inventoryPhoto"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setInventoryPhotoAttachment(e.target.files?.[0] || null)}
+                    />
+                    {inventoryPhotoAttachment && (
+                      <p className="text-sm text-muted-foreground">Selected: {inventoryPhotoAttachment.name}</p>
+                    )}
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="lineItemNumber">Line item number</Label>
-            <Input
-              type="number"
-              id="lineItemNumber"
-              value={partialDetails.lineItemNumber || ""}
-              onChange={(e) => setPartialDetails({...partialDetails, lineItemNumber: e.target.value})}
-              placeholder="Enter line item number"
-            />
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lineItemNumber">Line item number</Label>
+                    <Input
+                      type="number"
+                      id="lineItemNumber"
+                      value={partialDetails.lineItemNumber || ""}
+                      onChange={(e) => setPartialDetails({ ...partialDetails, lineItemNumber: e.target.value })}
+                      placeholder="Enter line item number"
+                    />
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="totalQty">Total qty</Label>
-            <Input
-  type="number"
-  id="totalQty"
-  value={partialDetails.totalQty || ""}
-  onChange={(e) => setPartialDetails({...partialDetails, totalQty: e.target.value})}
-  placeholder="Will auto-calculate"
-  readOnly
-/>
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="totalQty">Total qty</Label>
+                    <Input
+                      type="number"
+                      id="totalQty"
+                      value={partialDetails.totalQty || ""}
+                      onChange={(e) => setPartialDetails({ ...partialDetails, totalQty: e.target.value })}
+                      placeholder="Will auto-calculate"
+                      readOnly
+                    />
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="leadTime">Material received lead time</Label>
-            <Input
-              type="number"
-              id="leadTime"
-              value={partialDetails.leadTime || ""}
-              onChange={(e) => setPartialDetails({...partialDetails, leadTime: e.target.value})}
-              placeholder="Enter lead time in days"
-            />
-          </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="leadTime">Material received lead time</Label>
+                    <Input
+                      type="number"
+                      id="leadTime"
+                      value={partialDetails.leadTime || ""}
+                      onChange={(e) => setPartialDetails({ ...partialDetails, leadTime: e.target.value })}
+                      placeholder="Enter lead time in days"
+                    />
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="remarks">Remarks</Label>
-            <Textarea
-              id="remarks"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Enter remarks..."
-            />
-          </div>
-          <div className="space-y-4">
-  <Label>Items Not Available</Label>
-  {unavailableItems.map((item, index) => (
-    <div key={index} className="flex gap-2 items-end">
-      <div className="flex-1">
-        <Label htmlFor={`itemName-${index}`}>Item Name {index + 1}</Label>
-        <Input
-          id={`itemName-${index}`}
-          value={item.name}
-          onChange={(e) => updateUnavailableItem(index, "name", e.target.value)}
-          placeholder="Enter item name"
-        />
-      </div>
-      <div className="w-24">
-        <Label htmlFor={`qty-${index}`}>QTY</Label>
-        <Input
-          id={`qty-${index}`}
-          type="number"
-          value={item.qty}
-          onChange={(e) => updateUnavailableItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-          placeholder="0"
-        />
-      </div>
-      <Button 
-        type="button" 
-        size="sm" 
-        variant="outline" 
-        onClick={() => removeUnavailableItem(index)}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
-  ))}
-  
-  {/* <div className="space-y-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="remarks">Remarks</Label>
+                    <Textarea
+                      id="remarks"
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      placeholder="Enter remarks..."
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <Label>Items Not Available</Label>
+                    {unavailableItems.map((item, index) => (
+                      <div key={index} className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Label htmlFor={`itemName-${index}`}>Item Name {index + 1}</Label>
+                          <Input
+                            id={`itemName-${index}`}
+                            value={item.name}
+                            onChange={(e) => updateUnavailableItem(index, "name", e.target.value)}
+                            placeholder="Enter item name"
+                          />
+                        </div>
+                        <div className="w-24">
+                          <Label htmlFor={`qty-${index}`}>QTY</Label>
+                          <Input
+                            id={`qty-${index}`}
+                            type="number"
+                            value={item.qty}
+                            onChange={(e) => updateUnavailableItem(index, "qty", Number.parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeUnavailableItem(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+
+                    {/* <div className="space-y-2">
     <Label htmlFor="totalQty">Total qty</Label>
     <Input
       type="number"
@@ -1607,10 +1647,10 @@ const filteredProcessedOrders = useMemo(() => {
       readOnly
     />
   </div> */}
-</div>
+                  </div>
 
 
-          {/* {availabilityStatus === "Partial" && (
+                  {/* {availabilityStatus === "Partial" && (
             <div className="space-y-4">
               {unavailableItems.map((item, index) => (
                 <div key={index} className="flex gap-2 items-end">
@@ -1643,31 +1683,31 @@ const filteredProcessedOrders = useMemo(() => {
               </Button>
             </div>
           )} */}
-        </>
-      )}
+                </>
+              )}
 
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-          Cancel
-        </Button>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
      // In the Process Dialog submit button, update to:
-<Button
-  onClick={handleSubmit}
-  disabled={!availabilityStatus || currentUser?.role === "user" || isSubmitting}
->
-  {isSubmitting ? (
-    <>
-      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-      Processing...
-    </>
-  ) : (
-    "Submit"
-  )}
-</Button>
-      </div>
-    </div>
-  </DialogContent>
-</Dialog>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!availabilityStatus || currentUser?.role === "user" || isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* View Dialog */}
         <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
