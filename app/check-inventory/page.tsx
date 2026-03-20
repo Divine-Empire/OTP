@@ -1525,6 +1525,8 @@ export default function CheckInventoryPage() {
                       <SelectContent>
                         <SelectItem value="Sarita Baghel">Sarita Baghel</SelectItem>
                         <SelectItem value="Khushi Khemani">Khushi Khemani</SelectItem>
+                        <SelectItem value="SATYA KUMARI OGREY">SATYA KUMARI OGREY</SelectItem>
+                        <SelectItem value="PRIYANKA VISHWAS">PRIYANKA VISHWAS</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
