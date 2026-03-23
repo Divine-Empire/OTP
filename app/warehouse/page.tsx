@@ -42,6 +42,38 @@ import {
 import { RefreshCw, Search, Settings } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 
+const parseDynamicItems = (itemStr: string, quantityStr: string, startIndex: number = 15) => {
+  const defaultReturn = {
+    [`itemName${startIndex}`]: itemStr || "",
+    [`quantity${startIndex}`]: quantityStr || ""
+  };
+  
+  try {
+    if (!itemStr) return defaultReturn;
+    
+    // Check if it looks like JSON array
+    if (typeof itemStr === 'string' && itemStr.trim().startsWith('[')) {
+      const items = JSON.parse(itemStr);
+      if (Array.isArray(items)) {
+        if (items.length === 0) return defaultReturn;
+        
+        const result: Record<string, string> = {};
+        items.forEach((item, index) => {
+          const idx = startIndex + index;
+          result[`itemName${idx}`] = item.name || "";
+          result[`quantity${idx}`] = item.quantity || item.qty || "";
+        });
+        return result;
+      }
+    }
+    
+    return defaultReturn;
+  } catch (e) {
+    console.error("Error parsing items JSON:", e);
+    return defaultReturn;
+  }
+};
+
 export default function WarehousePage() {
   const { orders, updateOrder } = useData();
   // const [selectedOrder, setSelectedOrder] = useState<string>("")
@@ -303,8 +335,7 @@ export default function WarehousePage() {
                 quantity13: row.c[55] ? row.c[55].v : "",
                 itemName14: row.c[56] ? row.c[56].v : "",
                 quantity14: row.c[57] ? row.c[57].v : "",
-                itemName15: row.c[58] ? row.c[58].v : "",
-                quantity15: row.c[59] ? row.c[59].v : "",
+                ...parseDynamicItems(row.c[58] ? row.c[58].v : "", row.c[59] ? row.c[59].v : "", 15),
                 remarks: row.c[60] ? row.c[60].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
@@ -434,8 +465,7 @@ export default function WarehousePage() {
                 quantity13: row.c[55] ? row.c[55].v : "",
                 itemName14: row.c[56] ? row.c[56].v : "",
                 quantity14: row.c[57] ? row.c[57].v : "",
-                itemName15: row.c[58] ? row.c[58].v : "",
-                quantity15: row.c[59] ? row.c[59].v : "",
+                ...parseDynamicItems(row.c[58] ? row.c[58].v : "", row.c[59] ? row.c[59].v : "", 15),
                 remarks: row.c[60] ? row.c[60].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
@@ -1630,11 +1660,18 @@ export default function WarehousePage() {
               <div className="mt-4">
                 <h5 className="font-medium mb-2">Items</h5>
                 <div className="space-y-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
-                    (num) => {
+                  {Object.keys(selectedOrder || {})
+                    .filter((key) => key.startsWith("itemName"))
+                    .map((key) => {
+                      const numMatch = key.match(/\d+$/);
+                      return numMatch ? parseInt(numMatch[0]) : null;
+                    })
+                    .filter((num) => num !== null)
+                    .sort((a, b) => (a as number) - (b as number))
+                    .map((num) => {
                       const itemName = selectedOrder?.[`itemName${num}`];
                       const quantity = selectedOrder?.[`quantity${num}`];
-                      // if (itemName || quantity) {
+                      
                       return (
                         <div key={num} className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -1647,10 +1684,7 @@ export default function WarehousePage() {
                           </div>
                         </div>
                       );
-                      // }
-                      return null;
-                    }
-                  )}
+                    })}
                 </div>
               </div>
 
