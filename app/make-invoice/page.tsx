@@ -52,6 +52,7 @@ export default function MakeInvoicePage() {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [historyOrders, setHistoryOrders] = useState<any[]>([]);
   const [totalBillAmount, setTotalBillAmount] = useState<number>(0);
+  const [billDate, setBillDate] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
 
   const {user: currentUser} = useAuth();
@@ -162,6 +163,7 @@ export default function MakeInvoicePage() {
   const historyColumns = [
     ...pendingColumns.filter((col) => col.key !== "actions"),
     { key: "invoiceNumber", label: "Invoice Number", searchable: true },
+    { key: "billDate", label: "Bill Date", searchable: true },
     { key: "invoiceUpload", label: "Invoice Upload", searchable: true },
     { key: "ewayBillUpload", label: "Eway Bill Upload", searchable: true },
     { key: "totalQtyHistory", label: "Total Qty", searchable: true },
@@ -284,6 +286,7 @@ export default function MakeInvoicePage() {
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[60] ? row.c[60].v : "",
                 creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
+                billDate: row.c[111] ? row.c[111].v : "", // Column DH (index 111)
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
               };
               pendingOrders.push(order);
@@ -402,6 +405,7 @@ export default function MakeInvoicePage() {
                 remarks: row.c[60] ? row.c[60].v : "",
                 quotationCopy2: row.c[15] ? row.c[15].v : "",
                 creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
+                billDate: row.c[111] ? row.c[111].v : "", // Column DH (index 111)
                 quantity: row.c[10] ? row.c[10].v : "",
                 paymentDetails: row.c[8] === "Advance" ? "Attached" : "N/A",
                 seniorApproval: row.c[16] ? row.c[16].v : "Approved",
@@ -616,6 +620,7 @@ const filteredHistoryOrders = useMemo(() => {
       rowData[65] = invoiceData.invoiceNumber; // Column BO (index 65) - Invoice Number
       rowData[68] = invoiceData.qty; // Column BR (index 68) - Total Qty History
       rowData[69] = totalBillAmount.toString(); // Column BS (index 69) - Total Bill Amount
+      rowData[111] = invoiceData.billDate || ""; // Column DH (index 111) - Bill Date
 
       formData.append("rowData", JSON.stringify(rowData));
 
@@ -676,6 +681,7 @@ const filteredHistoryOrders = useMemo(() => {
     setInvoiceNumber("");
     setQty(order.totalQty || 0);
     setTotalBillAmount(0);
+    setBillDate("");
     setInvoiceAttachment(null);
     setEwayBillAttachment(null);
     setIsDialogOpen(true);
@@ -698,6 +704,7 @@ const filteredHistoryOrders = useMemo(() => {
 
     const invoiceData = {
       invoiceNumber,
+      billDate,
       qty,
       processedAt: new Date().toISOString(),
       processedBy: "Current User",
@@ -1513,6 +1520,15 @@ const filteredHistoryOrders = useMemo(() => {
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
                   placeholder="Enter invoice number manually"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="billDate">Bill Date</Label>
+                <Input
+                  id="billDate"
+                  type="date"
+                  value={billDate}
+                  onChange={(e) => setBillDate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
