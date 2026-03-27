@@ -691,8 +691,8 @@ const filteredHistoryOrders = useMemo(() => {
   };
 
   const handleSubmit = async () => {
-    if (!selectedOrder || !invoiceNumber) {
-      alert("Please fill in all required fields");
+    if (!selectedOrder || !invoiceNumber || !billDate) {
+      alert("Please fill in all required fields (Invoice Number and Bill Date)");
       return;
     }
 
@@ -1523,12 +1523,13 @@ const filteredHistoryOrders = useMemo(() => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="billDate">Bill Date</Label>
+                <Label htmlFor="billDate">Bill Date <span className="text-red-500">*</span></Label>
                 <Input
                   id="billDate"
                   type="date"
                   value={billDate}
                   onChange={(e) => setBillDate(e.target.value)}
+                  className="w-full"
                 />
               </div>
               <div className="space-y-2">
@@ -1590,9 +1591,9 @@ const filteredHistoryOrders = useMemo(() => {
                   Cancel
                 </Button>
               <Button
-  onClick={handleSubmit}
-  disabled={!invoiceNumber || uploading || currentUser?.role === "user"}
->
+                onClick={handleSubmit}
+                disabled={!invoiceNumber || !billDate || uploading || currentUser?.role === "user"}
+              >
   {uploading ? (
     <>
       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
