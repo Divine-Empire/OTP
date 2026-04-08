@@ -20,7 +20,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Trash2, RefreshCw, Search, Settings } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { Plus, Trash2, RefreshCw, Search, Settings, ChevronDown } from "lucide-react"
 
 // Column definitions for Pending tab (ORDER-DISPATCH sheet, columns B to BZ)
 const pendingColumns = [
@@ -161,7 +170,8 @@ export default function DispFormPage() {
   const [calibrationRequired, setCalibrationRequired] = useState<string>("")
   const [calibrationType, setCalibrationType] = useState<string>("")
   const [installationRequired, setInstallationRequired] = useState<string>("")
-  const [items, setItems] = useState<Array<{ name: string; qty: number }>>([])
+  const [items, setItems] = useState<Array<{ name: string; qty: number; serialNo?: string }>>([])
+  const [imsData, setImsData] = useState<Record<string, string[]>>({})
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [viewOrder, setViewOrder] = useState<any>(null)
@@ -178,6 +188,7 @@ export default function DispFormPage() {
   const [gstNumber, setGstNumber] = useState<string>("")
 const [vehicleNumber, setVehicleNumber] = useState<string>("")
 const [dispatchLocation, setDispatchLocation] = useState<string>("")
+const [openSNoIndex, setOpenSNoIndex] = useState<number | null>(null)
   const [uploading, setUploading] = useState(false)
   const [directDispatch, setDirectDispatch] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("")
@@ -200,6 +211,7 @@ const [dispatchLocation, setDispatchLocation] = useState<string>("")
   const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
   const PENDING_SHEET_NAME = "ORDER-DISPATCH"
   const HISTORY_SHEET_NAME = "DISPATCH-DELIVERY"
+  const IMS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkB72Tu0iDEEyQ5cdkYUTdJq7Ifj80hgqbXpwc9WnF3ruWs1Yppe3Z1TJce4yr9Gg/exec"
 
   const formatGoogleSheetsDate = (dateValue) => {
     if (!dateValue) return ""
@@ -586,8 +598,49 @@ const filteredProcessedOrders = useMemo(() => {
     }
   }
 
+  const fetchImsData = async () => {
+    try {
+      const response = await fetch(`${IMS_SCRIPT_URL}?sheet=IMS`)
+      const result = await response.json()
+      if (result.success && result.data) {
+        const mapping: Record<string, string[]> = {}
+        // result.data is from sheet.getDataRange().getValues()
+        const rows = result.data.slice(1); // Skip header row
+        rows.forEach((row: any[]) => {
+          const itemName = row[3]; // Column D (index 3)
+          const serials = row[76]; // Column BY (index 76)
+          const dates = row[77];   // Column BZ (index 77)
+          const locations = row[78]; // Column CA (index 78)
+
+          if (itemName) {
+            const sList = String(serials || "").split(",").map(s => s.trim());
+            const dList = String(dates || "").split(",").map(d => d.trim());
+            const lList = String(locations || "").split(",").map(l => l.trim());
+
+            const maxLength = Math.max(sList.length, dList.length, lList.length);
+            const combined: string[] = [];
+
+            for (let i = 0; i < maxLength; i++) {
+              const s = sList[i] || "";
+              const d = dList[i] || "";
+              const l = lList[i] || "";
+              if (s || d || l) {
+                combined.push(`${s}-${d}-${l}`);
+              }
+            }
+            mapping[itemName] = combined;
+          }
+        });
+        setImsData(mapping);
+      }
+    } catch (error) {
+      console.error("Error fetching IMS data:", error);
+    }
+  }
+
   useEffect(() => {
     fetchPendingOrders()
+    fetchImsData()
   }, [])
 
   const handleProcessedTabClick = async () => {
@@ -604,7 +657,7 @@ const filteredProcessedOrders = useMemo(() => {
     setInstallationRequired("")
   
     // Extract items from the order data (columns M to AF) - first 10 items
-    const extractedItems: Array<{ name: string; qty: number }> = []
+    const extractedItems: Array<{ name: string; qty: number; serialNo?: string }> = []
     for (let i = 12; i <= 31; i += 2) {
       // Columns M (12) to AF (31)
       const nameCol = order.fullRowData[i]
@@ -614,6 +667,7 @@ const filteredProcessedOrders = useMemo(() => {
         extractedItems.push({
           name: nameCol.v.toString(),
           qty: qtyCol ? Number(qtyCol.v) || 0 : 0,
+          serialNo: ""
         })
       }
     }
@@ -628,7 +682,8 @@ const filteredProcessedOrders = useMemo(() => {
             if (item.name && item.quantity !== undefined) {
               extractedItems.push({
                 name: item.name,
-                qty: Number(item.quantity) || 0
+                qty: Number(item.quantity) || 0,
+                serialNo: ""
               })
             }
           })
@@ -661,7 +716,7 @@ const filteredProcessedOrders = useMemo(() => {
     setItems(items.filter((_, i) => i !== index))
   }
 
-  const updateItem = (index: number, field: "name" | "qty", value: string | number) => {
+  const updateItem = (index: number, field: "name" | "qty" | "serialNo", value: string | number) => {
     const updated = [...items]
     updated[index] = { ...updated[index], [field]: value }
     setItems(updated)
@@ -676,6 +731,26 @@ const filteredProcessedOrders = useMemo(() => {
     // Calculate total quantity - Fixed syntax
     const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
   
+    // Process serial numbers for columns DI, DJ, DK
+    const serials: string[] = [];
+    const dates: string[] = [];
+    const locations: string[] = [];
+
+    items.forEach(item => {
+      const snVal = item.serialNo || "";
+      // Format is S-D-L (manual or from dropdown)
+      if (snVal && snVal.includes("-")) {
+        const parts = snVal.split("-");
+        serials.push(parts[0] || "");
+        dates.push(parts[1] || "");
+        locations.push(parts[2] || "");
+      } else {
+        serials.push("");
+        dates.push("");
+        locations.push("");
+      }
+    });
+
     const dispatchData = {
       calibrationRequired,
       calibrationType: calibrationRequired === "YES" ? calibrationType : "",
@@ -690,6 +765,9 @@ const filteredProcessedOrders = useMemo(() => {
       remarks,
       totalQty,
       processedAt: new Date().toISOString(),
+      serialNos: serials.join(", "),
+      serialDates: dates.join(", "),
+      serialLocations: locations.join(", ")
     };
   
     const result = await updateOrderStatus(order, dispatchData);
@@ -753,7 +831,7 @@ const filteredProcessedOrders = useMemo(() => {
         }
       }
   
-      const rowData = new Array(105).fill("");
+      const rowData = new Array(115).fill("");
   
       // Add today's date in column A (index 0)
       const today = new Date();
@@ -785,7 +863,8 @@ const filteredProcessedOrders = useMemo(() => {
       if (remainingItems.length > 0) {
         const jsonItems = remainingItems.map(item => ({
           name: item.name,
-          quantity: item.qty.toString()
+          quantity: item.qty.toString(),
+          serialNo: item.serialNo || ""
         }));
         rowData[58] = JSON.stringify(jsonItems); // Column BC
       }
@@ -799,6 +878,11 @@ rowData[61] = dispatchData.gstNumber || "";
 rowData[26] = dispatchData.vehicleNumber || "";
 // Add this mapping for Transport ID (Eway Bill Details)
 rowData[25] = dispatchData.ewayBillDetails || "";  // Column Z (index 25)
+
+// Serial Number Components
+rowData[112] = dispatchData.serialNos || "";   // Column DI
+rowData[113] = dispatchData.serialDates || ""; // Column DJ
+rowData[114] = dispatchData.serialLocations || ""; // Column DK
 
 // Remove any other assignments to rowData[25] that might be conflicting
 
@@ -1490,75 +1574,135 @@ case "actions":
               </div>
 
               <div className="space-y-4">
-  {/* <div className="flex items-center justify-between">
-    <Label>Items (Total: {items.length}, First 15 individual, Rest as JSON)</Label>
-    <Button type="button" size="sm" onClick={addItem}>
-      <Plus className="h-4 w-4 mr-1" />
-      Add Item ({items.length})
-    </Button>
-  </div> */}
-  
-  {/* Show first 15 items normally */}
-  {items.slice(0, 15).map((item, index) => (
-    <div key={index} className="flex gap-2 items-end">
-      <div className="flex-1">
-        <Label htmlFor={`itemName-${index}`}>Item Name {index + 1}</Label>
-        <Input
-          id={`itemName-${index}`}
-          value={item.name}
-          onChange={(e) => updateItem(index, "name", e.target.value)}
-          placeholder="Enter item name"
-        />
-      </div>
-      <div className="w-24">
-        <Label htmlFor={`qty-${index}`}>QTY</Label>
-        <Input
-          id={`qty-${index}`}
-          type="number"
-          value={item.qty}
-          onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
-          placeholder="0"
-        />
-      </div>
-      <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index)}>
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
-  ))}
-  
-  {/* Show remaining items (16+) in a condensed format */}
-  {items.length > 15 && (
-    <div className="border-t pt-4">
-      <Label className="text-orange-600">Additional Items (16+) - Will be stored as JSON:</Label>
-      {items.slice(15).map((item, index) => (
-        <div key={index + 15} className="flex gap-2 items-end mt-2">
-          <div className="flex-1">
-            <Label htmlFor={`itemName-${index + 15}`}>Item Name {index + 16}</Label>
-            <Input
-              id={`itemName-${index + 15}`}
-              value={item.name}
-              onChange={(e) => updateItem(index + 15, "name", e.target.value)}
-              placeholder="Enter item name"
-            />
-          </div>
-          <div className="w-24">
-            <Label htmlFor={`qty-${index + 15}`}>QTY</Label>
-            <Input
-              id={`qty-${index + 15}`}
-              type="number"
-              value={item.qty}
-              onChange={(e) => updateItem(index + 15, "qty", Number.parseInt(e.target.value) || 0)}
-              placeholder="0"
-            />
-          </div>
-          <Button type="button" size="sm" variant="outline" onClick={() => removeItem(index + 15)}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+                <div className="flex items-center justify-between">
+                  <Label>Items (Total: {items.length})</Label>
+                  <Button type="button" size="sm" variant="outline" onClick={addItem}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Item
+                  </Button>
+                </div>
+                
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="w-[45%] font-semibold">Item Name</TableHead>
+                        <TableHead className="w-[30%] font-semibold">S-Code</TableHead>
+                        <TableHead className="w-[15%] font-semibold text-center">Qty</TableHead>
+                        <TableHead className="w-[10%] font-semibold text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((item, index) => (
+                        <TableRow key={index} className="hover:bg-muted/30">
+                          <TableCell className="p-2">
+                            <Input
+                              value={item.name}
+                              onChange={(e) => updateItem(index, "name", e.target.value)}
+                              placeholder="Enter item name"
+                              className="h-9"
+                            />
+                          </TableCell>
+                          <TableCell className="p-2">
+                            <div className="relative">
+                              <Popover 
+                                open={openSNoIndex === index} 
+                                onOpenChange={(open) => {
+                                  if (!open) setOpenSNoIndex(null);
+                                }}
+                              >
+                                <PopoverTrigger asChild>
+                                  <div className="relative">
+                                    <Input
+                                      value={item.serialNo || ""}
+                                      onChange={(e) => updateItem(index, "serialNo", e.target.value)}
+                                      onFocus={() => setOpenSNoIndex(index)}
+                                      onClick={() => setOpenSNoIndex(index)}
+                                      placeholder="SN-Dt-Loc"
+                                      className="h-9 text-xs pr-8"
+                                    />
+                                    {imsData[item.name] && imsData[item.name].length > 0 && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute right-0 top-0 h-9 w-8 p-0 hover:bg-transparent"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenSNoIndex(openSNoIndex === index ? null : index);
+                                        }}
+                                      >
+                                        <ChevronDown className={`h-4 w-4 opacity-50 transition-transform ${openSNoIndex === index ? "rotate-180" : ""}`} />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </PopoverTrigger>
+                                {imsData[item.name] && imsData[item.name].length > 0 && (
+                                  <PopoverContent 
+                                    className="w-[300px] p-0" 
+                                    align="start"
+                                    onOpenAutoFocus={(e) => e.preventDefault()}
+                                  >
+                                    <Command>
+                                      <CommandList>
+                                        <CommandEmpty>No matching S-Code found</CommandEmpty>
+                                        <CommandGroup>
+                                          {imsData[item.name]
+                                            .filter(sn => 
+                                              !item.serialNo || 
+                                              sn.toLowerCase().includes(item.serialNo.toLowerCase())
+                                            )
+                                            .map((sn, i) => (
+                                              <CommandItem
+                                                key={i}
+                                                value={sn}
+                                                onSelect={(val) => {
+                                                  updateItem(index, "serialNo", val)
+                                                  setOpenSNoIndex(null)
+                                                }}
+                                                className="text-xs"
+                                              >
+                                                {sn}
+                                              </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                )}
+                              </Popover>
+                            </div>
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <Input
+                              type="number"
+                              value={item.qty}
+                              onChange={(e) => updateItem(index, "qty", Number.parseInt(e.target.value) || 0)}
+                              placeholder="0"
+                              className="h-9 text-center w-full min-w-[60px]"
+                            />
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <Button 
+                              type="button" 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => removeItem(index)}
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {items.length === 0 && (
+                  <div className="text-center py-4 text-muted-foreground border border-dashed rounded-md">
+                    No items added. Click "Add Item" to begin.
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="paymentDetails">Payment Details (Attachment) - In case of Advance</Label>
