@@ -70,12 +70,12 @@ const menuItems = [
     step: "make-invoice",
   },
   // { href: "/make-pi", label: "Make PI", icon: FileSpreadsheet, step: "make-pi" },
-  {
-    href: "/warehouse",
-    label: "Warehouse",
-    icon: Warehouse,
-    step: "warehouse",
-  },
+  // {
+  //   href: "/warehouse",
+  //   label: "Warehouse",
+  //   icon: Warehouse,
+  //   step: "warehouse",
+  // },
   {
     href: "/warehouse-material",
     label: "Warehouse (Material RCVD)",
