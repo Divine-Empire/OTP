@@ -1542,9 +1542,10 @@ export default function CheckInventoryPage() {
                         <SelectValue placeholder="Select location" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Chhattisgarh">Chhattisgarh</SelectItem>
-                        <SelectItem value="Odisha">Odisha</SelectItem>
-                        <SelectItem value="Assam">Assam</SelectItem>
+                        <SelectItem value="C.G Warehouse">C.G Warehouse</SelectItem>
+                        <SelectItem value="NE Warehouse">NE Warehouse</SelectItem>
+                        <SelectItem value="Maniquip Store">Maniquip Store</SelectItem>
+                        <SelectItem value="Head Office">Head Office</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
