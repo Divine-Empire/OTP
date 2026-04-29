@@ -236,8 +236,8 @@ export default function CalibrationPage() {
             const clColumn = row.c[88] ? row.c[88].v : null // Column CL (index 89)
 
             // Check if column X matches the calibration type and CK is not null and CL is null
-            const isLabOrder = xColumn && xColumn.toLowerCase() === "lab" && ckColumn && !clColumn
-            const isTotalStationOrder = xColumn && xColumn.toLowerCase() === "surevey instruments" && ckColumn && !clColumn
+            const isLabOrder = xColumn && xColumn.toLowerCase().includes("lab") && ckColumn && !clColumn
+            const isTotalStationOrder = xColumn && (xColumn.toLowerCase().includes("survey") || xColumn.toLowerCase().includes("surevey")) && ckColumn && !clColumn
 
             if (isLabOrder || isTotalStationOrder) {
               const order = {
@@ -325,7 +325,7 @@ export default function CalibrationPage() {
                 materialReceivingStatus: row.c[84] ? row.c[84].v : "", // Column CG
                 reason: row.c[85] ? row.c[85].v : "", // Column CH
                 installationRequiredHistory: row.c[86] ? row.c[86].v : "", // Column CI
-                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
+                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
               }
               pendingOrders.push(order)
             }
@@ -409,15 +409,15 @@ export default function CalibrationPage() {
                 billingAddress: row.c[6] ? row.c[6].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
-                paymentTerms: row.c[9] ? row.c[9].v : "",
+                paymentTerms: row.c[10] ? row.c[10].v : "",
                 dSrNumber: row.c[105] ? row.c[105].v : "",
-                qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
-                transportMode: row.c[11] ? row.c[11].v : "",
-                freightType: row.c[12] ? row.c[12].v : "",
-                destination: row.c[13] ? row.c[13].v : "",
+                qty: row.c[19] ? row.c[19].v : "", // Map to qty field for column definition
+                transportMode: row.c[32] ? row.c[32].v : "", // Column AG
+                freightType: row.c[33] ? row.c[33].v : "", // Column AH
+                destination: row.c[34] ? row.c[34].v : "", // Column AI
                 poNumber: row.c[14] ? row.c[14].v : "",
                 offer: row.c[15] ? row.c[15].v : "",
-                amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
+                amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
                 invoiceNumber: row.c[65] ? row.c[65].v : "",
                 calibrationType: row.c[23] ? row.c[23].v : "", // Default to UNKNOWN if not specified
                 calibrationProcessedDate: clColumn,
@@ -425,7 +425,7 @@ export default function CalibrationPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: row.c[9] ? row.c[9].v : "",
+                quotationCopy: row.c[36] ? row.c[36].v : "", // Column AK
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -468,8 +468,8 @@ export default function CalibrationPage() {
                 itemName15: row.c[58] ? row.c[58].v : "",
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
-                quotationCopy2: row.c[15] ? row.c[15].v : "",
-                acceptanceCopy: row.c[16] ? row.c[16].v : "",
+                quotationCopy2: row.c[66] ? row.c[66].v : "", // Column BO (Invoice Upload)
+                acceptanceCopy: row.c[37] ? row.c[37].v : "", // Column AL
                 // Warehouse material history headers (BV to CC)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
                 afterPhotoUpload: row.c[74] ? row.c[74].v : "", // Column BW
@@ -492,7 +492,7 @@ export default function CalibrationPage() {
                 stCalibrationPeriod: row.c[95] ? row.c[95].v : "", // Column CR
                 labDueDate: formatGoogleSheetsDate(row.c[96] ? row.c[96].v : ""), // Column CS
                 stDueDate: formatGoogleSheetsDate(row.c[97] ? row.c[97].v : ""), // Column CT
-                creName: row.c[106] ? row.c[106].v : "", // Column CD (index 81) - CRE Name
+                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
                 calibrationData: {
                   section: ckColumn || "UNKNOWN",
                   calibrationDate: row.c[89] ? row.c[89].v : "",
@@ -939,7 +939,7 @@ const updateOrderStatus = async (order: any) => {
               {filteredPendingOrders
                 .filter((order) => order.calibrationType === section)
                 .map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.rowIndex}>
                     {pendingColumns
                       .filter((col) => visiblePendingColumns[col.key])
                       .map((column) => (
@@ -1023,7 +1023,7 @@ const updateOrderStatus = async (order: any) => {
             </TableHeader>
             <TableBody>
               {filteredHistoryOrders.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.rowIndex}>
                   {historyColumns
                     .filter((col) => visibleHistoryColumns[col.key])
                     .map((column) => (
