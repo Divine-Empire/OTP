@@ -65,6 +65,7 @@ export default function CalibrationPage() {
     { key: "freightType", label: "Freight Type", searchable: true },
     { key: "destination", label: "Destination", searchable: true },
     { key: "poNumber", label: "Po Number", searchable: true },
+    { key: "invoiceNumber", label: "Invoice-No.", searchable: true },
     { key: "quotationCopy2", label: "Invoice Upload", searchable: true },
     { key: "acceptanceCopy", label: "Acceptance Copy (Purchase Order Only)", searchable: true },
     { key: "offer", label: "Offer", searchable: true },
@@ -1078,6 +1079,21 @@ const updateOrderStatus = async (order: any) => {
               className="pl-10"
             />
           </div>
+          <Select value={selectedColumn} onValueChange={setSelectedColumn}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All Columns" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Columns</SelectItem>
+              {pendingColumns
+                .filter((col) => col.searchable)
+                .map((col) => (
+                  <SelectItem key={col.key} value={col.key}>
+                    {col.label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Tabs defaultValue="pending" className="space-y-4">
