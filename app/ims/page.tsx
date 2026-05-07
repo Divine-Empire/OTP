@@ -38,10 +38,11 @@ export default function IMSPage() {
           const rawRows = jsonData.data
           
           // Map column letters (A, B, C...) to our data structure
-          // Column Letters: C, D, N, O, BU, BV
+          // Column Letters: C, D, E, N, O, BU, BV
           const mappedRows = rawRows.map((r: any) => ({
             C: r.C || "",
             D: r.D || "",
+            E: r.E || "",
             N: r.N || "",
             O: r.O || 0,
             BU: r.BU || 0,
@@ -54,10 +55,10 @@ export default function IMSPage() {
             return pending > 0
           })
 
-          // Group by Item Name (Column D)
+          // Group by Item Name (Column E)
           const groups: any = {}
           validRows.forEach((r: any) => {
-            const name = r.D || "Unknown Item"
+            const name = r.E || "Unknown Item"
             if (!groups[name]) {
               groups[name] = {
                 itemName: name,
@@ -110,7 +111,7 @@ export default function IMSPage() {
     if (activeTab === "indent") {
       return ["All", ...new Set(indentLiftData.map((item: any) => item.itemName).filter(Boolean))].sort()
     }
-    return ["All", ...new Set(items.map((item: any) => item["col_D"]).filter(Boolean))].sort()
+    return ["All", ...new Set(items.map((item: any) => item["col_E"]).filter(Boolean))].sort()
   }, [activeTab, indentLiftData, items])
 
   const clearFilters = () => {
@@ -125,7 +126,7 @@ export default function IMSPage() {
     const matchesSearch = Object.values(item).some((val) => String(val).toLowerCase().includes(searchStr))
     const matchesCategory = filterCategory === "All" || item["col_B"] === filterCategory
     const matchesItemCode = filterItemCode === "All" || item["col_C"] === filterItemCode
-    const matchesItemName = filterItemName === "All" || item["col_D"] === filterItemName
+    const matchesItemName = filterItemName === "All" || item["col_E"] === filterItemName
 
     return matchesSearch && matchesCategory && matchesItemCode && matchesItemName
   })
@@ -508,7 +509,7 @@ function IMSTable({ data, columns, loading, type }: { data: any[]; columns: any[
       columns.find(col => col.id === "A"), // GROUP
       columns.find(col => col.id === "B"), // CATEGORY
       columns.find(col => col.id === "C"), // ITEM CODE
-      columns.find(col => col.label.toUpperCase().includes("NAME OF ITEM")) || columns.find(col => col.id === "D")
+      columns.find(col => col.label.toUpperCase().includes("NAME OF ITEM")) || columns.find(col => col.id === "E")
     ].filter(Boolean)
 
     let targetCols: any[] = []
@@ -521,6 +522,13 @@ function IMSTable({ data, columns, loading, type }: { data: any[]; columns: any[
     } else {
       // Filter for Reorder columns (labels containing REORDER)
       targetCols = columns.filter((col) => col.label.toUpperCase().includes("REORDER QUANTITY"))
+      
+      // Map long formula labels to proper names with the formula in brackets
+      const reorderNames = ["CG", "NE", "Maniquip", "Head Office"]
+      targetCols = targetCols.map((col, idx) => ({
+        ...col,
+        label: `${reorderNames[idx] || "Reorder"} (${col.label})`
+      }))
     }
 
     // Remove duplicates

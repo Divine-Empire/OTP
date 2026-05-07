@@ -9,7 +9,8 @@ const SHEET_NAME = "INDENT-LIFT"
 // Data starts at row 7 (skip 6 header rows → slice(6))
 const COL = {
   C: 2,   // Indenter Name
-  D: 3,   // Item Name
+  D: 3,   // Category
+  E: 4,   // Item Name
   N: 13,  // Status (approve/approved)
   O: 14,  // Approved Qty
   BU: 72, // Remaining Qty
@@ -44,6 +45,7 @@ export async function GET() {
     const mapped = dataRows.map((row: any[]) => ({
       C: row[COL.C] ?? "",
       D: row[COL.D] ?? "",
+      E: row[COL.E] ?? "",
       N: row[COL.N] ?? "",
       O: row[COL.O] ?? 0,
       BU: row[COL.BU] ?? 0,
