@@ -71,41 +71,47 @@ const menuItems = [
   },
   // { href: "/make-pi", label: "Make PI", icon: FileSpreadsheet, step: "make-pi" },
   // {
-  //   href: "/warehouse",
-  //   label: "Warehouse",
-  //   icon: Warehouse,
-  //   step: "warehouse",
-  // },
-  {
-    href: "/warehouse-material",
-    label: "Warehouse (Material RCVD)",
-    icon: PackageCheck,
-    step: "warehouse-material",
-  },
-  {
-    href: "/calibration",
-    label: "Calibration Certificate",
-    icon: Award,
-    step: "calibration",
-  },
-  {
-    href: "/update-delivery",
-    label: "Update Delivery",
-    icon: Bell,
-    step: "update-delivery",
-  },
-  {
-    href: "/order-cancel",
-    label: "Order Cancel",
-    icon: XOctagon,
-    step: "order-cancel",
-  },
-  {
-    href: "/credit-note",
-    label: "Credit Note",
-    icon: ReceiptText,
-    step: "credit-note",
-  },
+    //   href: "/warehouse",
+    //   label: "Warehouse",
+    //   icon: Warehouse,
+    //   step: "warehouse",
+    // },
+    {
+      href: "/warehouse-material",
+      label: "Warehouse (Material RCVD)",
+      icon: PackageCheck,
+      step: "warehouse-material",
+    },
+    {
+      href: "/calibration",
+      label: "Calibration Certificate",
+      icon: Award,
+      step: "calibration",
+    },
+    {
+      href: "/update-delivery",
+      label: "Update Delivery",
+      icon: Bell,
+      step: "update-delivery",
+    },
+    {
+      href: "/order-cancel",
+      label: "Order Cancel",
+      icon: XOctagon,
+      step: "order-cancel",
+    },
+    {
+      href: "/credit-note",
+      label: "Credit Note",
+      icon: ReceiptText,
+      step: "credit-note",
+    },
+    {
+      href: "/ims",
+      label: "IMS",
+      icon: Package,
+      step: "ims",
+    },
   { href: "/settings", label: "Settings", icon: Settings, step: "settings" },
 ];
 
@@ -118,7 +124,8 @@ export function Sidebar() {
     if (user?.role === "admin") return true;
     return (
       user?.assignedSteps.includes(item.step) ||
-      user?.assignedSteps.includes("all")
+      user?.assignedSteps.includes("all") ||
+      item.step === "ims"
     );
   });
 
@@ -128,7 +135,7 @@ export function Sidebar() {
       <div className="p-6 border-b border-gray-200 bg-gradient-to-b from-blue-50 to-purple-50 ">
         <h2 className="text-lg font-semibold text-purple-600">OTP System</h2>
         <p className="text-sm text-gray-600">Order To Payment</p>
-        <div className="text-red-900 mt-4 rounded-xl hover:bg-blue-700 hover:text-white p-1 cursor-pointer text-start">
+        {/* <div className="text-red-900 mt-4 rounded-xl hover:bg-blue-700 hover:text-white p-1 cursor-pointer text-start">
           <a
             href="https://service-installation.vercel.app/"
             className="font-bold"
@@ -136,7 +143,7 @@ export function Sidebar() {
           >
             Service Installation Here
           </a>
-        </div>
+        </div> */}
       </div>
 
       <ScrollArea className="flex-1 px-3 bg-gradient-to-b from-blue-50 to-purple-50 ">

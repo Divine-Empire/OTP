@@ -55,12 +55,13 @@ export default function MakeInvoicePage() {
   const [billDate, setBillDate] = useState("");
   const [currentOrder, setCurrentOrder] = useState<any>(null);
 
-  const {user: currentUser} = useAuth();
+  const { user: currentUser } = useAuth();
 
   const APPS_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec";
-  const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA";
+    "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+  const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
   const SHEET_NAME = "DISPATCH-DELIVERY";
+
 
   // Column definitions for Pending tab (B to BJ)
   const pendingColumns = [
@@ -413,8 +414,8 @@ export default function MakeInvoicePage() {
                 billingQty: row.c[69]
                   ? row.c[69].v
                   : row.c[10]
-                  ? row.c[10].v
-                  : "",
+                    ? row.c[10].v
+                    : "",
                 invoiceDate: bkColumn,
                 invoiceNumber: row.c[65] ? row.c[65].v : "",
                 invoiceUpload: row.c[66] ? row.c[66].v : "",
@@ -454,69 +455,69 @@ export default function MakeInvoicePage() {
   }, []);
 
   // Filter orders based on search term and selected column
-const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
-  if (!currentUser) return orders;
-  
-  // Super admin sees all data
-  if (currentUser.role === "super_admin") {
-    return orders;
-  }
-  
-  // Admin and regular users only see data where CRE Name matches their username
-  return orders.filter(order => order.creName === currentUser.username);
-};
+  const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+    if (!currentUser) return orders;
 
-// Update the filteredPendingOrders useMemo to include role-based filtering
-const filteredPendingOrders = useMemo(() => {
-  let filtered = pendingOrders;
+    // Super admin sees all data
+    if (currentUser.role === "super_admin") {
+      return orders;
+    }
 
-  // Apply user role-based filtering
-  filtered = filterOrdersByUserRole(filtered, currentUser);
+    // Admin and regular users only see data where CRE Name matches their username
+    return orders.filter(order => order.creName === currentUser.username);
+  };
 
-  if (searchTerm) {
-    filtered = filtered.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = pendingColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase());
-        return searchableFields.some((field) =>
-          field.includes(searchTerm.toLowerCase())
-        );
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase();
-        return fieldValue.includes(searchTerm.toLowerCase());
-      }
-    });
-  }
+  // Update the filteredPendingOrders useMemo to include role-based filtering
+  const filteredPendingOrders = useMemo(() => {
+    let filtered = pendingOrders;
 
-  return filtered;
-}, [pendingOrders, searchTerm, selectedColumn, currentUser]);
+    // Apply user role-based filtering
+    filtered = filterOrdersByUserRole(filtered, currentUser);
 
-// Update the filteredHistoryOrders useMemo to include role-based filtering
-const filteredHistoryOrders = useMemo(() => {
-  let filtered = historyOrders;
+    if (searchTerm) {
+      filtered = filtered.filter((order) => {
+        if (selectedColumn === "all") {
+          const searchableFields = pendingColumns
+            .filter((col) => col.searchable)
+            .map((col) => String(order[col.key] || "").toLowerCase());
+          return searchableFields.some((field) =>
+            field.includes(searchTerm.toLowerCase())
+          );
+        } else {
+          const fieldValue = String(order[selectedColumn] || "").toLowerCase();
+          return fieldValue.includes(searchTerm.toLowerCase());
+        }
+      });
+    }
 
-  // Apply user role-based filtering
-  filtered = filterOrdersByUserRole(filtered, currentUser);
+    return filtered;
+  }, [pendingOrders, searchTerm, selectedColumn, currentUser]);
 
-  if (searchTerm) {
-    filtered = filtered.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = historyColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase());
-        return searchableFields.some((field) =>
-          field.includes(searchTerm.toLowerCase())
-        );
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase();
-        return fieldValue.includes(searchTerm.toLowerCase());
-      }
-    });
-  }
+  // Update the filteredHistoryOrders useMemo to include role-based filtering
+  const filteredHistoryOrders = useMemo(() => {
+    let filtered = historyOrders;
 
-  return filtered;
-}, [historyOrders, searchTerm, selectedColumn, currentUser]);
+    // Apply user role-based filtering
+    filtered = filterOrdersByUserRole(filtered, currentUser);
+
+    if (searchTerm) {
+      filtered = filtered.filter((order) => {
+        if (selectedColumn === "all") {
+          const searchableFields = historyColumns
+            .filter((col) => col.searchable)
+            .map((col) => String(order[col.key] || "").toLowerCase());
+          return searchableFields.some((field) =>
+            field.includes(searchTerm.toLowerCase())
+          );
+        } else {
+          const fieldValue = String(order[selectedColumn] || "").toLowerCase();
+          return fieldValue.includes(searchTerm.toLowerCase());
+        }
+      });
+    }
+
+    return filtered;
+  }, [historyOrders, searchTerm, selectedColumn, currentUser]);
 
   // Column visibility handlers
   const togglePendingColumn = (columnKey) => {
@@ -666,6 +667,7 @@ const filteredHistoryOrders = useMemo(() => {
       setUploading(false);
     }
   };
+
 
   const handleProcess = (orderId: string) => {
     const order = pendingOrders.find((o) => o.id === orderId);
@@ -841,21 +843,21 @@ const filteredHistoryOrders = useMemo(() => {
     <MainLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-  <div>
-    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-      Make Invoice (Accounts Part)
-    </h1>
-    {currentUser && (
-      <p className="text-sm text-muted-foreground mt-1">
-        Logged in as: {currentUser.fullName} ({currentUser.role})
-      </p>
-    )}
-  </div>
-  <Button onClick={handleRefresh} variant="outline">
-    <RefreshCw className="h-4 w-4 mr-2" />
-    Refresh
-  </Button>
-</div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              Make Invoice (Accounts Part)
+            </h1>
+            {currentUser && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Logged in as: {currentUser.fullName} ({currentUser.role})
+              </p>
+            )}
+          </div>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -961,77 +963,77 @@ const filteredHistoryOrders = useMemo(() => {
                                       column.key === "actions"
                                         ? "120px"
                                         : column.key === "orderNo"
-                                        ? "120px"
-                                        : column.key === "quotationNo"
-                                        ? "150px"
-                                        : column.key === "companyName"
-                                        ? "250px"
-                                        : column.key === "contactPersonName"
-                                        ? "180px"
-                                        : column.key === "contactNumber"
-                                        ? "140px"
-                                        : column.key === "billingAddress"
-                                        ? "200px"
-                                        : column.key === "shippingAddress"
-                                        ? "200px"
-                                        : column.key === "isOrderAcceptable"
-                                        ? "150px"
-                                        : column.key ===
-                                          "orderAcceptanceChecklist"
-                                        ? "250px"
-                                        : column.key === "remarks"
-                                        ? "200px"
-                                        : "160px",
+                                          ? "120px"
+                                          : column.key === "quotationNo"
+                                            ? "150px"
+                                            : column.key === "companyName"
+                                              ? "250px"
+                                              : column.key === "contactPersonName"
+                                                ? "180px"
+                                                : column.key === "contactNumber"
+                                                  ? "140px"
+                                                  : column.key === "billingAddress"
+                                                    ? "200px"
+                                                    : column.key === "shippingAddress"
+                                                      ? "200px"
+                                                      : column.key === "isOrderAcceptable"
+                                                        ? "150px"
+                                                        : column.key ===
+                                                          "orderAcceptanceChecklist"
+                                                          ? "250px"
+                                                          : column.key === "remarks"
+                                                            ? "200px"
+                                                            : "160px",
                                     minWidth:
                                       column.key === "actions"
                                         ? "120px"
                                         : column.key === "orderNo"
-                                        ? "120px"
-                                        : column.key === "quotationNo"
-                                        ? "150px"
-                                        : column.key === "companyName"
-                                        ? "250px"
-                                        : column.key === "contactPersonName"
-                                        ? "180px"
-                                        : column.key === "contactNumber"
-                                        ? "140px"
-                                        : column.key === "billingAddress"
-                                        ? "200px"
-                                        : column.key === "shippingAddress"
-                                        ? "200px"
-                                        : column.key === "isOrderAcceptable"
-                                        ? "150px"
-                                        : column.key ===
-                                          "orderAcceptanceChecklist"
-                                        ? "250px"
-                                        : column.key === "remarks"
-                                        ? "200px"
-                                        : "160px",
+                                          ? "120px"
+                                          : column.key === "quotationNo"
+                                            ? "150px"
+                                            : column.key === "companyName"
+                                              ? "250px"
+                                              : column.key === "contactPersonName"
+                                                ? "180px"
+                                                : column.key === "contactNumber"
+                                                  ? "140px"
+                                                  : column.key === "billingAddress"
+                                                    ? "200px"
+                                                    : column.key === "shippingAddress"
+                                                      ? "200px"
+                                                      : column.key === "isOrderAcceptable"
+                                                        ? "150px"
+                                                        : column.key ===
+                                                          "orderAcceptanceChecklist"
+                                                          ? "250px"
+                                                          : column.key === "remarks"
+                                                            ? "200px"
+                                                            : "160px",
                                     maxWidth:
                                       column.key === "actions"
                                         ? "120px"
                                         : column.key === "orderNo"
-                                        ? "120px"
-                                        : column.key === "quotationNo"
-                                        ? "150px"
-                                        : column.key === "companyName"
-                                        ? "250px"
-                                        : column.key === "contactPersonName"
-                                        ? "180px"
-                                        : column.key === "contactNumber"
-                                        ? "140px"
-                                        : column.key === "billingAddress"
-                                        ? "200px"
-                                        : column.key === "shippingAddress"
-                                        ? "200px"
-                                        : column.key === "isOrderAcceptable"
-                                        ? "150px"
-                                        : column.key ===
-                                          "orderAcceptanceChecklist"
-                                        ? "250px"
-                                        : column.key === "remarks"
-                                        ? "200px"
-                                        : "160px",
+                                          ? "120px"
+                                          : column.key === "quotationNo"
+                                            ? "150px"
+                                            : column.key === "companyName"
+                                              ? "250px"
+                                              : column.key === "contactPersonName"
+                                                ? "180px"
+                                                : column.key === "contactNumber"
+                                                  ? "140px"
+                                                  : column.key === "billingAddress"
+                                                    ? "200px"
+                                                    : column.key === "shippingAddress"
+                                                      ? "200px"
+                                                      : column.key === "isOrderAcceptable"
+                                                        ? "150px"
+                                                        : column.key ===
+                                                          "orderAcceptanceChecklist"
+                                                          ? "250px"
+                                                          : column.key === "remarks"
+                                                            ? "200px"
+                                                            : "160px",
                                   }}
                                 >
                                   <div className="break-words">
@@ -1067,77 +1069,77 @@ const filteredHistoryOrders = useMemo(() => {
                                           column.key === "actions"
                                             ? "120px"
                                             : column.key === "orderNo"
-                                            ? "120px"
-                                            : column.key === "quotationNo"
-                                            ? "150px"
-                                            : column.key === "companyName"
-                                            ? "250px"
-                                            : column.key === "contactPersonName"
-                                            ? "180px"
-                                            : column.key === "contactNumber"
-                                            ? "140px"
-                                            : column.key === "billingAddress"
-                                            ? "200px"
-                                            : column.key === "shippingAddress"
-                                            ? "200px"
-                                            : column.key === "isOrderAcceptable"
-                                            ? "150px"
-                                            : column.key ===
-                                              "orderAcceptanceChecklist"
-                                            ? "250px"
-                                            : column.key === "remarks"
-                                            ? "200px"
-                                            : "160px",
+                                              ? "120px"
+                                              : column.key === "quotationNo"
+                                                ? "150px"
+                                                : column.key === "companyName"
+                                                  ? "250px"
+                                                  : column.key === "contactPersonName"
+                                                    ? "180px"
+                                                    : column.key === "contactNumber"
+                                                      ? "140px"
+                                                      : column.key === "billingAddress"
+                                                        ? "200px"
+                                                        : column.key === "shippingAddress"
+                                                          ? "200px"
+                                                          : column.key === "isOrderAcceptable"
+                                                            ? "150px"
+                                                            : column.key ===
+                                                              "orderAcceptanceChecklist"
+                                                              ? "250px"
+                                                              : column.key === "remarks"
+                                                                ? "200px"
+                                                                : "160px",
                                         minWidth:
                                           column.key === "actions"
                                             ? "120px"
                                             : column.key === "orderNo"
-                                            ? "120px"
-                                            : column.key === "quotationNo"
-                                            ? "150px"
-                                            : column.key === "companyName"
-                                            ? "250px"
-                                            : column.key === "contactPersonName"
-                                            ? "180px"
-                                            : column.key === "contactNumber"
-                                            ? "140px"
-                                            : column.key === "billingAddress"
-                                            ? "200px"
-                                            : column.key === "shippingAddress"
-                                            ? "200px"
-                                            : column.key === "isOrderAcceptable"
-                                            ? "150px"
-                                            : column.key ===
-                                              "orderAcceptanceChecklist"
-                                            ? "250px"
-                                            : column.key === "remarks"
-                                            ? "200px"
-                                            : "160px",
+                                              ? "120px"
+                                              : column.key === "quotationNo"
+                                                ? "150px"
+                                                : column.key === "companyName"
+                                                  ? "250px"
+                                                  : column.key === "contactPersonName"
+                                                    ? "180px"
+                                                    : column.key === "contactNumber"
+                                                      ? "140px"
+                                                      : column.key === "billingAddress"
+                                                        ? "200px"
+                                                        : column.key === "shippingAddress"
+                                                          ? "200px"
+                                                          : column.key === "isOrderAcceptable"
+                                                            ? "150px"
+                                                            : column.key ===
+                                                              "orderAcceptanceChecklist"
+                                                              ? "250px"
+                                                              : column.key === "remarks"
+                                                                ? "200px"
+                                                                : "160px",
                                         maxWidth:
                                           column.key === "actions"
                                             ? "120px"
                                             : column.key === "orderNo"
-                                            ? "120px"
-                                            : column.key === "quotationNo"
-                                            ? "150px"
-                                            : column.key === "companyName"
-                                            ? "250px"
-                                            : column.key === "contactPersonName"
-                                            ? "180px"
-                                            : column.key === "contactNumber"
-                                            ? "140px"
-                                            : column.key === "billingAddress"
-                                            ? "200px"
-                                            : column.key === "shippingAddress"
-                                            ? "200px"
-                                            : column.key === "isOrderAcceptable"
-                                            ? "150px"
-                                            : column.key ===
-                                              "orderAcceptanceChecklist"
-                                            ? "250px"
-                                            : column.key === "remarks"
-                                            ? "200px"
-                                            : "160px",
+                                              ? "120px"
+                                              : column.key === "quotationNo"
+                                                ? "150px"
+                                                : column.key === "companyName"
+                                                  ? "250px"
+                                                  : column.key === "contactPersonName"
+                                                    ? "180px"
+                                                    : column.key === "contactNumber"
+                                                      ? "140px"
+                                                      : column.key === "billingAddress"
+                                                        ? "200px"
+                                                        : column.key === "shippingAddress"
+                                                          ? "200px"
+                                                          : column.key === "isOrderAcceptable"
+                                                            ? "150px"
+                                                            : column.key ===
+                                                              "orderAcceptanceChecklist"
+                                                              ? "250px"
+                                                              : column.key === "remarks"
+                                                                ? "200px"
+                                                                : "160px",
                                       }}
                                     >
                                       <div className="break-words whitespace-normal leading-relaxed">
@@ -1254,89 +1256,89 @@ const filteredHistoryOrders = useMemo(() => {
                                       column.key === "orderNo"
                                         ? "120px"
                                         : column.key === "quotationNo"
-                                        ? "150px"
-                                        : column.key === "companyName"
-                                        ? "250px"
-                                        : column.key === "contactPersonName"
-                                        ? "180px"
-                                        : column.key === "contactNumber"
-                                        ? "140px"
-                                        : column.key === "billingAddress"
-                                        ? "200px"
-                                        : column.key === "shippingAddress"
-                                        ? "200px"
-                                        : column.key === "isOrderAcceptable"
-                                        ? "150px"
-                                        : column.key ===
-                                          "orderAcceptanceChecklist"
-                                        ? "250px"
-                                        : column.key === "remarks"
-                                        ? "200px"
-                                        : column.key === "invoiceNo"
-                                        ? "120px"
-                                        : column.key === "invoiceDate"
-                                        ? "130px"
-                                        : column.key === "invoiceStatus"
-                                        ? "130px"
-                                        : "160px",
+                                          ? "150px"
+                                          : column.key === "companyName"
+                                            ? "250px"
+                                            : column.key === "contactPersonName"
+                                              ? "180px"
+                                              : column.key === "contactNumber"
+                                                ? "140px"
+                                                : column.key === "billingAddress"
+                                                  ? "200px"
+                                                  : column.key === "shippingAddress"
+                                                    ? "200px"
+                                                    : column.key === "isOrderAcceptable"
+                                                      ? "150px"
+                                                      : column.key ===
+                                                        "orderAcceptanceChecklist"
+                                                        ? "250px"
+                                                        : column.key === "remarks"
+                                                          ? "200px"
+                                                          : column.key === "invoiceNo"
+                                                            ? "120px"
+                                                            : column.key === "invoiceDate"
+                                                              ? "130px"
+                                                              : column.key === "invoiceStatus"
+                                                                ? "130px"
+                                                                : "160px",
                                     minWidth:
                                       column.key === "orderNo"
                                         ? "120px"
                                         : column.key === "quotationNo"
-                                        ? "150px"
-                                        : column.key === "companyName"
-                                        ? "250px"
-                                        : column.key === "contactPersonName"
-                                        ? "180px"
-                                        : column.key === "contactNumber"
-                                        ? "140px"
-                                        : column.key === "billingAddress"
-                                        ? "200px"
-                                        : column.key === "shippingAddress"
-                                        ? "200px"
-                                        : column.key === "isOrderAcceptable"
-                                        ? "150px"
-                                        : column.key ===
-                                          "orderAcceptanceChecklist"
-                                        ? "250px"
-                                        : column.key === "remarks"
-                                        ? "200px"
-                                        : column.key === "invoiceNo"
-                                        ? "120px"
-                                        : column.key === "invoiceDate"
-                                        ? "130px"
-                                        : column.key === "invoiceStatus"
-                                        ? "130px"
-                                        : "160px",
+                                          ? "150px"
+                                          : column.key === "companyName"
+                                            ? "250px"
+                                            : column.key === "contactPersonName"
+                                              ? "180px"
+                                              : column.key === "contactNumber"
+                                                ? "140px"
+                                                : column.key === "billingAddress"
+                                                  ? "200px"
+                                                  : column.key === "shippingAddress"
+                                                    ? "200px"
+                                                    : column.key === "isOrderAcceptable"
+                                                      ? "150px"
+                                                      : column.key ===
+                                                        "orderAcceptanceChecklist"
+                                                        ? "250px"
+                                                        : column.key === "remarks"
+                                                          ? "200px"
+                                                          : column.key === "invoiceNo"
+                                                            ? "120px"
+                                                            : column.key === "invoiceDate"
+                                                              ? "130px"
+                                                              : column.key === "invoiceStatus"
+                                                                ? "130px"
+                                                                : "160px",
                                     maxWidth:
                                       column.key === "orderNo"
                                         ? "120px"
                                         : column.key === "quotationNo"
-                                        ? "150px"
-                                        : column.key === "companyName"
-                                        ? "250px"
-                                        : column.key === "contactPersonName"
-                                        ? "180px"
-                                        : column.key === "contactNumber"
-                                        ? "140px"
-                                        : column.key === "billingAddress"
-                                        ? "200px"
-                                        : column.key === "shippingAddress"
-                                        ? "200px"
-                                        : column.key === "isOrderAcceptable"
-                                        ? "150px"
-                                        : column.key ===
-                                          "orderAcceptanceChecklist"
-                                        ? "250px"
-                                        : column.key === "remarks"
-                                        ? "200px"
-                                        : column.key === "invoiceNo"
-                                        ? "120px"
-                                        : column.key === "invoiceDate"
-                                        ? "130px"
-                                        : column.key === "invoiceStatus"
-                                        ? "130px"
-                                        : "160px",
+                                          ? "150px"
+                                          : column.key === "companyName"
+                                            ? "250px"
+                                            : column.key === "contactPersonName"
+                                              ? "180px"
+                                              : column.key === "contactNumber"
+                                                ? "140px"
+                                                : column.key === "billingAddress"
+                                                  ? "200px"
+                                                  : column.key === "shippingAddress"
+                                                    ? "200px"
+                                                    : column.key === "isOrderAcceptable"
+                                                      ? "150px"
+                                                      : column.key ===
+                                                        "orderAcceptanceChecklist"
+                                                        ? "250px"
+                                                        : column.key === "remarks"
+                                                          ? "200px"
+                                                          : column.key === "invoiceNo"
+                                                            ? "120px"
+                                                            : column.key === "invoiceDate"
+                                                              ? "130px"
+                                                              : column.key === "invoiceStatus"
+                                                                ? "130px"
+                                                                : "160px",
                                   }}
                                 >
                                   <div className="break-words">
@@ -1372,89 +1374,89 @@ const filteredHistoryOrders = useMemo(() => {
                                           column.key === "orderNo"
                                             ? "120px"
                                             : column.key === "quotationNo"
-                                            ? "150px"
-                                            : column.key === "companyName"
-                                            ? "250px"
-                                            : column.key === "contactPersonName"
-                                            ? "180px"
-                                            : column.key === "contactNumber"
-                                            ? "140px"
-                                            : column.key === "billingAddress"
-                                            ? "200px"
-                                            : column.key === "shippingAddress"
-                                            ? "200px"
-                                            : column.key === "isOrderAcceptable"
-                                            ? "150px"
-                                            : column.key ===
-                                              "orderAcceptanceChecklist"
-                                            ? "250px"
-                                            : column.key === "remarks"
-                                            ? "200px"
-                                            : column.key === "invoiceNo"
-                                            ? "120px"
-                                            : column.key === "invoiceDate"
-                                            ? "130px"
-                                            : column.key === "invoiceStatus"
-                                            ? "130px"
-                                            : "160px",
+                                              ? "150px"
+                                              : column.key === "companyName"
+                                                ? "250px"
+                                                : column.key === "contactPersonName"
+                                                  ? "180px"
+                                                  : column.key === "contactNumber"
+                                                    ? "140px"
+                                                    : column.key === "billingAddress"
+                                                      ? "200px"
+                                                      : column.key === "shippingAddress"
+                                                        ? "200px"
+                                                        : column.key === "isOrderAcceptable"
+                                                          ? "150px"
+                                                          : column.key ===
+                                                            "orderAcceptanceChecklist"
+                                                            ? "250px"
+                                                            : column.key === "remarks"
+                                                              ? "200px"
+                                                              : column.key === "invoiceNo"
+                                                                ? "120px"
+                                                                : column.key === "invoiceDate"
+                                                                  ? "130px"
+                                                                  : column.key === "invoiceStatus"
+                                                                    ? "130px"
+                                                                    : "160px",
                                         minWidth:
                                           column.key === "orderNo"
                                             ? "120px"
                                             : column.key === "quotationNo"
-                                            ? "150px"
-                                            : column.key === "companyName"
-                                            ? "250px"
-                                            : column.key === "contactPersonName"
-                                            ? "180px"
-                                            : column.key === "contactNumber"
-                                            ? "140px"
-                                            : column.key === "billingAddress"
-                                            ? "200px"
-                                            : column.key === "shippingAddress"
-                                            ? "200px"
-                                            : column.key === "isOrderAcceptable"
-                                            ? "150px"
-                                            : column.key ===
-                                              "orderAcceptanceChecklist"
-                                            ? "250px"
-                                            : column.key === "remarks"
-                                            ? "200px"
-                                            : column.key === "invoiceNo"
-                                            ? "120px"
-                                            : column.key === "invoiceDate"
-                                            ? "130px"
-                                            : column.key === "invoiceStatus"
-                                            ? "130px"
-                                            : "160px",
+                                              ? "150px"
+                                              : column.key === "companyName"
+                                                ? "250px"
+                                                : column.key === "contactPersonName"
+                                                  ? "180px"
+                                                  : column.key === "contactNumber"
+                                                    ? "140px"
+                                                    : column.key === "billingAddress"
+                                                      ? "200px"
+                                                      : column.key === "shippingAddress"
+                                                        ? "200px"
+                                                        : column.key === "isOrderAcceptable"
+                                                          ? "150px"
+                                                          : column.key ===
+                                                            "orderAcceptanceChecklist"
+                                                            ? "250px"
+                                                            : column.key === "remarks"
+                                                              ? "200px"
+                                                              : column.key === "invoiceNo"
+                                                                ? "120px"
+                                                                : column.key === "invoiceDate"
+                                                                  ? "130px"
+                                                                  : column.key === "invoiceStatus"
+                                                                    ? "130px"
+                                                                    : "160px",
                                         maxWidth:
                                           column.key === "orderNo"
                                             ? "120px"
                                             : column.key === "quotationNo"
-                                            ? "150px"
-                                            : column.key === "companyName"
-                                            ? "250px"
-                                            : column.key === "contactPersonName"
-                                            ? "180px"
-                                            : column.key === "contactNumber"
-                                            ? "140px"
-                                            : column.key === "billingAddress"
-                                            ? "200px"
-                                            : column.key === "shippingAddress"
-                                            ? "200px"
-                                            : column.key === "isOrderAcceptable"
-                                            ? "150px"
-                                            : column.key ===
-                                              "orderAcceptanceChecklist"
-                                            ? "250px"
-                                            : column.key === "remarks"
-                                            ? "200px"
-                                            : column.key === "invoiceNo"
-                                            ? "120px"
-                                            : column.key === "invoiceDate"
-                                            ? "130px"
-                                            : column.key === "invoiceStatus"
-                                            ? "130px"
-                                            : "160px",
+                                              ? "150px"
+                                              : column.key === "companyName"
+                                                ? "250px"
+                                                : column.key === "contactPersonName"
+                                                  ? "180px"
+                                                  : column.key === "contactNumber"
+                                                    ? "140px"
+                                                    : column.key === "billingAddress"
+                                                      ? "200px"
+                                                      : column.key === "shippingAddress"
+                                                        ? "200px"
+                                                        : column.key === "isOrderAcceptable"
+                                                          ? "150px"
+                                                          : column.key ===
+                                                            "orderAcceptanceChecklist"
+                                                            ? "250px"
+                                                            : column.key === "remarks"
+                                                              ? "200px"
+                                                              : column.key === "invoiceNo"
+                                                                ? "120px"
+                                                                : column.key === "invoiceDate"
+                                                                  ? "130px"
+                                                                  : column.key === "invoiceStatus"
+                                                                    ? "130px"
+                                                                    : "160px",
                                       }}
                                     >
                                       <div className="break-words whitespace-normal leading-relaxed">
@@ -1590,19 +1592,19 @@ const filteredHistoryOrders = useMemo(() => {
                 >
                   Cancel
                 </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!invoiceNumber || !billDate || uploading || currentUser?.role === "user"}
-              >
-  {uploading ? (
-    <>
-      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-      Uploading...
-    </>
-  ) : (
-    "Submit"
-  )}
-</Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!invoiceNumber || !billDate || uploading || currentUser?.role === "user"}
+                >
+                  {uploading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
               </div>
             </div>
           </DialogContent>

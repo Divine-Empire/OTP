@@ -186,9 +186,9 @@ export default function DispFormPage() {
   const [srnNumberAttachment, setSrnNumberAttachment] = useState<File | null>(null)
   const [paymentAttachment, setPaymentAttachment] = useState<File | null>(null)
   const [gstNumber, setGstNumber] = useState<string>("")
-const [vehicleNumber, setVehicleNumber] = useState<string>("")
-const [dispatchLocation, setDispatchLocation] = useState<string>("")
-const [openSNoIndex, setOpenSNoIndex] = useState<number | null>(null)
+  const [vehicleNumber, setVehicleNumber] = useState<string>("")
+  const [dispatchLocation, setDispatchLocation] = useState<string>("")
+  const [openSNoIndex, setOpenSNoIndex] = useState<number | null>(null)
   const [uploading, setUploading] = useState(false)
   const [directDispatch, setDirectDispatch] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("")
@@ -204,14 +204,18 @@ const [openSNoIndex, setOpenSNoIndex] = useState<number | null>(null)
     historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {}),
   )
 
-  const {user: currentUser} = useAuth();
+  const { user: currentUser } = useAuth();
 
   const APPS_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
   const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
   const PENDING_SHEET_NAME = "ORDER-DISPATCH"
   const HISTORY_SHEET_NAME = "DISPATCH-DELIVERY"
-  const IMS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkB72Tu0iDEEyQ5cdkYUTdJq7Ifj80hgqbXpwc9WnF3ruWs1Yppe3Z1TJce4yr9Gg/exec"
+  const IMS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+
+  const INSTALLATION_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwu7wzvou_bj7zZvM1q5NCzTgHMaO6WMZVswb3aNG8VJ42Jz1W_sAd4El42tgmg3JKC/exec"
+  const INSTALLATION_SHEET_NAME = "Service-Installation"
+  const INSTALLATION_SHEET_ID = "1teE4IIdCw7qnQvm_W7xAPgmGgpU13dtYw6y5ui01HHc"
 
   const formatGoogleSheetsDate = (dateValue) => {
     if (!dateValue) return ""
@@ -273,64 +277,64 @@ const [openSNoIndex, setOpenSNoIndex] = useState<number | null>(null)
 
 
   // Add this function after the useAuth hook
-const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
-  if (!currentUser) return orders;
-  
-  // Super admin sees all data
-  if (currentUser.role === "super_admin") {
-    return orders;
-  }
-  
-  // Admin and regular users only see data where CRE Name matches their username
-  return orders.filter(order => order.creName === currentUser.username);
-};
+  const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
+    if (!currentUser) return orders;
+
+    // Super admin sees all data
+    if (currentUser.role === "super_admin") {
+      return orders;
+    }
+
+    // Admin and regular users only see data where CRE Name matches their username
+    return orders.filter(order => order.creName === currentUser.username);
+  };
   // Filter orders based on search term and selected column
-const filteredOrders = useMemo(() => {
-  let filtered = orders;
+  const filteredOrders = useMemo(() => {
+    let filtered = orders;
 
-  // Apply user role-based filtering
-  filtered = filterOrdersByUserRole(filtered, currentUser);
+    // Apply user role-based filtering
+    filtered = filterOrdersByUserRole(filtered, currentUser);
 
-  if (searchTerm) {
-    filtered = filtered.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = pendingColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
-        return fieldValue.includes(searchTerm.toLowerCase())
-      }
-    })
-  }
+    if (searchTerm) {
+      filtered = filtered.filter((order) => {
+        if (selectedColumn === "all") {
+          const searchableFields = pendingColumns
+            .filter((col) => col.searchable)
+            .map((col) => String(order[col.key] || "").toLowerCase())
+          return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+        } else {
+          const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+          return fieldValue.includes(searchTerm.toLowerCase())
+        }
+      })
+    }
 
-  return filtered
-}, [orders, searchTerm, selectedColumn, currentUser])
+    return filtered
+  }, [orders, searchTerm, selectedColumn, currentUser])
 
   // Filter processed orders based on search term
-const filteredProcessedOrders = useMemo(() => {
-  let filtered = processedOrders;
+  const filteredProcessedOrders = useMemo(() => {
+    let filtered = processedOrders;
 
-  // Apply user role-based filtering
-  filtered = filterOrdersByUserRole(filtered, currentUser);
+    // Apply user role-based filtering
+    filtered = filterOrdersByUserRole(filtered, currentUser);
 
-  if (searchTerm) {
-    filtered = filtered.filter((order) => {
-      if (selectedColumn === "all") {
-        const searchableFields = historyColumns
-          .filter((col) => col.searchable)
-          .map((col) => String(order[col.key] || "").toLowerCase())
-        return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
-      } else {
-        const fieldValue = String(order[selectedColumn] || "").toLowerCase()
-        return fieldValue.includes(searchTerm.toLowerCase())
-      }
-    })
-  }
+    if (searchTerm) {
+      filtered = filtered.filter((order) => {
+        if (selectedColumn === "all") {
+          const searchableFields = historyColumns
+            .filter((col) => col.searchable)
+            .map((col) => String(order[col.key] || "").toLowerCase())
+          return searchableFields.some((field) => field.includes(searchTerm.toLowerCase()))
+        } else {
+          const fieldValue = String(order[selectedColumn] || "").toLowerCase()
+          return fieldValue.includes(searchTerm.toLowerCase())
+        }
+      })
+    }
 
-  return filtered
-}, [processedOrders, searchTerm, selectedColumn, currentUser])
+    return filtered
+  }, [processedOrders, searchTerm, selectedColumn, currentUser])
 
   // Column visibility handlers
   const togglePendingColumn = (columnKey) => {
@@ -368,7 +372,7 @@ const filteredProcessedOrders = useMemo(() => {
     setError(null)
 
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${PENDING_SHEET_NAME}`
+      const sheetUrl = `/api/sheets-proxy?sheetId=${SHEET_ID}&sheetName=${encodeURIComponent(PENDING_SHEET_NAME)}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -394,13 +398,13 @@ const filteredProcessedOrders = useMemo(() => {
             // if (hasColumnBR && hasColumnBS) {
             // Column AX (index 49) - Dispatch Status should be "PENDING"
             const dispatchStatus = row.c[49] && row.c[49].v ? row.c[49].v.toString().toUpperCase() : ""
-          
-          // Column BX (index 75) - Should not be null or empty
-          const columnBX = row.c[75] && row.c[75].v ? row.c[75].v.toString().trim() : ""
 
-          // For pending orders: show rows where AX column has "PENDING" value AND BX column is not empty
-          if (dispatchStatus === "PENDING" && columnBX !== "") {
-            const order = {
+            // Column BX (index 75) - Should not be null or empty
+            const columnBX = row.c[75] && row.c[75].v ? row.c[75].v.toString().trim() : ""
+
+            // For pending orders: show rows where AX column has "PENDING" value AND BX column is not empty
+            if (dispatchStatus === "PENDING" && columnBX !== "") {
+              const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
                 // Map all columns B to BZ
@@ -487,7 +491,7 @@ const filteredProcessedOrders = useMemo(() => {
     setProcessedLoading(true)
 
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${HISTORY_SHEET_NAME}`
+      const sheetUrl = `/api/sheets-proxy?sheetId=${SHEET_ID}&sheetName=${encodeURIComponent(HISTORY_SHEET_NAME)}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -650,19 +654,19 @@ const filteredProcessedOrders = useMemo(() => {
   const handleProcess = (orderId: string) => {
     const order = orders.find((o: any) => o.id === orderId)
     if (!order) return
-  
+
     setSelectedOrder(orderId)
     setCalibrationRequired("")
     setCalibrationType("")
     setInstallationRequired("")
-  
+
     // Extract items from the order data (columns M to AF) - first 10 items
     const extractedItems: Array<{ name: string; qty: number; serialNo?: string }> = []
     for (let i = 12; i <= 31; i += 2) {
       // Columns M (12) to AF (31)
       const nameCol = order.fullRowData[i]
       const qtyCol = order.fullRowData[i + 1]
-  
+
       if (nameCol && nameCol.v && nameCol.v.toString().trim() !== "") {
         extractedItems.push({
           name: nameCol.v.toString(),
@@ -671,7 +675,7 @@ const filteredProcessedOrders = useMemo(() => {
         })
       }
     }
-  
+
     // Extract additional items from column AI (index 34) if it contains JSON data
     try {
       const aiColumnData = order.fullRowData[34] // Column AI
@@ -692,7 +696,7 @@ const filteredProcessedOrders = useMemo(() => {
     } catch (error) {
       console.log("No valid JSON data found in column AI or error parsing:", error)
     }
-  
+
     setItems(extractedItems)
     setAdditionalItemsJson("")
     setEwayBillDetails("")
@@ -709,34 +713,45 @@ const filteredProcessedOrders = useMemo(() => {
   }
 
   const addItem = () => {
-    setItems([...items, { name: "", qty: 0 }])
+    setItems([...items, { name: "", qty: 0, installation: "No" }])
   }
 
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index))
   }
 
-  const updateItem = (index: number, field: "name" | "qty" | "serialNo", value: string | number) => {
+  const updateItem = (index: number, field: "name" | "qty" | "serialNo" | "installation", value: string | number) => {
     const updated = [...items]
-    updated[index] = { ...updated[index], [field]: value }
+    updated[index] = { ...updated[index], [field]: value } as any
     setItems(updated)
   }
 
   const handleSubmit = async () => {
     if (!selectedOrder || !calibrationRequired || !installationRequired || !dispatchLocation) return;
-  
+
     const order = orders.find((o: any) => o.id === selectedOrder);
     if (!order) return;
-  
+
     // Calculate total quantity - Fixed syntax
     const totalQty = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
-  
+
     // Process serial numbers for columns DI, DJ, DK
     const serials: string[] = [];
     const dates: string[] = [];
     const locations: string[] = [];
 
-    items.forEach(item => {
+    const installationStatuses: string[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      // Validation: S-Code is mandatory if Installation is Yes
+      if (item.installation === "Yes" && !item.serialNo) {
+        alert(`S-Code is mandatory for item "${item.name || `at row ${i + 1}`}" because Installation is set to Yes.`);
+        return;
+      }
+
+      installationStatuses.push(item.installation || "No");
+
       const snVal = item.serialNo || "";
       // Format is S-D-L (manual or from dropdown)
       if (snVal && snVal.includes("-")) {
@@ -745,11 +760,12 @@ const filteredProcessedOrders = useMemo(() => {
         dates.push(parts[1] || "");
         locations.push(parts[2] || "");
       } else {
-        serials.push("");
+        // If no hyphen, treat the whole value as the serial number
+        serials.push(snVal);
         dates.push("");
         locations.push("");
       }
-    });
+    }
 
     const dispatchData = {
       calibrationRequired,
@@ -767,11 +783,12 @@ const filteredProcessedOrders = useMemo(() => {
       processedAt: new Date().toISOString(),
       serialNos: serials.join(", "),
       serialDates: dates.join(", "),
-      serialLocations: locations.join(", ")
+      serialLocations: locations.join(", "),
+      installationStatuses: installationStatuses.join(", ")
     };
-  
+
     const result = await updateOrderStatus(order, dispatchData);
-  
+
     if (result.success) {
       setIsDialogOpen(false);
       setSelectedOrder("");
@@ -782,21 +799,58 @@ const filteredProcessedOrders = useMemo(() => {
         if (result.fileUrls.srnUrl) message += "\n- SRN Number attachment";
         if (result.fileUrls.paymentUrl) message += "\n- Payment attachment";
       }
+
+      // Secondary submission for items requiring installation
+      const installationItems = items.filter(item => item.installation === "Yes");
+      if (installationItems.length > 0) {
+        try {
+          // Fetch current row count to generate sequential SI-ID
+          let nextIdIndex = 1;
+          try {
+            const sheetUrl = `/api/sheets-proxy?sheetId=${INSTALLATION_SHEET_ID}&sheetName=${encodeURIComponent(INSTALLATION_SHEET_NAME)}`;
+            const response = await fetch(sheetUrl);
+            const text = await response.text();
+            const jsonStart = text.indexOf("{");
+            const jsonEnd = text.lastIndexOf("}") + 1;
+            const jsonData = text.substring(jsonStart, jsonEnd);
+            const data = JSON.parse(jsonData);
+            if (data && data.table && data.table.rows) {
+              // Assuming 6 header rows, data starts from row 7
+              nextIdIndex = data.table.rows.length - 6 + 1;
+              if (nextIdIndex < 1) nextIdIndex = 1;
+            }
+          } catch (e) {
+            console.error("Failed to fetch installation count, defaulting to next available", e);
+          }
+
+          // Process each installation item
+          for (const item of installationItems) {
+            const siId = `SI-${String(nextIdIndex).padStart(3, '0')}`;
+            await submitToInstallationSheet(order, item, siId);
+            nextIdIndex++;
+          }
+          message += `\n\n✅ ${installationItems.length} item(s) logged in Service-Installation sheet.`;
+        } catch (err) {
+          console.error("Error submitting to installation sheet:", err);
+          message += "\n\n⚠️ Failed to log items in Service-Installation sheet.";
+        }
+      }
+
       alert(message);
     } else {
       alert(`Error processing order: ${result.error}`);
     }
   };
-  
+
   const updateOrderStatus = async (order: any, dispatchData: any) => {
     try {
       setUploading(true);
-  
+
       const formData = new FormData();
       formData.append("sheetName", "DISPATCH-DELIVERY");
       formData.append("action", "insert");
       formData.append("orderNo", order.id);
-  
+
       // Handle file uploads (keep existing file upload code)
       if (ewayBillAttachment) {
         try {
@@ -808,7 +862,7 @@ const filteredProcessedOrders = useMemo(() => {
           console.error("Error converting Eway Bill file:", error);
         }
       }
-  
+
       if (srnNumberAttachment) {
         try {
           const base64Data = await convertFileToBase64(srnNumberAttachment);
@@ -819,7 +873,7 @@ const filteredProcessedOrders = useMemo(() => {
           console.error("Error converting SRN file:", error);
         }
       }
-  
+
       if (paymentAttachment) {
         try {
           const base64Data = await convertFileToBase64(paymentAttachment);
@@ -830,15 +884,15 @@ const filteredProcessedOrders = useMemo(() => {
           console.error("Error converting Payment file:", error);
         }
       }
-  
-      const rowData = new Array(115).fill("");
-  
+
+      const rowData = new Array(116).fill("");
+
       // Add today's date in column A (index 0)
       const today = new Date();
       const formattedDate =
         `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
         `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-  
+
       rowData[0] = formattedDate;
       rowData[1] = order.id;
       rowData[22] = dispatchData.calibrationRequired;
@@ -846,7 +900,7 @@ const filteredProcessedOrders = useMemo(() => {
       rowData[24] = dispatchData.installationRequired;
       rowData[25] = dispatchData.ewayBillDetails;
       rowData[27] = dispatchData.srnNumber;
-  
+
       // Process first 14 items in individual columns (AE-BB: index 30-57)
       const first14Items = dispatchData.items.slice(0, 14);
       let columnIndex = 30;
@@ -857,54 +911,66 @@ const filteredProcessedOrders = useMemo(() => {
           columnIndex += 2;
         }
       });
-  
+
       // Items 15+ go to column BC (index 58) as JSON
       const remainingItems = dispatchData.items.slice(14);
       if (remainingItems.length > 0) {
         const jsonItems = remainingItems.map(item => ({
           name: item.name,
           quantity: item.qty.toString(),
-          serialNo: item.serialNo || ""
+          serialNo: item.serialNo || "",
+          installation: item.installation || "No"
         }));
         rowData[58] = JSON.stringify(jsonItems); // Column BC
       }
-  
+
+      // Also include installation status in the main JSON or handle it separately if needed
+      // For now, we'll ensure it's in the BC JSON blob for all items to be safe
+      const allItemsJson = dispatchData.items.map(item => ({
+        name: item.name,
+        quantity: item.qty.toString(),
+        serialNo: item.serialNo || "",
+        installation: item.installation || "No"
+      }));
+      rowData[58] = JSON.stringify(allItemsJson); // Overwriting BC with ALL items including installation status
+
       // Total quantity goes to column BD (index 59)
       rowData[59] = dispatchData.totalQty;
       // GST Number goes to column BJ (index 61)
-rowData[61] = dispatchData.gstNumber || "";
+      rowData[61] = dispatchData.gstNumber || "";
 
-// Vehicle Number goes to column AA (index 26)
-rowData[26] = dispatchData.vehicleNumber || "";
-// Add this mapping for Transport ID (Eway Bill Details)
-rowData[25] = dispatchData.ewayBillDetails || "";  // Column Z (index 25)
+      // Vehicle Number goes to column AA (index 26)
+      rowData[26] = dispatchData.vehicleNumber || "";
+      // Add this mapping for Transport ID (Eway Bill Details)
+      rowData[25] = dispatchData.ewayBillDetails || "";  // Column Z (index 25)
 
-// Serial Number Components
-rowData[112] = dispatchData.serialNos || "";   // Column DI
-rowData[113] = dispatchData.serialDates || ""; // Column DJ
-rowData[114] = dispatchData.serialLocations || ""; // Column DK
+      // Serial Number Components
+      rowData[112] = dispatchData.serialNos || "";   // Column DI
+      rowData[113] = dispatchData.serialDates || ""; // Column DJ
+      rowData[114] = dispatchData.serialLocations || ""; // Column DK
+      rowData[115] = dispatchData.installationStatuses || ""; // Column DL
 
-// Remove any other assignments to rowData[25] that might be conflicting
+      // Remove any other assignments to rowData[25] that might be conflicting
 
-// Dispatch Location goes to column AB (index 27)
-rowData[103] = dispatchData.dispatchLocation || "";
-  // Direct Dispatch goes to column CZ (index 103)
-rowData[104] = dispatchData.directDispatch || "";
+      // Dispatch Location goes to column AB (index 27)
+      rowData[103] = dispatchData.dispatchLocation || "";
+      // Direct Dispatch goes to column CZ (index 103)
+      rowData[104] = dispatchData.directDispatch || "";
       // Remarks go to column BE (index 60)
       rowData[60] = dispatchData.remarks || "";
-  
+
       formData.append("rowData", JSON.stringify(rowData));
-  
+
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       });
-  
+
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`);
       }
-  
+
       let result;
       try {
         const responseText = await updateResponse.text();
@@ -912,7 +978,7 @@ rowData[104] = dispatchData.directDispatch || "";
       } catch (parseError) {
         result = { success: true };
       }
-  
+
       if (result.success !== false) {
         await fetchPendingOrders();
         return { success: true, fileUrls: result.fileUrls };
@@ -925,6 +991,50 @@ rowData[104] = dispatchData.directDispatch || "";
       return { success: false, error: err.message };
     } finally {
       setUploading(false);
+    }
+  };
+
+  const submitToInstallationSheet = async (order: any, item: any, siId: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.append("action", "insert");
+      params.append("sheetName", INSTALLATION_SHEET_NAME);
+
+      const today = new Date();
+      const formattedDate =
+        `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ` +
+        `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
+
+      const rowData = [
+        formattedDate,           // A: Timestamp
+        order.id,                // B: Order No.
+        "Yes",                   // C: Is Installation Required Or Not?
+        order.companyName || "", // D: COMPANY NAME
+        order.contactPersonName || "", // E: CONTACT PERSON NAME
+        order.contactNumber || "",   // F: CONTACT PERSON NO.
+        item.name || "",         // G: Item-Name
+        item.qty || "",          // H: Qty
+        item.serialNo || "",     // I: Serial
+        siId,                    // J: SI-ID (Moved to Column J)
+        "",                      // K: Bill Date (Placeholder)
+        "",                      // L: Invoice Number (Placeholder)
+        ""                       // M: Invoice URL (Placeholder)
+      ];
+
+      params.append("rowData", JSON.stringify(rowData));
+
+      const response = await fetch(INSTALLATION_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        body: params,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Installation sheet error: ${response.status}`);
+      }
+    } catch (err) {
+      console.error("Installation submission failed:", err);
+      throw err;
     }
   };
 
@@ -943,47 +1053,47 @@ rowData[104] = dispatchData.directDispatch || "";
   }
 
   // Update the renderCellContent function to handle these fields as hyperlinks
-const renderCellContent = (order, columnKey) => {
-  const value = order[columnKey]
+  const renderCellContent = (order, columnKey) => {
+    const value = order[columnKey]
 
-  switch (columnKey) {
-case "actions":
-  return (
-    <Button 
-      size="sm" 
-      onClick={() => handleProcess(order.id)}
-      disabled={currentUser?.role === "user"}
-    >
-      {currentUser?.role === "user" ? "View Only" : "Process"}
-    </Button>
-  )
-    case "quotationCopy":
-    case "quotationCopyHistory":
+    switch (columnKey) {
+      case "actions":
+        return (
+          <Button
+            size="sm"
+            onClick={() => handleProcess(order.id)}
+            disabled={currentUser?.role === "user"}
+          >
+            {currentUser?.role === "user" ? "View Only" : "Process"}
+          </Button>
+        )
+      case "quotationCopy":
+      case "quotationCopyHistory":
       // return <Badge variant={value === "Available" ? "default" : "secondary"}>{value || "N/A"}</Badge>
-    case "acceptanceCopy":
-    case "ewayBillAttachment":
-    case "srnNumberAttachment":
-    case "attachment":
-      return value && (value.startsWith("http") || value.startsWith("https")) ? (
-        <a href={value} target="_blank" rel="noopener noreferrer">
-          <Badge variant="default">View Attachment</Badge>
-        </a>
-      ) : (
-        <Badge variant="secondary">{value || "N/A"}</Badge>
-      )
-    case "calibrationRequired":
-    case "installationRequired":
-      return <Badge variant={value === "YES" ? "default" : "destructive"}>{value || "N/A"}</Badge>
-    case "billingAddress":
-    case "shippingAddress":
-    case "remarks":
-      return <div className="max-w-[200px] whitespace-normal break-words">{value}</div>
-    case "amount":
-      return value ? `₹${Number(value).toLocaleString()}` : ""
-    default:
-      return value || ""
+      case "acceptanceCopy":
+      case "ewayBillAttachment":
+      case "srnNumberAttachment":
+      case "attachment":
+        return value && (value.startsWith("http") || value.startsWith("https")) ? (
+          <a href={value} target="_blank" rel="noopener noreferrer">
+            <Badge variant="default">View Attachment</Badge>
+          </a>
+        ) : (
+          <Badge variant="secondary">{value || "N/A"}</Badge>
+        )
+      case "calibrationRequired":
+      case "installationRequired":
+        return <Badge variant={value === "YES" ? "default" : "destructive"}>{value || "N/A"}</Badge>
+      case "billingAddress":
+      case "shippingAddress":
+      case "remarks":
+        return <div className="max-w-[200px] whitespace-normal break-words">{value}</div>
+      case "amount":
+        return value ? `₹${Number(value).toLocaleString()}` : ""
+      default:
+        return value || ""
+    }
   }
-}
 
   if (loading) {
     return (
@@ -1016,22 +1126,22 @@ case "actions":
   return (
     <MainLayout>
       <div className="space-y-6">
-      <div className="flex justify-between items-center">
-  <div>
-    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-      Pre Invoice Form
-    </h1>
-    {currentUser && (
-      <p className="text-sm text-muted-foreground mt-1">
-        Logged in as: {currentUser.fullName} ({currentUser.role})
-      </p>
-    )}
-  </div>
-  <Button onClick={handleRefresh} variant="outline">
-    <RefreshCw className="h-4 w-4 mr-2" />
-    Refresh
-  </Button>
-</div>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              Pre Invoice Form
+            </h1>
+            {currentUser && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Logged in as: {currentUser.fullName} ({currentUser.role})
+              </p>
+            )}
+          </div>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
 
         {/* Search and Filter Controls */}
         <div className="flex gap-4 items-center">
@@ -1055,385 +1165,385 @@ case "actions":
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
-  <Card>
-    <CardHeader>
-      <div className="flex justify-between items-center">
-        <div>
-          <CardTitle>Pending Pre Invoice Forms</CardTitle>
-          <CardDescription>Orders waiting for dispatch form processing</CardDescription>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Column Visibility
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
-            <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="flex gap-2 p-2">
-              <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
-                Show All
-              </Button>
-              <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
-                Hide All
-              </Button>
-            </div>
-            <DropdownMenuSeparator />
-            <div className="p-2 space-y-2">
-              {pendingColumns.map((column) => (
-                <div key={column.key} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`pending-${column.key}`}
-                    checked={visiblePendingColumns[column.key]}
-                    onCheckedChange={() => togglePendingColumn(column.key)}
-                  />
-                  <Label htmlFor={`pending-${column.key}`} className="text-sm">
-                    {column.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <div style={{ minWidth: 'max-content' }}>
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-gray-50">
-                <TableRow>
-                  {pendingColumns
-                    .filter((col) => visiblePendingColumns[col.key])
-                    .map((column) => (
-                      <TableHead 
-                        key={column.key}
-                        className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
-                        style={{ 
-                          width: column.key === 'actions' ? '120px' : 
-                                 column.key === 'orderNo' ? '120px' :
-                                 column.key === 'quotationNo' ? '150px' :
-                                 column.key === 'companyName' ? '250px' :
-                                 column.key === 'contactPersonName' ? '180px' :
-                                 column.key === 'contactNumber' ? '140px' :
-                                 column.key === 'billingAddress' ? '200px' :
-                                 column.key === 'shippingAddress' ? '200px' :
-                                 column.key === 'isOrderAcceptable' ? '150px' :
-                                 column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                 column.key === 'remarks' ? '200px' :
-                                 '160px',
-                          minWidth: column.key === 'actions' ? '120px' : 
-                                   column.key === 'orderNo' ? '120px' :
-                                   column.key === 'quotationNo' ? '150px' :
-                                   column.key === 'companyName' ? '250px' :
-                                   column.key === 'contactPersonName' ? '180px' :
-                                   column.key === 'contactNumber' ? '140px' :
-                                   column.key === 'billingAddress' ? '200px' :
-                                   column.key === 'shippingAddress' ? '200px' :
-                                   column.key === 'isOrderAcceptable' ? '150px' :
-                                   column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                   column.key === 'remarks' ? '200px' :
-                                   '160px',
-                          maxWidth: column.key === 'actions' ? '120px' : 
-                                   column.key === 'orderNo' ? '120px' :
-                                   column.key === 'quotationNo' ? '150px' :
-                                   column.key === 'companyName' ? '250px' :
-                                   column.key === 'contactPersonName' ? '180px' :
-                                   column.key === 'contactNumber' ? '140px' :
-                                   column.key === 'billingAddress' ? '200px' :
-                                   column.key === 'shippingAddress' ? '200px' :
-                                   column.key === 'isOrderAcceptable' ? '150px' :
-                                   column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                   column.key === 'remarks' ? '200px' :
-                                   '160px'
-                        }}
-                      >
-                        <div className="break-words">
-                          {column.label}
-                        </div>
-                      </TableHead>
-                    ))}
-                </TableRow>
-              </TableHeader>
-            </Table>
-            
-            <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
-              <Table>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id} className="hover:bg-gray-50">
-                      {pendingColumns
-                        .filter((col) => visiblePendingColumns[col.key])
-                        .map((column) => (
-                          <TableCell 
-                            key={column.key} 
-                            className="border-b px-4 py-3 align-top"
-                            style={{ 
-                              width: column.key === 'actions' ? '120px' : 
-                                     column.key === 'orderNo' ? '120px' :
-                                     column.key === 'quotationNo' ? '150px' :
-                                     column.key === 'companyName' ? '250px' :
-                                     column.key === 'contactPersonName' ? '180px' :
-                                     column.key === 'contactNumber' ? '140px' :
-                                     column.key === 'billingAddress' ? '200px' :
-                                     column.key === 'shippingAddress' ? '200px' :
-                                     column.key === 'isOrderAcceptable' ? '150px' :
-                                     column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                     column.key === 'remarks' ? '200px' :
-                                     '160px',
-                              minWidth: column.key === 'actions' ? '120px' : 
-                                       column.key === 'orderNo' ? '120px' :
-                                       column.key === 'quotationNo' ? '150px' :
-                                       column.key === 'companyName' ? '250px' :
-                                       column.key === 'contactPersonName' ? '180px' :
-                                       column.key === 'contactNumber' ? '140px' :
-                                       column.key === 'billingAddress' ? '200px' :
-                                       column.key === 'shippingAddress' ? '200px' :
-                                       column.key === 'isOrderAcceptable' ? '150px' :
-                                       column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                       column.key === 'remarks' ? '200px' :
-                                       '160px',
-                              maxWidth: column.key === 'actions' ? '120px' : 
-                                       column.key === 'orderNo' ? '120px' :
-                                       column.key === 'quotationNo' ? '150px' :
-                                       column.key === 'companyName' ? '250px' :
-                                       column.key === 'contactPersonName' ? '180px' :
-                                       column.key === 'contactNumber' ? '140px' :
-                                       column.key === 'billingAddress' ? '200px' :
-                                       column.key === 'shippingAddress' ? '200px' :
-                                       column.key === 'isOrderAcceptable' ? '150px' :
-                                       column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                       column.key === 'remarks' ? '200px' :
-                                       '160px'
-                            }}
-                          >
-                            <div className="break-words whitespace-normal leading-relaxed">
-                              {renderCellContent(order, column.key)}
-                            </div>
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  ))}
-                  {filteredOrders.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
-                        className="text-center text-muted-foreground h-32"
-                      >
-                        {searchTerm
-                          ? "No orders match your search criteria"
-                          : "No pending orders found in Google Sheets"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
-<TabsContent value="history" className="space-y-4">
-  <Card>
-    <CardHeader>
-      <div className="flex justify-between items-center">
-        <div>
-          <CardTitle>DISP Form History</CardTitle>
-          <CardDescription>Previously processed dispatch forms</CardDescription>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings className="h-4 w-4 mr-2" />
-              Column Visibility
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
-            <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="flex gap-2 p-2">
-              <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
-                Show All
-              </Button>
-              <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
-                Hide All
-              </Button>
-            </div>
-            <DropdownMenuSeparator />
-            <div className="p-2 space-y-2">
-              {historyColumns.map((column) => (
-                <div key={column.key} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`history-${column.key}`}
-                    checked={visibleHistoryColumns[column.key]}
-                    onCheckedChange={() => toggleHistoryColumn(column.key)}
-                  />
-                  <Label htmlFor={`history-${column.key}`} className="text-sm">
-                    {column.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </CardHeader>
-    <CardContent>
-      {processedLoading ? (
-        <div className="flex items-center justify-center h-32">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Loading processed orders...</span>
-        </div>
-      ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <div style={{ minWidth: 'max-content' }}>
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-gray-50">
-                  <TableRow>
-                    {historyColumns
-                      .filter((col) => visibleHistoryColumns[col.key])
-                      .map((column) => (
-                        <TableHead 
-                          key={column.key}
-                          className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
-                          style={{ 
-                            width: column.key === 'orderNo' ? '120px' :
-                                   column.key === 'quotationNo' ? '150px' :
-                                   column.key === 'companyName' ? '250px' :
-                                   column.key === 'contactPersonName' ? '180px' :
-                                   column.key === 'contactNumber' ? '140px' :
-                                   column.key === 'billingAddress' ? '200px' :
-                                   column.key === 'shippingAddress' ? '200px' :
-                                   column.key === 'isOrderAcceptable' ? '150px' :
-                                   column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                   column.key === 'remarks' ? '200px' :
-                                   column.key === 'availabilityStatus' ? '150px' :
-                                   column.key === 'inventoryRemarks' ? '200px' :
-                                   '160px',
-                            minWidth: column.key === 'orderNo' ? '120px' :
-                                     column.key === 'quotationNo' ? '150px' :
-                                     column.key === 'companyName' ? '250px' :
-                                     column.key === 'contactPersonName' ? '180px' :
-                                     column.key === 'contactNumber' ? '140px' :
-                                     column.key === 'billingAddress' ? '200px' :
-                                     column.key === 'shippingAddress' ? '200px' :
-                                     column.key === 'isOrderAcceptable' ? '150px' :
-                                     column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                     column.key === 'remarks' ? '200px' :
-                                     column.key === 'availabilityStatus' ? '150px' :
-                                     column.key === 'inventoryRemarks' ? '200px' :
-                                     '160px',
-                            maxWidth: column.key === 'orderNo' ? '120px' :
-                                     column.key === 'quotationNo' ? '150px' :
-                                     column.key === 'companyName' ? '250px' :
-                                     column.key === 'contactPersonName' ? '180px' :
-                                     column.key === 'contactNumber' ? '140px' :
-                                     column.key === 'billingAddress' ? '200px' :
-                                     column.key === 'shippingAddress' ? '200px' :
-                                     column.key === 'isOrderAcceptable' ? '150px' :
-                                     column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                     column.key === 'remarks' ? '200px' :
-                                     column.key === 'availabilityStatus' ? '150px' :
-                                     column.key === 'inventoryRemarks' ? '200px' :
-                                     '160px'
-                          }}
-                        >
-                          <div className="break-words">
-                            {column.label}
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Pending Pre Invoice Forms</CardTitle>
+                    <CardDescription>Orders waiting for dispatch form processing</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllPendingColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllPendingColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {pendingColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`pending-${column.key}`}
+                              checked={visiblePendingColumns[column.key]}
+                              onCheckedChange={() => togglePendingColumn(column.key)}
+                            />
+                            <Label htmlFor={`pending-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
                           </div>
-                        </TableHead>
-                      ))}
-                  </TableRow>
-                </TableHeader>
-              </Table>
-              
-              <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
-                <Table>
-                  <TableBody>
-                    {filteredProcessedOrders.map((order) => (
-                      <TableRow key={order.orderNo} className="hover:bg-gray-50">
-                        {historyColumns
-                          .filter((col) => visibleHistoryColumns[col.key])
-                          .map((column) => (
-                            <TableCell 
-                              key={column.key} 
-                              className="border-b px-4 py-3 align-top"
-                              style={{ 
-                                width: column.key === 'orderNo' ? '120px' :
-                                       column.key === 'quotationNo' ? '150px' :
-                                       column.key === 'companyName' ? '250px' :
-                                       column.key === 'contactPersonName' ? '180px' :
-                                       column.key === 'contactNumber' ? '140px' :
-                                       column.key === 'billingAddress' ? '200px' :
-                                       column.key === 'shippingAddress' ? '200px' :
-                                       column.key === 'isOrderAcceptable' ? '150px' :
-                                       column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                       column.key === 'remarks' ? '200px' :
-                                       column.key === 'availabilityStatus' ? '150px' :
-                                       column.key === 'inventoryRemarks' ? '200px' :
-                                       '160px',
-                                minWidth: column.key === 'orderNo' ? '120px' :
-                                         column.key === 'quotationNo' ? '150px' :
-                                         column.key === 'companyName' ? '250px' :
-                                         column.key === 'contactPersonName' ? '180px' :
-                                         column.key === 'contactNumber' ? '140px' :
-                                         column.key === 'billingAddress' ? '200px' :
-                                         column.key === 'shippingAddress' ? '200px' :
-                                         column.key === 'isOrderAcceptable' ? '150px' :
-                                         column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                         column.key === 'remarks' ? '200px' :
-                                         column.key === 'availabilityStatus' ? '150px' :
-                                         column.key === 'inventoryRemarks' ? '200px' :
-                                         '160px',
-                                maxWidth: column.key === 'orderNo' ? '120px' :
-                                         column.key === 'quotationNo' ? '150px' :
-                                         column.key === 'companyName' ? '250px' :
-                                         column.key === 'contactPersonName' ? '180px' :
-                                         column.key === 'contactNumber' ? '140px' :
-                                         column.key === 'billingAddress' ? '200px' :
-                                         column.key === 'shippingAddress' ? '200px' :
-                                         column.key === 'isOrderAcceptable' ? '150px' :
-                                         column.key === 'orderAcceptanceChecklist' ? '250px' :
-                                         column.key === 'remarks' ? '200px' :
-                                         column.key === 'availabilityStatus' ? '150px' :
-                                         column.key === 'inventoryRemarks' ? '200px' :
-                                         '160px'
-                              }}
-                            >
-                              <div className="break-words whitespace-normal leading-relaxed">
-                                {renderCellContent(order, column.key)}
-                              </div>
-                            </TableCell>
-                          ))}
-                      </TableRow>
-                    ))}
-                    {filteredProcessedOrders.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
-                          className="text-center text-muted-foreground h-32"
-                        >
-                          {searchTerm ? "No orders match your search criteria" : "No processed orders found"}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-</TabsContent>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <div style={{ minWidth: 'max-content' }}>
+                      <Table>
+                        <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                          <TableRow>
+                            {pendingColumns
+                              .filter((col) => visiblePendingColumns[col.key])
+                              .map((column) => (
+                                <TableHead
+                                  key={column.key}
+                                  className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
+                                  style={{
+                                    width: column.key === 'actions' ? '120px' :
+                                      column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          '160px',
+                                    minWidth: column.key === 'actions' ? '120px' :
+                                      column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          '160px',
+                                    maxWidth: column.key === 'actions' ? '120px' :
+                                      column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          '160px'
+                                  }}
+                                >
+                                  <div className="break-words">
+                                    {column.label}
+                                  </div>
+                                </TableHead>
+                              ))}
+                          </TableRow>
+                        </TableHeader>
+                      </Table>
+
+                      <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
+                        <Table>
+                          <TableBody>
+                            {filteredOrders.map((order) => (
+                              <TableRow key={order.id} className="hover:bg-gray-50">
+                                {pendingColumns
+                                  .filter((col) => visiblePendingColumns[col.key])
+                                  .map((column) => (
+                                    <TableCell
+                                      key={column.key}
+                                      className="border-b px-4 py-3 align-top"
+                                      style={{
+                                        width: column.key === 'actions' ? '120px' :
+                                          column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              '160px',
+                                        minWidth: column.key === 'actions' ? '120px' :
+                                          column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              '160px',
+                                        maxWidth: column.key === 'actions' ? '120px' :
+                                          column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              '160px'
+                                      }}
+                                    >
+                                      <div className="break-words whitespace-normal leading-relaxed">
+                                        {renderCellContent(order, column.key)}
+                                      </div>
+                                    </TableCell>
+                                  ))}
+                              </TableRow>
+                            ))}
+                            {filteredOrders.length === 0 && (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={pendingColumns.filter((col) => visiblePendingColumns[col.key]).length}
+                                  className="text-center text-muted-foreground h-32"
+                                >
+                                  {searchTerm
+                                    ? "No orders match your search criteria"
+                                    : "No pending orders found in Google Sheets"}
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>DISP Form History</CardTitle>
+                    <CardDescription>Previously processed dispatch forms</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Column Visibility
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-80 max-h-96 overflow-y-auto">
+                      <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <div className="flex gap-2 p-2">
+                        <Button size="sm" variant="outline" onClick={showAllHistoryColumns}>
+                          Show All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={hideAllHistoryColumns}>
+                          Hide All
+                        </Button>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <div className="p-2 space-y-2">
+                        {historyColumns.map((column) => (
+                          <div key={column.key} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`history-${column.key}`}
+                              checked={visibleHistoryColumns[column.key]}
+                              onCheckedChange={() => toggleHistoryColumn(column.key)}
+                            />
+                            <Label htmlFor={`history-${column.key}`} className="text-sm">
+                              {column.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {processedLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <RefreshCw className="h-6 w-6 animate-spin" />
+                    <span className="ml-2">Loading processed orders...</span>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <div style={{ minWidth: 'max-content' }}>
+                        <Table>
+                          <TableHeader className="sticky top-0 z-10 bg-gray-50">
+                            <TableRow>
+                              {historyColumns
+                                .filter((col) => visibleHistoryColumns[col.key])
+                                .map((column) => (
+                                  <TableHead
+                                    key={column.key}
+                                    className="bg-gray-50 font-semibold text-gray-900 border-b-2 border-gray-200 px-4 py-3"
+                                    style={{
+                                      width: column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          column.key === 'availabilityStatus' ? '150px' :
+                                                            column.key === 'inventoryRemarks' ? '200px' :
+                                                              '160px',
+                                      minWidth: column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          column.key === 'availabilityStatus' ? '150px' :
+                                                            column.key === 'inventoryRemarks' ? '200px' :
+                                                              '160px',
+                                      maxWidth: column.key === 'orderNo' ? '120px' :
+                                        column.key === 'quotationNo' ? '150px' :
+                                          column.key === 'companyName' ? '250px' :
+                                            column.key === 'contactPersonName' ? '180px' :
+                                              column.key === 'contactNumber' ? '140px' :
+                                                column.key === 'billingAddress' ? '200px' :
+                                                  column.key === 'shippingAddress' ? '200px' :
+                                                    column.key === 'isOrderAcceptable' ? '150px' :
+                                                      column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                        column.key === 'remarks' ? '200px' :
+                                                          column.key === 'availabilityStatus' ? '150px' :
+                                                            column.key === 'inventoryRemarks' ? '200px' :
+                                                              '160px'
+                                    }}
+                                  >
+                                    <div className="break-words">
+                                      {column.label}
+                                    </div>
+                                  </TableHead>
+                                ))}
+                            </TableRow>
+                          </TableHeader>
+                        </Table>
+
+                        <div className="overflow-y-auto" style={{ maxHeight: '500px' }}>
+                          <Table>
+                            <TableBody>
+                              {filteredProcessedOrders.map((order) => (
+                                <TableRow key={order.orderNo} className="hover:bg-gray-50">
+                                  {historyColumns
+                                    .filter((col) => visibleHistoryColumns[col.key])
+                                    .map((column) => (
+                                      <TableCell
+                                        key={column.key}
+                                        className="border-b px-4 py-3 align-top"
+                                        style={{
+                                          width: column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              column.key === 'availabilityStatus' ? '150px' :
+                                                                column.key === 'inventoryRemarks' ? '200px' :
+                                                                  '160px',
+                                          minWidth: column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              column.key === 'availabilityStatus' ? '150px' :
+                                                                column.key === 'inventoryRemarks' ? '200px' :
+                                                                  '160px',
+                                          maxWidth: column.key === 'orderNo' ? '120px' :
+                                            column.key === 'quotationNo' ? '150px' :
+                                              column.key === 'companyName' ? '250px' :
+                                                column.key === 'contactPersonName' ? '180px' :
+                                                  column.key === 'contactNumber' ? '140px' :
+                                                    column.key === 'billingAddress' ? '200px' :
+                                                      column.key === 'shippingAddress' ? '200px' :
+                                                        column.key === 'isOrderAcceptable' ? '150px' :
+                                                          column.key === 'orderAcceptanceChecklist' ? '250px' :
+                                                            column.key === 'remarks' ? '200px' :
+                                                              column.key === 'availabilityStatus' ? '150px' :
+                                                                column.key === 'inventoryRemarks' ? '200px' :
+                                                                  '160px'
+                                        }}
+                                      >
+                                        <div className="break-words whitespace-normal leading-relaxed">
+                                          {renderCellContent(order, column.key)}
+                                        </div>
+                                      </TableCell>
+                                    ))}
+                                </TableRow>
+                              ))}
+                              {filteredProcessedOrders.length === 0 && (
+                                <TableRow>
+                                  <TableCell
+                                    colSpan={historyColumns.filter((col) => visibleHistoryColumns[col.key]).length}
+                                    className="text-center text-muted-foreground h-32"
+                                  >
+                                    {searchTerm ? "No orders match your search criteria" : "No processed orders found"}
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Process Dialog */}
@@ -1502,52 +1612,52 @@ case "actions":
               </div>
 
               {/* Remove Eway Bill Attachment and add new fields */}
-<div className="space-y-2">
-  <Label htmlFor="gstNumber">GST Number</Label>
-  <Input
-    id="gstNumber"
-    value={gstNumber}
-    onChange={(e) => setGstNumber(e.target.value)}
-    placeholder="Enter GST Number"
-  />
-</div>
+              <div className="space-y-2">
+                <Label htmlFor="gstNumber">GST Number</Label>
+                <Input
+                  id="gstNumber"
+                  value={gstNumber}
+                  onChange={(e) => setGstNumber(e.target.value)}
+                  placeholder="Enter GST Number"
+                />
+              </div>
 
-<div className="space-y-2">
-  <Label htmlFor="vehicleNumber">Vehicle Number</Label>
-  <Input
-    id="vehicleNumber"
-    value={vehicleNumber}
-    onChange={(e) => setVehicleNumber(e.target.value)}
-    placeholder="Enter Vehicle Number"
-  />
-</div>
+              <div className="space-y-2">
+                <Label htmlFor="vehicleNumber">Vehicle Number</Label>
+                <Input
+                  id="vehicleNumber"
+                  value={vehicleNumber}
+                  onChange={(e) => setVehicleNumber(e.target.value)}
+                  placeholder="Enter Vehicle Number"
+                />
+              </div>
 
-<div className="space-y-2">
-  <Label htmlFor="dispatchLocation">Dispatch Location <span className="text-red-500">*</span></Label>
-  <Select value={dispatchLocation} onValueChange={setDispatchLocation}>
-    <SelectTrigger>
-      <SelectValue placeholder="Select dispatch location" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="By C.G.Warehouse">By C.G.Warehouse</SelectItem>
-      <SelectItem value="By Head office">By Head office</SelectItem>
-      <SelectItem value="By N.E Warehouse">By N.E Warehouse</SelectItem>
-      <SelectItem value="Direct Dispatch">Direct Dispatch</SelectItem>
-      <SelectItem value="Maniquip store">Maniquip store</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
+              <div className="space-y-2">
+                <Label htmlFor="dispatchLocation">Dispatch Location <span className="text-red-500">*</span></Label>
+                <Select value={dispatchLocation} onValueChange={setDispatchLocation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select dispatch location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="By C.G.Warehouse">By C.G.Warehouse</SelectItem>
+                    <SelectItem value="By Head office">By Head office</SelectItem>
+                    <SelectItem value="By N.E Warehouse">By N.E Warehouse</SelectItem>
+                    <SelectItem value="Direct Dispatch">Direct Dispatch</SelectItem>
+                    <SelectItem value="Maniquip store">Maniquip store</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-{/* Direct Dispatch Input */}
-<div className="space-y-2">
-  <Label htmlFor="directDispatch">Direct Dispatch Details</Label>
-  <Input
-    id="directDispatch"
-    value={directDispatch}
-    onChange={(e) => setDirectDispatch(e.target.value)}
-    placeholder="Enter direct dispatch details"
-  />
-</div>
+              {/* Direct Dispatch Input */}
+              <div className="space-y-2">
+                <Label htmlFor="directDispatch">Direct Dispatch Details</Label>
+                <Input
+                  id="directDispatch"
+                  value={directDispatch}
+                  onChange={(e) => setDirectDispatch(e.target.value)}
+                  placeholder="Enter direct dispatch details"
+                />
+              </div>
 
               {/* SRN Number */}
               <div className="space-y-2">
@@ -1581,14 +1691,15 @@ case "actions":
                     Add Item
                   </Button>
                 </div>
-                
+
                 <div className="border rounded-md overflow-hidden">
                   <Table>
                     <TableHeader className="bg-muted/50">
                       <TableRow>
-                        <TableHead className="w-[45%] font-semibold">Item Name</TableHead>
-                        <TableHead className="w-[30%] font-semibold">S-Code</TableHead>
-                        <TableHead className="w-[15%] font-semibold text-center">Qty</TableHead>
+                        <TableHead className="w-[35%] font-semibold">Item Name</TableHead>
+                        <TableHead className="w-[25%] font-semibold">S-Code</TableHead>
+                        <TableHead className="w-[10%] font-semibold text-center">Qty</TableHead>
+                        <TableHead className="w-[20%] font-semibold text-center">Installation</TableHead>
                         <TableHead className="w-[10%] font-semibold text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1605,8 +1716,8 @@ case "actions":
                           </TableCell>
                           <TableCell className="p-2">
                             <div className="relative">
-                              <Popover 
-                                open={openSNoIndex === index} 
+                              <Popover
+                                open={openSNoIndex === index}
                                 onOpenChange={(open) => {
                                   if (!open) setOpenSNoIndex(null);
                                 }}
@@ -1619,7 +1730,7 @@ case "actions":
                                       onFocus={() => setOpenSNoIndex(index)}
                                       onClick={() => setOpenSNoIndex(index)}
                                       placeholder="SN-Dt-Loc"
-                                      className="h-9 text-xs pr-8"
+                                      className={`h-9 text-xs pr-8 ${item.installation === "Yes" && !item.serialNo ? "border-red-500 ring-red-500" : ""}`}
                                     />
                                     {imsData[item.name] && imsData[item.name].length > 0 && (
                                       <Button
@@ -1637,8 +1748,8 @@ case "actions":
                                   </div>
                                 </PopoverTrigger>
                                 {imsData[item.name] && imsData[item.name].length > 0 && (
-                                  <PopoverContent 
-                                    className="w-[300px] p-0" 
+                                  <PopoverContent
+                                    className="w-[300px] p-0"
                                     align="start"
                                     onOpenAutoFocus={(e) => e.preventDefault()}
                                   >
@@ -1647,8 +1758,8 @@ case "actions":
                                         <CommandEmpty>No matching S-Code found</CommandEmpty>
                                         <CommandGroup>
                                           {imsData[item.name]
-                                            .filter(sn => 
-                                              !item.serialNo || 
+                                            .filter(sn =>
+                                              !item.serialNo ||
                                               sn.toLowerCase().includes(item.serialNo.toLowerCase())
                                             )
                                             .map((sn, i) => (
@@ -1682,10 +1793,24 @@ case "actions":
                             />
                           </TableCell>
                           <TableCell className="p-2 text-center">
-                            <Button 
-                              type="button" 
-                              size="icon" 
-                              variant="ghost" 
+                            <Select
+                              value={item.installation || "No"}
+                              onValueChange={(val) => updateItem(index, "installation", val)}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="No" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Yes">Yes</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="p-2 text-center">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
                               onClick={() => removeItem(index)}
                               className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             >
@@ -1731,19 +1856,19 @@ case "actions":
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-               <Button 
-  onClick={handleSubmit} 
-  disabled={!calibrationRequired || !installationRequired || !dispatchLocation || uploading || currentUser?.role === "user"}
->
-  {uploading ? (
-    <>
-      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-      Uploading...
-    </>
-  ) : (
-    currentUser?.role === "user" ? "View Only" : "Submit"
-  )}
-</Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!calibrationRequired || !installationRequired || !dispatchLocation || uploading || currentUser?.role === "user"}
+                >
+                  {uploading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    currentUser?.role === "user" ? "View Only" : "Submit"
+                  )}
+                </Button>
               </div>
             </div>
           </DialogContent>
