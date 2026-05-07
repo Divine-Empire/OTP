@@ -270,7 +270,7 @@ export default function WarehouseMaterialPage() {
                 offer: row.c[15] ? row.c[15].v : "",
                 dSrNumber: row.c[105] ? row.c[105].v : "",
                 amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
-                invoiceNumber: row.c[66] ? row.c[65].v : "", // Column BN (invoice number)
+                invoiceNumber: row.c[65]?.v || "", 
                 warehouseProcessedDate: ceColumn, // Column CE contains the warehouse processing date
                 // Keep existing fields for backward compatibility
                 contactPerson: row.c[4] ? row.c[4].v : "",
@@ -394,9 +394,9 @@ export default function WarehouseMaterialPage() {
                 dSrNumber: row.c[105] ? row.c[105].v : "",
                 offer: row.c[15] ? row.c[15].v : "",
                 amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
-                invoiceNumber: row.c[66] ? row.c[65].v : "", // Column BN (invoice number)
-                warehouseProcessedDate: ceColumn, // Column CE contains the warehouse processing date
-                materialProcessedDate: cfColumn, // Column CF contains the material processing date
+                invoiceNumber: row.c[65]?.v || "", 
+                warehouseProcessedDate: ceColumn, 
+                materialProcessedDate: cfColumn, 
                 // Keep existing fields for backward compatibility
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
@@ -1552,7 +1552,7 @@ case "actions":
                 >
                   Cancel
                 </Button>
-                // In the Process Dialog submit button:
+               
 <Button
   onClick={handleSubmit}
   disabled={
