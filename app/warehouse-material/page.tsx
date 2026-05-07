@@ -843,7 +843,7 @@ case "actions":
   return (
     <MainLayout>
       <div className="space-y-6">
-        // Update the header section:
+     
 <div className="flex justify-between items-center">
   <div>
     <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
