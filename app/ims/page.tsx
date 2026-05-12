@@ -10,6 +10,33 @@ import { Loader2, Search, Package, RefreshCw, AlertCircle, Filter, XCircle } fro
 import { toast } from "sonner"
 import { MainLayout } from "@/components/layout/main-layout"
 
+const formatDate = (dateValue: any) => {
+  if (!dateValue) return "-";
+  
+  // Handle Google Sheets Date(year, month, day) format
+  if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
+    const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (match) {
+      const year = parseInt(match[1]);
+      const month = parseInt(match[2]);
+      const day = parseInt(match[3]);
+      return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+    }
+  }
+
+  try {
+    const date = new Date(dateValue);
+    if (!isNaN(date.getTime())) {
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  } catch (e) {}
+  
+  return dateValue;
+};
+
 export default function IMSPage() {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -34,49 +61,70 @@ export default function IMSPage() {
         const response = await fetch("/api/indent-data")
         const jsonData = await response.json()
         
-        if (jsonData && jsonData.success && jsonData.data) {
-          const rawRows = jsonData.data
-          
-          // Map column letters (A, B, C...) to our data structure
-          // Column Letters: C, D, E, N, O, BU, BV
-          const mappedRows = rawRows.map((r: any) => ({
-            C: r.C || "",
-            D: r.D || "",
-            E: r.E || "",
-            N: r.N || "",
-            O: r.O || 0,
-            BU: r.BU || 0,
-            BV: r.BV || 0,
-          }))
+          if (jsonData && jsonData.success && Array.isArray(jsonData.data)) {
+            const groups: any = {}
+            jsonData.data.forEach((r: any) => {
+              const itemName = r.E ? String(r.E).trim() : ""
+              if (!itemName) return
 
-          // Filter for Pending Qty (Column BV) > 0
-          const validRows = mappedRows.filter((r: any) => {
-            const pending = Number(r.BV || 0)
-            return pending > 0
-          })
-
-          // Group by Item Name (Column E)
-          const groups: any = {}
-          validRows.forEach((r: any) => {
-            const name = r.E || "Unknown Item"
-            if (!groups[name]) {
-              groups[name] = {
-                itemName: name,
-                itemCode: r.C || "-",
-                totalPending: 0,
-                records: []
+              if (!groups[itemName]) {
+                groups[itemName] = {
+                  itemName: itemName,
+                  itemCode: r.D || "-",
+                  totalPending: 0,
+                  totalIndentRaised: 0,
+                  totalPORaised: 0,
+                  totalTransit: 0,
+                  expectedDate: "",
+                  poSet: new Set(),
+                  transitSet: new Set(),
+                  dateSet: new Set(),
+                  records: []
+                }
               }
-            }
-            groups[name].totalPending += Number(r.BV || 0)
-            groups[name].records.push(r)
-          })
-          setIndentLiftData(Object.values(groups))
+              
+              const g = groups[itemName]
+              const pQty = Number(r.BV || 0)
+              g.totalPending += pQty
+              
+              const status = String(r.N || "").toLowerCase().trim()
+              if (status === "approve" || status === "approved") {
+                const pNum = (v: any) => {
+                  const val = parseFloat(String(v || 0).replace(/[^0-9.-]/g, ''))
+                  return isNaN(val) ? 0 : val
+                }
+                g.totalIndentRaised += pNum(r.O)
+              }
+              
+              if (r.BC) {
+                g.poSet.add(String(r.BC).trim());
+                g.totalPORaised = g.poSet.size;
+              }
+              
+              if (r.BW && String(r.BW).trim() !== "" && String(r.BW).trim() !== "0") {
+                g.transitSet.add(String(r.BW).trim());
+                g.totalTransit = g.transitSet.size;
+              }
+              
+              if (r.BX && String(r.BX).trim() !== "") {
+                const d = formatDate(r.BX);
+                if (d && d !== "-") g.dateSet.add(d);
+              }
+              g.expectedDate = Array.from(g.dateSet).join(", ");
+              
+              // Push ALL records to the modal so every indenter is visible
+              g.records.push({ ...r })
+            })
+            
+            // Show all items that have at least one approved indent
+            const finalData = Object.values(groups).filter((g: any) => g.records.length > 0)
+            setIndentLiftData(finalData)
+          } else {
+            console.error("Script error or no data:", jsonData.error)
+            toast.error(jsonData.error || "Failed to fetch Indent data")
+          }
         } else {
-          console.error("Script error or no data:", jsonData.error)
-          toast.error(jsonData.error || "Failed to fetch Indent data")
-        }
-      } else {
-        // Reorder logic — via server-side proxy (supports restricted sheets)
+          // Reorder logic — via server-side proxy (supports restricted sheets)
         const response = await fetch("/api/reorder-data")
         const jsonData = await response.json()
 
@@ -310,12 +358,13 @@ export default function IMSPage() {
                       <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Status</th>
                       <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Remaining Qty</th>
                       <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Pending Qty</th>
+                      <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Expected Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {selectedItem.records
                       .filter((r: any) => {
-                        const status = String(r.N || r.col_N || "").toLowerCase().trim();
+                        const status = String(r.N || "").toLowerCase().trim();
                         const matchesStatus = status === "approve" || status === "approved";
                         const matchesIndenter = modalFilterIndenter === "All" || r.C === modalFilterIndenter;
                         return matchesStatus && matchesIndenter;
@@ -325,22 +374,29 @@ export default function IMSPage() {
                           <td className="px-6 py-4 text-sm">{r.C || r.col_C}</td>
                           <td className="px-6 py-4 text-sm font-semibold">{r.O || r.col_O}</td>
                           <td className="px-6 py-4 text-sm">
-                            <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium uppercase">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${
+                              String(r.N || "").toLowerCase().includes("approve") 
+                                ? "bg-green-100 text-green-700" 
+                                : String(r.N || "").toLowerCase().includes("reject")
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                            }`}>
                               {r.N || r.col_N}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm">{r.BU || r.col_BU}</td>
-                          <td className="px-6 py-4 text-sm text-indigo-600 font-bold">{r.BV || r.col_BV}</td>
+                          <td className="px-6 py-4 text-sm font-black text-indigo-600">{r.BV || r.col_BV}</td>
+                          <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{formatDate(r.BX || r.col_BX)}</td>
                         </tr>
                       ))}
                     {selectedItem.records.filter((r: any) => {
-                      const status = String(r.N || r.col_N || "").toLowerCase().trim();
+                      const status = String(r.N || "").toLowerCase().trim();
                       const matchesStatus = status === "approve" || status === "approved";
                       const matchesIndenter = modalFilterIndenter === "All" || r.C === modalFilterIndenter;
                       return matchesStatus && matchesIndenter;
                     }).length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500 italic">
+                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500 italic">
                           No approved records found for this item.
                         </td>
                       </tr>
@@ -352,7 +408,7 @@ export default function IMSPage() {
                 <div className="block md:hidden p-4 space-y-4">
                   {selectedItem.records
                     .filter((r: any) => {
-                      const status = String(r.N || r.col_N || "").toLowerCase().trim();
+                      const status = String(r.N || "").toLowerCase().trim();
                       const matchesStatus = status === "approve" || status === "approved";
                       const matchesIndenter = modalFilterIndenter === "All" || r.C === modalFilterIndenter;
                       return matchesStatus && matchesIndenter;
@@ -365,7 +421,13 @@ export default function IMSPage() {
                             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Indenter Name</span>
                             <span className="text-sm font-bold text-gray-800">{r.C || r.col_C}</span>
                           </div>
-                          <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            String(r.N || "").toLowerCase().includes("approve") 
+                              ? "bg-green-100 text-green-700" 
+                              : String(r.N || "").toLowerCase().includes("reject")
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
+                          }`}>
                             {r.N || r.col_N}
                           </span>
                         </div>
@@ -384,10 +446,14 @@ export default function IMSPage() {
                             <span className="text-sm font-black text-indigo-600">{r.BV || r.col_BV}</span>
                           </div>
                         </div>
+                        <div className="mt-3 pt-3 border-t border-gray-50 pl-2">
+                           <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Expected Delivery Date</span>
+                           <span className="text-sm font-medium text-gray-700">{formatDate(r.BX || r.col_BX)}</span>
+                        </div>
                       </div>
                     ))}
                     {selectedItem.records.filter((r: any) => {
-                      const status = String(r.N || r.col_N || "").toLowerCase().trim();
+                      const status = String(r.N || "").toLowerCase().trim();
                       const matchesStatus = status === "approve" || status === "approved";
                       const matchesIndenter = modalFilterIndenter === "All" || r.C === modalFilterIndenter;
                       return matchesStatus && matchesIndenter;
@@ -411,6 +477,7 @@ export default function IMSPage() {
 }
 
 function IndentLiftTable({ data, loading, onRowClick }: { data: any[]; loading: boolean; onRowClick: (item: any) => void }) {
+
   if (loading) {
     return (
       <Card className="p-12 flex flex-col items-center justify-center bg-white shadow-xl">
@@ -427,9 +494,13 @@ function IndentLiftTable({ data, loading, onRowClick }: { data: any[]; loading: 
         <table className="w-full text-left border-separate border-spacing-0">
           <thead>
             <tr className="bg-gradient-to-r from-indigo-800 to-blue-800">
-              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800">Item Name</th>
-              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800">Total Pending Qty</th>
-              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800">Action</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">Item Name</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">Total Pending Qty</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">Total Indent Raised Qty</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">PO Raised</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">Material In Transit</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">Expected date of Delivery</th>
+              <th className="px-6 py-4 text-xs font-bold text-white uppercase sticky top-0 z-10 bg-indigo-800 whitespace-nowrap">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -441,12 +512,16 @@ function IndentLiftTable({ data, loading, onRowClick }: { data: any[]; loading: 
               >
                 <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.itemName}</td>
                 <td className="px-6 py-4 text-sm font-bold text-indigo-600">{item.totalPending}</td>
-                <td className="px-6 py-4 text-sm text-indigo-600 font-semibold underline">View Details</td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-700">{item.totalIndentRaised}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-700">{item.totalPORaised}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-700">{item.totalTransit}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{formatDate(item.expectedDate)}</td>
+                <td className="px-6 py-4 text-sm text-indigo-600 font-semibold underline whitespace-nowrap">View Details</td>
               </tr>
             ))}
             {data.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-6 py-12 text-center text-gray-500 italic">
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-500 italic">
                   No pending indents found.
                 </td>
               </tr>
@@ -469,10 +544,30 @@ function IndentLiftTable({ data, loading, onRowClick }: { data: any[]; loading: 
                 <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Item Name</span>
                 <span className="text-sm font-bold text-gray-800 leading-tight block">{item.itemName}</span>
               </div>
-              <div className="flex justify-between items-end border-t border-gray-100 pt-3 mt-1">
+              
+              <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 mt-1">
                 <div>
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Total Pending</span>
-                  <span className="text-lg font-black text-indigo-600">{item.totalPending}</span>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-0.5">Total Pending</span>
+                  <span className="text-sm font-black text-indigo-600">{item.totalPending}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-0.5">Approved Qty</span>
+                  <span className="text-sm font-bold text-gray-700">{item.totalIndentRaised}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-0.5">PO Raised</span>
+                  <span className="text-sm font-bold text-gray-700">{item.totalPORaised}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-0.5">In Transit</span>
+                  <span className="text-sm font-bold text-gray-700">{item.totalTransit}</span>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 pt-3 flex justify-between items-end">
+                <div>
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-0.5">Expected Delivery</span>
+                  <span className="text-xs font-medium text-gray-600">{formatDate(item.expectedDate)}</span>
                 </div>
                 <Button size="sm" variant="outline" className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 font-semibold h-8" onClick={(e) => { e.stopPropagation(); onRowClick(item); }}>
                   View Details

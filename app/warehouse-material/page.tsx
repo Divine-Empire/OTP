@@ -64,6 +64,7 @@ export default function WarehouseMaterialPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dropdownData, setDropdownData] = useState<any[]>([]);
 
   const {user: currentUser} = useAuth();
 
@@ -487,6 +488,28 @@ export default function WarehouseMaterialPage() {
   useEffect(() => {
     fetchPendingOrders();
     fetchHistoryOrders();
+    
+    // Fetch dropdown data for Site Person Name and Contact
+    const fetchDropdowns = async () => {
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Dropdown`;
+        const res = await fetch(url);
+        const text = await res.text();
+        const start = text.indexOf("{");
+        const end = text.lastIndexOf("}") + 1;
+        const json = JSON.parse(text.substring(start, end));
+        if (json.table && json.table.rows) {
+          const rows = json.table.rows.map((r: any) => ({
+            name: r.c[0]?.v || "",
+            contact: r.c[1]?.f || String(r.c[1]?.v || "")
+          })).filter((r: any) => r.name);
+          setDropdownData(rows);
+        }
+      } catch (err) {
+        console.error("Error fetching dropdowns:", err);
+      }
+    };
+    fetchDropdowns();
   }, []);
 
   // Add this function after the useAuth hook
@@ -1522,28 +1545,42 @@ case "actions":
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="installation">Installation Required</Label>
+                <Label htmlFor="installation">Site Person Name</Label>
                 <Select
                   value={installationRequired}
-                  onValueChange={setInstallationRequired}
+                  onValueChange={(val) => {
+                    setInstallationRequired(val);
+                    const person = dropdownData.find(d => d.name === val);
+                    if (person) {
+                      setTransporterFollowup(person.contact);
+                    }
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select" />
+                    <SelectValue placeholder="Select Name" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="YES">YES</SelectItem>
-                    <SelectItem value="NO">NO</SelectItem>
+                    {dropdownData.map((d, i) => (
+                      <SelectItem key={i} value={d.name}>{d.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="transporterFollowup">Reason</Label>
-                <Input
-                  id="transporterFollowup"
-                  placeholder="Enter Reason details"
+                <Label htmlFor="transporterFollowup">Site Person Contact No.</Label>
+                <Select
                   value={transporterFollowup}
-                  onChange={(e) => setTransporterFollowup(e.target.value)}
-                />
+                  onValueChange={setTransporterFollowup}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Contact No." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dropdownData.map((d, i) => (
+                      <SelectItem key={i} value={d.contact}>{d.contact}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex justify-end gap-2">
                 <Button

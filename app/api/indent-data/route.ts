@@ -13,8 +13,11 @@ const COL = {
   E: 4,   // Item Name
   N: 13,  // Status (approve/approved)
   O: 14,  // Approved Qty
+  BC: 54, // PO Raised
   BU: 72, // Remaining Qty
   BV: 73, // Pending Qty
+  BW: 74, // Material In Transit
+  BX: 75, // Expected date of Delivery
 }
 
 export async function GET() {
@@ -48,8 +51,11 @@ export async function GET() {
       E: row[COL.E] ?? "",
       N: row[COL.N] ?? "",
       O: row[COL.O] ?? 0,
+      BC: row[COL.BC] ?? 0,
       BU: row[COL.BU] ?? 0,
       BV: row[COL.BV] ?? 0,
+      BW: row[COL.BW] ?? 0,
+      BX: row[COL.BX] ?? "",
     }))
 
     return NextResponse.json({ success: true, data: mapped })
