@@ -1546,41 +1546,21 @@ case "actions":
               </div>
               <div className="space-y-2">
                 <Label htmlFor="installation">Site Person Name</Label>
-                <Select
+                <Input
+                  id="installation"
+                  placeholder="Enter Name"
                   value={installationRequired}
-                  onValueChange={(val) => {
-                    setInstallationRequired(val);
-                    const person = dropdownData.find(d => d.name === val);
-                    if (person) {
-                      setTransporterFollowup(person.contact);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Name" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dropdownData.map((d, i) => (
-                      <SelectItem key={i} value={d.name}>{d.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setInstallationRequired(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="transporterFollowup">Site Person Contact No.</Label>
-                <Select
+                <Input
+                  id="transporterFollowup"
+                  placeholder="Enter Contact No."
                   value={transporterFollowup}
-                  onValueChange={setTransporterFollowup}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Contact No." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dropdownData.map((d, i) => (
-                      <SelectItem key={i} value={d.contact}>{d.contact}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setTransporterFollowup(e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-2">
                 <Button
