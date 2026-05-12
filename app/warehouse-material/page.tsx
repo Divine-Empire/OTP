@@ -262,13 +262,13 @@ export default function WarehouseMaterialPage() {
                 billingAddress: row.c[6] ? row.c[6].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
-                paymentTerms: row.c[9] ? row.c[9].v : "",
-                qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
-                transportMode: row.c[11] ? row.c[11].v : "",
-                freightType: row.c[12] ? row.c[12].v : "",
-                destination: row.c[13] ? row.c[13].v : "",
-                poNumber: row.c[14] ? row.c[14].v : "",
-                offer: row.c[15] ? row.c[15].v : "",
+                paymentTerms: row.c[10] ? row.c[10].v : "",
+                qty: row.c[11] ? row.c[11].v : "", // Map to qty field for column definition
+                transportMode: row.c[12] ? row.c[12].v : "",
+                freightType: row.c[13] ? row.c[13].v : "",
+                destination: row.c[14] ? row.c[14].v : "",
+                poNumber: row.c[15] ? row.c[15].v : "",
+                offer: row.c[16] ? row.c[16].v : "",
                 dSrNumber: row.c[105] ? row.c[105].v : "",
                 amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
                 invoiceNumber: row.c[65]?.v || "", 
@@ -277,7 +277,7 @@ export default function WarehouseMaterialPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: row.c[15] ? row.c[15].v : "",
+                quotationCopy: row.c[9] ? row.c[9].v : "",
                 fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
@@ -320,7 +320,7 @@ export default function WarehouseMaterialPage() {
                 itemName15: row.c[58] ? row.c[58].v : "",
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
-                quotationCopy2: row.c[15] ? row.c[15].v : "",
+                quotationCopy2: row.c[9] ? row.c[9].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // BV to CC columns (warehouse specific data)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV
@@ -386,15 +386,15 @@ export default function WarehouseMaterialPage() {
                 billingAddress: row.c[6] ? row.c[6].v : "",
                 shippingAddress: row.c[7] ? row.c[7].v : "",
                 paymentMode: row.c[8] ? row.c[8].v : "",
-                paymentTerms: row.c[9] ? row.c[9].v : "",
-                qty: row.c[10] ? row.c[10].v : "", // Map to qty field for column definition
-                transportMode: row.c[11] ? row.c[11].v : "",
-                freightType: row.c[12] ? row.c[12].v : "",
-                destination: row.c[13] ? row.c[13].v : "",
-                poNumber: row.c[14] ? row.c[14].v : "",
+                paymentTerms: row.c[10] ? row.c[10].v : "",
+                qty: row.c[11] ? row.c[11].v : "", // Map to qty field for column definition
+                transportMode: row.c[12] ? row.c[12].v : "",
+                freightType: row.c[13] ? row.c[13].v : "",
+                destination: row.c[14] ? row.c[14].v : "",
+                poNumber: row.c[15] ? row.c[15].v : "",
                 dSrNumber: row.c[105] ? row.c[105].v : "",
-                offer: row.c[15] ? row.c[15].v : "",
-                amount: row.c[12] ? Number.parseFloat(row.c[12].v) || 0 : 0,
+                offer: row.c[16] ? row.c[16].v : "",
+                amount: row.c[13] ? Number.parseFloat(row.c[13].v) || 0 : 0,
                 invoiceNumber: row.c[65]?.v || "", 
                 warehouseProcessedDate: ceColumn, 
                 materialProcessedDate: cfColumn, 
@@ -402,7 +402,7 @@ export default function WarehouseMaterialPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[10] ? row.c[10].v : "",
                 totalQty: row.c[19] ? row.c[19].v : "",
-                quotationCopy: row.c[15] ? row.c[15].v : "",
+                quotationCopy: row.c[9] ? row.c[9].v : "",
                 fullRowData: row.c,
                 materialRcvdData: {
                   materialReceived: row.c[84] ? row.c[84].v : "", // Column CG (index 85)
@@ -452,7 +452,7 @@ export default function WarehouseMaterialPage() {
                 itemName15: row.c[58] ? row.c[58].v : "",
                 quantity15: row.c[59] ? row.c[59].v : "",
                 remarks: row.c[61] ? row.c[61].v : "",
-                quotationCopy2: row.c[15] ? row.c[15].v : "",
+                quotationCopy2: row.c[9] ? row.c[9].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 // BV to CC columns (warehouse specific data)
                 beforePhotoUpload: row.c[73] ? row.c[73].v : "", // Column BV

@@ -359,6 +359,8 @@ export default function IMSPage() {
                       <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Remaining Qty</th>
                       <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Pending Qty</th>
                       <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Expected Date</th>
+                      <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Payment Term</th>
+                      <th className="px-6 py-3 text-xs font-bold text-indigo-700 uppercase">Quotation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
@@ -387,6 +389,14 @@ export default function IMSPage() {
                           <td className="px-6 py-4 text-sm">{r.BU || r.col_BU}</td>
                           <td className="px-6 py-4 text-sm font-black text-indigo-600">{r.BV || r.col_BV}</td>
                           <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">{formatDate(r.BX || r.col_BX)}</td>
+                          <td className="px-6 py-4 text-sm">{r.J || r.col_J || "-"}</td>
+                          <td className="px-6 py-4 text-sm">
+                            {(r.AK || r.col_AK) ? (
+                              String(r.AK || r.col_AK).startsWith("http") ? (
+                                <a href={String(r.AK || r.col_AK)} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium">View Link</a>
+                              ) : String(r.AK || r.col_AK)
+                            ) : "-"}
+                          </td>
                         </tr>
                       ))}
                     {selectedItem.records.filter((r: any) => {
@@ -396,7 +406,7 @@ export default function IMSPage() {
                       return matchesStatus && matchesIndenter;
                     }).length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500 italic">
+                        <td colSpan={8} className="px-6 py-8 text-center text-gray-500 italic">
                           No approved records found for this item.
                         </td>
                       </tr>
@@ -450,6 +460,22 @@ export default function IMSPage() {
                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Expected Delivery Date</span>
                            <span className="text-sm font-medium text-gray-700">{formatDate(r.BX || r.col_BX)}</span>
                         </div>
+                        <div className="mt-3 pt-3 border-t border-gray-50 pl-2 grid grid-cols-2 gap-2">
+                           <div>
+                             <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Payment Term</span>
+                             <span className="text-sm font-medium text-gray-700">{r.J || r.col_J || "-"}</span>
+                           </div>
+                           <div>
+                             <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">Quotation</span>
+                             <span className="text-sm font-medium text-gray-700">
+                               {(r.AK || r.col_AK) ? (
+                                 String(r.AK || r.col_AK).startsWith("http") ? (
+                                   <a href={String(r.AK || r.col_AK)} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">View Link</a>
+                                 ) : String(r.AK || r.col_AK)
+                               ) : "-"}
+                             </span>
+                           </div>
+                         </div>
                       </div>
                     ))}
                     {selectedItem.records.filter((r: any) => {

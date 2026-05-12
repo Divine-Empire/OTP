@@ -18,6 +18,8 @@ const COL = {
   BV: 73, // Pending Qty
   BW: 74, // Material In Transit
   BX: 75, // Expected date of Delivery
+  J: 9,   // Payment Terms
+  AK: 36, // Quotation Copy
 }
 
 export async function GET() {
@@ -56,6 +58,8 @@ export async function GET() {
       BV: row[COL.BV] ?? 0,
       BW: row[COL.BW] ?? 0,
       BX: row[COL.BX] ?? "",
+      J: row[COL.J] ?? "",
+      AK: row[COL.AK] ?? "",
     }))
 
     return NextResponse.json({ success: true, data: mapped })
