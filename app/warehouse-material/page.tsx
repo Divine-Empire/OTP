@@ -268,7 +268,7 @@ export default function WarehouseMaterialPage() {
                 freightType: row.c[13] ? row.c[13].v : "",
                 destination: row.c[14] ? row.c[14].v : "",
                 poNumber: row.c[15] ? row.c[15].v : "",
-                offer: row.c[16] ? row.c[16].v : "",
+                offer: row.c[17] ? row.c[17].v : "",
                 dSrNumber: row.c[105] ? row.c[105].v : "",
                 amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
                 invoiceNumber: row.c[65]?.v || "", 
@@ -812,7 +812,7 @@ case "actions":
           typeof value === "string" &&
           (value.startsWith("http") || value.startsWith("https")) ? (
           <a href={value} target="_blank" rel="noopener noreferrer">
-            <Badge variant="default">Link</Badge>
+            <Badge variant="default">View</Badge>
           </a>
         ) : (
           <Badge variant="secondary">{value || ""}</Badge>
@@ -843,6 +843,8 @@ case "actions":
       case "afterPhotoUpload":
       case "biltyUpload":
       case "ewayBillAttachment":
+      case "srnNumberAttachment":
+      case "attachment":
         return value &&
           typeof value === "string" &&
           (value.startsWith("http") || value.startsWith("https")) ? (
