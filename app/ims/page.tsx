@@ -11,28 +11,26 @@ import { toast } from "sonner"
 import { MainLayout } from "@/components/layout/main-layout"
 
 const formatDate = (dateValue: any) => {
-  if (!dateValue) return "-";
+  if (!dateValue || dateValue === "" || dateValue === "-") return "-";
   
+  let date: Date | null = null;
+
   // Handle Google Sheets Date(year, month, day) format
   if (typeof dateValue === "string" && dateValue.startsWith("Date(")) {
     const match = dateValue.match(/Date\((\d+),(\d+),(\d+)\)/);
     if (match) {
-      const year = parseInt(match[1]);
-      const month = parseInt(match[2]);
-      const day = parseInt(match[3]);
-      return `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+      date = new Date(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
     }
+  } else {
+    date = new Date(dateValue);
   }
 
-  try {
-    const date = new Date(dateValue);
-    if (!isNaN(date.getTime())) {
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-  } catch (e) {}
+  if (date && !isNaN(date.getTime())) {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  }
   
   return dateValue;
 };
