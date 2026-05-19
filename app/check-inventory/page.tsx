@@ -738,6 +738,10 @@ export default function CheckInventoryPage() {
           indentFormData.append("lineItemNumber", partialDetails.lineItemNumber || "");
           indentFormData.append("leadTime", partialDetails.leadTime || "");
 
+          if (result.fileUrls?.inventoryPhotoUrl) {
+            indentFormData.append("attachment", result.fileUrls.inventoryPhotoUrl);
+          }
+
           const indentResponse = await fetch(APPS_SCRIPT_URL, {
             method: "POST",
             mode: "cors",
@@ -1693,7 +1697,6 @@ export default function CheckInventoryPage() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-     // In the Process Dialog submit button, update to:
                 <Button
                   onClick={handleSubmit}
                   disabled={!availabilityStatus || currentUser?.role === "user" || isSubmitting}
