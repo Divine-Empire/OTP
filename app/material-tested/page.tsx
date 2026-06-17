@@ -109,7 +109,7 @@ export default function MaterialTestedPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen p-4 md:p-6">
+      <div className="space-y-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
         
         {/* Header Section */}
         <Card className="border border-indigo-100 bg-white/80 backdrop-blur-sm shadow-md">
@@ -121,9 +121,6 @@ export default function MaterialTestedPage() {
                     <FlaskConical className="h-6 w-6 text-indigo-600 animate-pulse" />
                     Material Tested QC Records
                   </CardTitle>
-                  <p className="text-xs text-indigo-500 mt-1">
-                    Showing passed or passed-with-concern tested items and their serial details grouped by Lift No & Machine Name
-                  </p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
