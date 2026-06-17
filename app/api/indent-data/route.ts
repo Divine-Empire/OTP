@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 // This is the Apps Script linked to the INDENT-LIFT spreadsheet
 // (SPREADSHEET_ID: 1_KAokqi4ZxBGj2xA7TOdUMj6H44szaf4CQMI_OINdAo)
-const INDENT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCik-SO0JHWnTfyeltKDx3i7LI0Ppt3lBw59tQy1ymiiQb8ai3D9FA540Pw65Jzq58Lg/exec"
+const INDENT_SCRIPT_URL = process.env.INDENT_SCRIPT_URL
 const SHEET_NAME = "INDENT-LIFT"
 
 // Column indices (0-based) in the INDENT-LIFT sheet

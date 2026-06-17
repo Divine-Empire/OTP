@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 // Apps Script linked to the Reorder/IMS spreadsheet
 // (SPREADSHEET_ID: 1O-fEA6iQvlJhSP6xcn2G-n0XxWE5LUX2kg2z6BVQLJw)
-const REORDER_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkB72Tu0iDEEyQ5cdkYUTdJq7Ifj80hgqbXpwc9WnF3ruWs1Yppe3Z1TJce4yr9Gg/exec"
+const REORDER_SCRIPT_URL = process.env.REORDER_SCRIPT_URL
 const SHEET_NAME = "IMS"
 
 // The sheet uses 2 header rows → data starts at index 2 (row 3)

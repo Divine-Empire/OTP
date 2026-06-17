@@ -9,6 +9,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  env: {
+    GOOGLE_SHEETS_API: process.env.GOOGLE_SHEETS_API,
+    GOOGLE_OTP_SHEET_ID: process.env.GOOGLE_OTP_SHEET_ID,
+    INSTALLATION_SCRIPT_URL: process.env.INSTALLATION_SCRIPT_URL,
+    INSTALLATION_SHEET_ID: process.env.INSTALLATION_SHEET_ID,
+    REORDER_SCRIPT_URL: process.env.REORDER_SCRIPT_URL,
+    IMS_SHEET_ID: process.env.IMS_SHEET_ID,
+    INDENT_SCRIPT_URL: process.env.INDENT_SCRIPT_URL,
+  },
 }
 
 export default nextConfig

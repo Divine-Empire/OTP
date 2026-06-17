@@ -48,8 +48,8 @@ export default function IMSPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalFilterIndenter, setModalFilterIndenter] = useState("All")
 
-  const script_url = "https://script.google.com/macros/s/AKfycbxkB72Tu0iDEEyQ5cdkYUTdJq7Ifj80hgqbXpwc9WnF3ruWs1Yppe3Z1TJce4yr9Gg/exec"
-  const sheet_id = "1O-fEA6iQvlJhSP6xcn2G-n0XxWE5LUX2kg2z6BVQLJw"
+  const script_url = process.env.REORDER_SCRIPT_URL
+  const sheet_id = process.env.IMS_SHEET_ID
   const sheet_name = "IMS"
 
   const fetchIMSData = async () => {

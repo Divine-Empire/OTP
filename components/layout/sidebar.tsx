@@ -24,6 +24,7 @@ import {
   Menu,
   ReceiptText,
   XOctagon,
+  FlaskConical,
 } from "lucide-react";
 
 const menuItems = [
@@ -112,6 +113,12 @@ const menuItems = [
       icon: Package,
       step: "ims",
     },
+    {
+      href: "/material-tested",
+      label: "Material Tested",
+      icon: FlaskConical,
+      step: "material-tested",
+    },
   { href: "/settings", label: "Settings", icon: Settings, step: "settings" },
 ];
 
@@ -125,7 +132,8 @@ export function Sidebar() {
     return (
       user?.assignedSteps.includes(item.step) ||
       user?.assignedSteps.includes("all") ||
-      item.step === "ims"
+      item.step === "ims" ||
+      item.step === "material-tested"
     );
   });
 

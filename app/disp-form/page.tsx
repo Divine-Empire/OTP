@@ -206,16 +206,15 @@ export default function DispFormPage() {
 
   const { user: currentUser } = useAuth();
 
-  const APPS_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
-  const SHEET_ID = "1yEsh4yzyvglPXHxo-5PT70VpwVJbxV7wwH8rpU1RFJA"
+  const APPS_SCRIPT_URL = process.env.GOOGLE_SHEETS_API
+  const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
   const PENDING_SHEET_NAME = "ORDER-DISPATCH"
   const HISTORY_SHEET_NAME = "DISPATCH-DELIVERY"
-  const IMS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzW8-RldYx917QpAfO4kY-T8_ntg__T0sbr7Yup2ZTVb1FC5H1g6TYuJgAU6wTquVM/exec"
+  const IMS_SCRIPT_URL = process.env.GOOGLE_SHEETS_API
 
-  const INSTALLATION_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwu7wzvou_bj7zZvM1q5NCzTgHMaO6WMZVswb3aNG8VJ42Jz1W_sAd4El42tgmg3JKC/exec"
+  const INSTALLATION_SCRIPT_URL = process.env.INSTALLATION_SCRIPT_URL
   const INSTALLATION_SHEET_NAME = "Service-Installation"
-  const INSTALLATION_SHEET_ID = "1teE4IIdCw7qnQvm_W7xAPgmGgpU13dtYw6y5ui01HHc"
+  const INSTALLATION_SHEET_ID = process.env.INSTALLATION_SHEET_ID
 
   const formatGoogleSheetsDate = (dateValue) => {
     if (!dateValue) return ""
