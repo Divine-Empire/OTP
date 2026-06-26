@@ -57,8 +57,8 @@ export default function MakeInvoicePage() {
 
   const { user: currentUser } = useAuth();
 
-const APPS_SCRIPT_URL = process.env.GOOGLE_SHEETS_API
-const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
+const APPS_SCRIPT_URL = process.env.GOOGLE_SHEETS_API || ""
+const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID || ""
   const SHEET_NAME = "DISPATCH-DELIVERY";
 
 
@@ -115,7 +115,6 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
       searchable: true,
     },
     { key: "ewayBillDetails", label: "Transport Id", searchable: true },
-    { key: "gstNo", label: "GST No", searchable: true },
     { key: "ewayBillAttachment", label: "Vehicle No.", searchable: true },
     { key: "srnNumber", label: "Srn Number", searchable: true },
     {
@@ -172,11 +171,11 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedColumn, setSelectedColumn] = useState("all");
-  const [visiblePendingColumns, setVisiblePendingColumns] = useState(
-    pendingColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
+  const [visiblePendingColumns, setVisiblePendingColumns] = useState<Record<string, boolean>>(
+    pendingColumns.reduce((acc: Record<string, boolean>, col) => ({ ...acc, [col.key]: true }), {})
   );
-  const [visibleHistoryColumns, setVisibleHistoryColumns] = useState(
-    historyColumns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
+  const [visibleHistoryColumns, setVisibleHistoryColumns] = useState<Record<string, boolean>>(
+    historyColumns.reduce((acc: Record<string, boolean>, col) => ({ ...acc, [col.key]: true }), {})
   );
 
   const [loading, setLoading] = useState(false);
@@ -205,7 +204,7 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
       if (data && data.table && data.table.rows) {
         const pendingOrders: any[] = [];
 
-        data.table.rows.slice(6).forEach((row, index) => {
+        data.table.rows.slice(6).forEach((row: any, index: number) => {
           if (row.c) {
             const actualRowIndex = index + 2;
             const bjColumn = row.c[62] ? row.c[62].v : null; // Column BJ (index 61)
@@ -323,7 +322,7 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
       if (data && data.table && data.table.rows) {
         const historyOrders: any[] = [];
 
-        data.table.rows.slice(6).forEach((row, index) => {
+        data.table.rows.slice(6).forEach((row: any, index: number) => {
           if (row.c) {
             const actualRowIndex = index + 2;
             const bjColumn = row.c[62] ? row.c[62].v : null; // Column BJ (index 61)
@@ -353,15 +352,9 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
                 amount: row.c[20] ? Number.parseFloat(row.c[20].v) || 0 : 0,
                 // Keep existing fields for backward compatibility
                 contactPerson: row.c[4] ? row.c[4].v : "",
-                quantity: row.c[10] ? row.c[10].v : "",
-                paymentDetails: row.c[8] === "Advance" ? "Required" : "N/A",
-                seniorApproval: row.c[16] ? row.c[16].v : "Approved",
-                totalQty: row.c[59] ? row.c[59].v : "",
-                billingQty: row.c[10] ? row.c[10].v : "",
                 quotationCopy: row.c[9] ? row.c[9].v : "",
                 acceptanceCopy: row.c[16] ? row.c[16].v : "",
                 dSrNumber: row.c[105] ? row.c[105].v : "",
-                fullRowData: row.c,
                 conveyedForRegistration: row.c[18] ? row.c[18].v : "",
                 approvedName: row.c[21] ? row.c[21].v : "",
                 calibrationCertRequired: row.c[22] ? row.c[22].v : "",
@@ -519,14 +512,14 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
   }, [historyOrders, searchTerm, selectedColumn, currentUser]);
 
   // Column visibility handlers
-  const togglePendingColumn = (columnKey) => {
+  const togglePendingColumn = (columnKey: string) => {
     setVisiblePendingColumns((prev) => ({
       ...prev,
       [columnKey]: !prev[columnKey],
     }));
   };
 
-  const toggleHistoryColumn = (columnKey) => {
+  const toggleHistoryColumn = (columnKey: string) => {
     setVisibleHistoryColumns((prev) => ({
       ...prev,
       [columnKey]: !prev[columnKey],
@@ -572,37 +565,72 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
     });
   };
 
+  // Upload a single file to Google Drive via a dedicated API call
+  const uploadFileToServer = async (file: File, prefix: string): Promise<string | null> => {
+    try {
+      const base64Data = await convertFileToBase64(file);
+      // Replace + with encoded form to prevent Apps Script URL decoding issue
+      const safeBase64 = base64Data.replace(/\+/g, "-PLUS-");
+
+      const formData = new FormData();
+      formData.append("action", "uploadFile");
+      formData.append("base64Data", safeBase64);
+      formData.append("fileName", `${prefix}_${file.name}`);
+      formData.append("mimeType", file.type);
+
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        console.error(`DEBUG: ${prefix} upload HTTP error:`, response.status);
+        return null;
+      }
+
+      const responseText = await response.text();
+
+      const result = JSON.parse(responseText);
+      if (result.success && result.fileUrl) {
+        return result.fileUrl;
+      } else {
+        console.error(`DEBUG: ${prefix} upload failed:`, result.error || result);
+        return null;
+      }
+    } catch (err) {
+      console.error(`DEBUG: ${prefix} upload exception:`, err);
+      return null;
+    }
+  };
+
   const updateOrderStatus = async (order: any, invoiceData: any) => {
     try {
       setUploading(true);
 
+      // Step 1: Upload files separately and get their URLs
+      let invoiceUrl: string | null = null;
+      let ewayBillUrl: string | null = null;
+
+      if (invoiceAttachment) {
+        invoiceUrl = await uploadFileToServer(invoiceAttachment, `invoice_${order.dSrNumber}`);
+      }
+
+      if (ewayBillAttachment) {
+        ewayBillUrl = await uploadFileToServer(ewayBillAttachment, `ewaybill_${order.dSrNumber}`);
+      }
+
+      // Step 2: Send the main update with file URLs as pre-uploaded URL params
       const formData = new FormData();
       formData.append("sheetName", SHEET_NAME);
       formData.append("action", "updateByDSrNumber");
       formData.append("dSrNumber", order.dSrNumber);
 
-      // Handle invoice file upload
-      if (invoiceAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(invoiceAttachment);
-          formData.append("invoiceFile", base64Data);
-          formData.append("invoiceFileName", invoiceAttachment.name);
-          formData.append("invoiceMimeType", invoiceAttachment.type);
-        } catch (error) {
-          console.error("Error converting invoice file:", error);
-        }
+      if (invoiceUrl) {
+        formData.append("invoiceUrl", invoiceUrl);
       }
-
-      // Handle eway bill file upload
-      if (ewayBillAttachment) {
-        try {
-          const base64Data = await convertFileToBase64(ewayBillAttachment);
-          formData.append("ewayBillFile", base64Data);
-          formData.append("ewayBillFileName", ewayBillAttachment.name);
-          formData.append("ewayBillMimeType", ewayBillAttachment.type);
-        } catch (error) {
-          console.error("Error converting E-way Bill file:", error);
-        }
+      if (ewayBillUrl) {
+        formData.append("ewayBillUrl1", ewayBillUrl);
       }
 
       // Create rowData array with proper length (should match your sheet columns)
@@ -624,12 +652,6 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
 
       formData.append("rowData", JSON.stringify(rowData));
 
-      console.log("Sending data:", {
-        dSrNumber: order.dSrNumber,
-        invoiceNumber: invoiceData.invoiceNumber,
-        qty: invoiceData.qty,
-        totalBillAmount: totalBillAmount,
-      });
 
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -644,7 +666,6 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
       let result;
       try {
         const responseText = await updateResponse.text();
-        console.log("Response:", responseText);
         result = JSON.parse(responseText);
       } catch (parseError) {
         console.error("Parse error:", parseError);
@@ -781,7 +802,7 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
     }
   };
 
-  const renderCellContent = (order, columnKey) => {
+  const renderCellContent = (order: any, columnKey: string) => {
     const value = order[columnKey];
 
     switch (columnKey) {
