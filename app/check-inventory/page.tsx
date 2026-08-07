@@ -100,7 +100,7 @@ export default function CheckInventoryPage() {
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [availabilityStatus, setAvailabilityStatus] = useState("")
   const [remarks, setRemarks] = useState("")
-  const [partialDetails, setPartialDetails] = useState("")
+  const [partialDetails, setPartialDetails] = useState<any>("")
   const [unavailableItems, setUnavailableItems] = useState([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
@@ -185,7 +185,7 @@ export default function CheckInventoryPage() {
     setError(null)
 
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}&t=${Date.now()}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -203,13 +203,13 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BG (index 58) - inventory status
-            const hasColumnBG = row.c[58] && row.c[58].v !== null && row.c[58].v !== ""
-            // Column BH (index 59) - inventory remarks
-            const isColumnBHEmpty = !row.c[59] || row.c[59].v === null || row.c[59].v === ""
+            // Column BD (index 55) - order acceptable status
+            const hasColumnBD = row.c[55] && row.c[55].v === "Yes"
+            // Column BJ (index 61) - inventory status
+            const isColumnBJEmpty = !row.c[61] || row.c[61].v === null || row.c[61].v === ""
 
-            // For pending orders: show rows where BG has data but BH is empty
-            if (hasColumnBG && isColumnBHEmpty) {
+            // For pending orders: show rows where BD is Yes but BJ is empty
+            if (hasColumnBD && isColumnBJEmpty) {
               const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -274,9 +274,9 @@ export default function CheckInventoryPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[55] ? row.c[55].v : "",
                 creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
-                inventoryStatus: row.c[58] ? row.c[58].v : null, // Column BG
-                inventoryRemarks: row.c[59] ? row.c[59].v : "", // Column BH
-                processedDate: row.c[60] ? row.c[60].v : "", // Column BI
+                inventoryStatus: row.c[61] ? row.c[61].v : null, // Column BJ (index 61)
+                inventoryRemarks: row.c[62] ? row.c[62].v : "", // Column BK (index 62)
+                processedDate: row.c[60] ? row.c[60].v : "", // Column BI (index 60)
                 fullRowData: row.c,
               }
 
@@ -300,7 +300,7 @@ export default function CheckInventoryPage() {
   // Fetch processed orders (where both BG and BH have data)
   const fetchProcessedOrders = async () => {
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}&t=${Date.now()}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -317,13 +317,11 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BG (index 58) - inventory status
-            const hasColumnBG = row.c[58] && row.c[58].v !== null && row.c[58].v !== ""
-            // Column BH (index 59) - inventory remarks
-            const hasColumnBH = row.c[59] && row.c[59].v !== null && row.c[59].v !== ""
+            // Column BJ (index 61) - inventory status
+            const hasColumnBJ = row.c[61] && row.c[61].v !== null && row.c[61].v !== ""
 
-            // For processed orders: show rows where both BG and BH have data
-            if (hasColumnBG && hasColumnBH) {
+            // For processed orders: show rows where BJ has data
+            if (hasColumnBJ) {
               const processedOrder = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -416,12 +414,12 @@ export default function CheckInventoryPage() {
   const filterOrdersByUserRole = (orders: any[], currentUser: any) => {
     if (!currentUser) return orders;
 
-    // Super admin sees all data
-    if (currentUser.role === "super_admin") {
+    // Super admin and admin see all data
+    if (currentUser.role === "super_admin" || currentUser.role === "admin") {
       return orders;
     }
 
-    // Admin and regular users only see data where CRE Name matches their username
+    // Regular users only see data where CRE Name matches their username
     return orders.filter(order => order.creName === currentUser.username);
   };
 
@@ -449,12 +447,8 @@ export default function CheckInventoryPage() {
     return filtered
   }, [orders, searchTerm, selectedColumn, currentUser])
 
-  // Filter orders based on status
-  const pendingOrders = filteredOrders.filter(
-    (order) =>
-      // Since we want orders where BG has data but BH is empty
-      order.inventoryStatus && !order.inventoryRemarks,
-  )
+  // Filter orders based on status (pre-filtered by fetchOrders)
+  const pendingOrders = filteredOrders;
 
   // For processed orders, we'll fetch them separately when the tab is clicked
   const [processedOrders, setProcessedOrders] = useState([])
@@ -565,8 +559,8 @@ export default function CheckInventoryPage() {
       // Set inventory status (column BJ - index 61)
       rowData[61] = inventoryData.availabilityStatus;
 
-      // Set processed date (column BI - index 59)
-      rowData[59] = formattedDate;
+      // Set processed date (column BI - index 60)
+      rowData[60] = formattedDate;
 
       // Set remarks in column BK (index 62)
       rowData[62] = inventoryData.remarks || "";
@@ -677,8 +671,8 @@ export default function CheckInventoryPage() {
       // Set inventory status (column BJ - index 61)
       rowData[61] = availabilityStatus;
 
-      // Set processed date (column BI - index 59)
-      rowData[59] = formattedDate;
+      // Set processed date (column BI - index 60)
+      rowData[60] = formattedDate;
 
       // Set remarks in column BK (index 62)
       rowData[62] = remarks || "";
@@ -718,46 +712,57 @@ export default function CheckInventoryPage() {
         throw new Error(result.error || "Update failed");
       }
 
-      // ── Secondary submission to INDENT-LIFT sheet ──────────────────────────
+      // ── Secondary submission to Supabase (Indent Generation) ──────────────────────────
       // Fires only when status is Partial or Not Available (primary must succeed first)
       if (availabilityStatus === "Partial" || availabilityStatus === "Not Available") {
         try {
-          const indentFormData = new FormData();
-          indentFormData.append("action", "insertIndentLift");
-          indentFormData.append(
-            "items",
-            JSON.stringify(
-              unavailableItems
-                .filter((item) => item.name && item.name.trim() !== "")
-                .map((item) => ({ name: item.name, qty: item.qty }))
-            )
-          );
-          indentFormData.append("createdBy", partialDetails.createdBy || "");
-          indentFormData.append("warehouseLocation", partialDetails.warehouseLocation || "");
-          indentFormData.append("lineItemNumber", partialDetails.lineItemNumber || "");
-          indentFormData.append("leadTime", partialDetails.leadTime || "");
-
-          if (result.fileUrls?.inventoryPhotoUrl) {
-            indentFormData.append("attachment", result.fileUrls.inventoryPhotoUrl);
+          let filePayload = null;
+          if (inventoryPhotoAttachment) {
+            try {
+              const base64Data = await convertFileToBase64(inventoryPhotoAttachment);
+              filePayload = {
+                base64: base64Data,
+                name: inventoryPhotoAttachment.name,
+                type: inventoryPhotoAttachment.type,
+              };
+            } catch (err) {
+              console.error("Error preparing file base64 for Supabase upload:", err);
+            }
           }
 
-          const indentResponse = await fetch(APPS_SCRIPT_URL, {
+          const payload = {
+            items: unavailableItems
+              .filter((item) => item.name && item.name.trim() !== "")
+              .map((item) => ({ name: item.name, qty: item.qty })),
+            createdBy: partialDetails.createdBy || "",
+            warehouseLocation: partialDetails.warehouseLocation || "",
+            lineItemNumber: partialDetails.lineItemNumber || "",
+            leadTime: partialDetails.leadTime || "",
+            remarks: remarks || "",
+            file: filePayload,
+          };
+
+          const indentResponse = await fetch("/api/generate-indent", {
             method: "POST",
-            mode: "cors",
-            body: indentFormData,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
           });
 
           if (indentResponse.ok) {
             const indentResult = await indentResponse.json();
             if (indentResult.success) {
-              console.log("✅ INDENT-LIFT rows inserted:", indentResult.generatedIds);
+              console.log("✅ Supabase indent records created:", indentResult.generatedIds);
             } else {
-              console.warn("⚠️ INDENT-LIFT insertion warning:", indentResult.error);
+              console.warn("⚠️ Supabase indent creation warning:", indentResult.error);
             }
+          } else {
+            console.error("❌ Supabase indent endpoint returned status:", indentResponse.status);
           }
         } catch (indentErr) {
           // Non-blocking — primary submission already succeeded
-          console.error("❌ Error submitting to INDENT-LIFT (non-blocking):", indentErr);
+          console.error("❌ Error submitting to Supabase (non-blocking):", indentErr);
         }
       }
       // ────────────────────────────────────────────────────────────────────────
