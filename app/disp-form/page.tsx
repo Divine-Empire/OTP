@@ -388,21 +388,11 @@ export default function DispFormPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Check if this order needs DISP form processing
-            // You can adjust this logic based on your requirements
-            // const hasColumnBR = row.c[69] && row.c[69].v !== null && row.c[69].v !== ""
-            // const hasColumnBS = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
+            // Column CF (index 83) - dispatch pending qty
+            const dispatchPendingQty = Number(row.c[83] && row.c[83].v !== null ? row.c[83].v : 0) || 0
 
-            // For pending orders: show rows where BR and BS have data (senior approved)
-            // if (hasColumnBR && hasColumnBS) {
-            // Column AX (index 49) - Dispatch Status should be "PENDING"
-            const dispatchStatus = row.c[49] && row.c[49].v ? row.c[49].v.toString().toUpperCase() : ""
-
-            // Column BX (index 75) - Should not be null or empty
-            const columnBX = row.c[75] && row.c[75].v ? row.c[75].v.toString().trim() : ""
-
-            // For pending orders: show rows where AX column has "PENDING" value AND BX column is not empty
-            if (dispatchStatus === "PENDING" && columnBX !== "") {
+            // Pending: CF > 0 (dispatch still pending)
+            if (dispatchPendingQty > 0) {
               const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -459,10 +449,10 @@ export default function DispFormPage() {
                 dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
                 deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
                 seniorApproveName: row.c[77] ? row.c[77].v : "",
-                itemQty: row.c[79] ? row.c[79].v : "",
-                dispatchTotalQty: row.c[80] ? row.c[80].v : "",
-                creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
-                dispatchPendingQty: row.c[82] ? row.c[82].v : "",
+                itemQty: row.c[80] ? row.c[80].v : "", // Column CC (Item/Qty)
+                dispatchTotalQty: row.c[81] ? row.c[81].v : "", // Column CD (dispatch Total Qty)
+                creName: row.c[82] ? row.c[82].v : "", // Column CE (index 82) - CRE Name
+                dispatchPendingQty, // Column CF (index 83) - dispatch pending qty
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
