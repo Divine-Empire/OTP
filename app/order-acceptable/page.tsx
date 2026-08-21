@@ -194,7 +194,7 @@ const [creFilter, setCreFilter] = useState("all")
   return dateValue;
 };
 
-  // Fetch data from Google Sheets - condition: column Q is not null and column R is null
+  // Fetch data from Google Sheets - condition: column BB (Planned1) is not null and column BC (Actual1) is null
   const fetchOrders = async () => {
     setLoading(true)
     setError(null)
@@ -218,11 +218,11 @@ const [creFilter, setCreFilter] = useState("all")
 
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
-            // Condition: column Q is not null and column R is null
-            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== "" // Column Q (index 16)
-            const isColumnREmpty = !row.c[53] || row.c[53].v === null || row.c[53].v === "" // Column R (index 17)
+            // Condition: column BB (Planned1) is not null and column BC (Actual1) is null
+            const hasColumnBB = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column BB (Planned1)
+            const isColumnBCEmpty = !row.c[54] || row.c[54].v === null || row.c[54].v === "" // Column BC (Actual1)
 
-            if (hasColumnQ && isColumnREmpty) {
+            if (hasColumnBB && isColumnBCEmpty) {
               // Calculate correct row index
               const actualRowIndex = index + 7
 
@@ -281,7 +281,7 @@ const [creFilter, setCreFilter] = useState("all")
   dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
   dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
   deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
-  status: row.c[53] ? row.c[53].v : "pending",    // for pending is particular column 52 condition is required
+  status: row.c[54] ? row.c[54].v : "pending",    // for pending, column BB (index 53) not-null condition is required
   completeDate: row.c[51] ? row.c[51].v : "",
   creName: row.c[81] ? row.c[81].v : "", 
   // Keep the old field names for backward compatibility in dialog
@@ -290,15 +290,12 @@ const [creFilter, setCreFilter] = useState("all")
 }
 
 
-              console.log(`Order ${order.orderNo}: Company "${order.companyName}" at actual row ${order.rowIndex}`)
               ordersData.push(order)
             }
           }
         })
 
         setOrders(ordersData)
-        console.log("Total orders loaded:", ordersData.length)
-        console.log("Orders data:", ordersData)
       }
     } catch (err) {
       console.error("Error fetching orders data:", err)
@@ -345,7 +342,7 @@ const [creFilter, setCreFilter] = useState("all")
   //   return dateValue
   // }
 
-  // Fetch processed orders (where both Q and R have data)
+  // Fetch processed orders (where both BB (Planned1) and BC (Actual1) have data)
   const fetchProcessedOrders = async () => {
     try {
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
@@ -363,11 +360,11 @@ const [creFilter, setCreFilter] = useState("all")
 
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
-            // Show rows where both column Q and R have data
-            const hasColumnQ = row.c[52] && row.c[52].v !== null && row.c[52].v !== "" // Column Q (index 16)
-            const hasColumnR = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column R (index 17)
+            // Show rows where both column BB (Planned1) and BC (Actual1) have data
+            const hasColumnBB = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column BB (Planned1)
+            const hasColumnBC = row.c[54] && row.c[54].v !== null && row.c[54].v !== "" // Column BC (Actual1)
 
-            if (hasColumnQ && hasColumnR) {
+            if (hasColumnBB && hasColumnBC) {
               const actualRowIndex = index + 7
 
               const processedOrder = {
@@ -428,10 +425,10 @@ const [creFilter, setCreFilter] = useState("all")
                 status: row.c[24] ? row.c[24].v : "",
                 completeDate: formatGoogleSheetsDate(row.c[25] ? row.c[25].v : ""),
                 creName: row.c[81] ? row.c[81].v : "", 
-                // Additional columns BD, BE, BF (indices 55, 56, 57)
-                isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column BD
-                orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column BE
-                remarks: row.c[57] ? row.c[57].v : "", // Column BF
+                // Additional columns BE, BF, BG (indices 56, 57, 58)
+                isOrderAcceptable: row.c[56] ? row.c[56].v : "", // Column BE
+                orderAcceptanceChecklist: row.c[57] ? row.c[57].v : "", // Column BF
+                remarks: row.c[58] ? row.c[58].v : "", // Column BG
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : "",
                 fullRowData: row.c,
@@ -635,9 +632,6 @@ const filteredProcessedOrders = useMemo(() => {
   // 2. Fix the updateOrderStatus function - correct the data structure
   const updateOrderStatus = async (order, acceptanceData) => {
     try {
-      console.log(`Updating order for Order No.: ${order.orderNo}`); // Use orderNo instead of id
-      console.log(`Order details:`, order);
-  
       const formData = new FormData();
       formData.append("sheetName", SHEET_NAME);
       formData.append("action", "updateByOrderNoInColumnB");
@@ -646,42 +640,31 @@ const filteredProcessedOrders = useMemo(() => {
       // Create a sparse array to update only specific columns
       const rowData = new Array(82).fill("");
   
-      // Add today's date to column R (index 53) - this is the key column that needs to be filled
+      // Add today's date to column BC/Actual1 (index 54) - this is the key column that needs to be filled
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
-      
-      rowData[53] = formattedDate; // Column R - THIS IS CRITICAL
-  
-      // Add acceptance status to column BD (index 55)
-      rowData[55] = acceptanceData.isAcceptable;
-  
+
+      rowData[54] = formattedDate; // Column BC (Actual1) - THIS IS CRITICAL
+
+      // Add acceptance status to column BE (index 56)
+      rowData[56] = acceptanceData.isAcceptable;
+
       if (acceptanceData.isAcceptable === "Yes") {
         const checklistText = acceptanceData.checklist.join(", ");
-        rowData[56] = checklistText; // Column BE
+        rowData[57] = checklistText; // Column BF
       }
-  
-      // Always add remarks to column BF (index 57)
-      rowData[57] = acceptanceData.remarks || "";
+
+      // Always add remarks to column BG (index 58)
+      rowData[58] = acceptanceData.remarks || "";
   
       formData.append("rowData", JSON.stringify(rowData));
-  
-      console.log("Sending data to Apps Script:", {
-        sheetName: SHEET_NAME,
-        orderNo: order.orderNo,
-        isAcceptable: acceptanceData.isAcceptable,
-        todayDate: formattedDate,
-        checklist: acceptanceData.checklist,
-        remarks: acceptanceData.remarks,
-      });
-  
+
       const updateResponse = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         body: formData,
       });
-  
-      console.log("Response status:", updateResponse.status);
-  
+
       if (!updateResponse.ok) {
         throw new Error(`HTTP error! status: ${updateResponse.status}`);
       }
@@ -689,15 +672,11 @@ const filteredProcessedOrders = useMemo(() => {
       let result;
       try {
         const responseText = await updateResponse.text();
-        console.log("Raw response:", responseText);
         result = JSON.parse(responseText);
       } catch (parseError) {
-        console.log("Response parsing failed, but request might be successful");
         result = { success: true };
       }
-  
-      console.log("Parsed result:", result);
-  
+
       if (result.success !== false) {
         await fetchOrders(); // Refresh the data
         return true;
@@ -1049,7 +1028,7 @@ const renderCellContent = (order, columnKey) => {
         <div>
           <CardTitle>Order History</CardTitle>
           <CardDescription>
-            Previously processed orders (where both Q and R columns have data)
+            Previously processed orders (where both BB and BC columns have data)
           </CardDescription>
         </div>
         <DropdownMenu>
