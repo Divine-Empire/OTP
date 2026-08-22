@@ -388,8 +388,8 @@ export default function DispFormPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column CF (index 83) - dispatch pending qty
-            const dispatchPendingQty = Number(row.c[83] && row.c[83].v !== null ? row.c[83].v : 0) || 0
+            // Column AV (index 47) - dispatch pending qty
+            const dispatchPendingQty = Number(row.c[47] && row.c[47].v !== null ? row.c[47].v : 0) || 0
 
             // Pending: CF > 0 (dispatch still pending)
             if (dispatchPendingQty > 0) {
