@@ -203,13 +203,13 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BH (index 59) - must not be null
-            const hasColumnBH = row.c[59] && row.c[59].v !== null && row.c[59].v !== ""
-            // Column BI (index 60) - must be null for pending
-            const isColumnBIEmpty = !row.c[60] || row.c[60].v === null || row.c[60].v === ""
+            // Column BG (index 58) - Planned2 - must not be null
+            const hasColumnBG = row.c[58] && row.c[58].v !== null && row.c[58].v !== ""
+            // Column BH (index 59) - Actual2 - must be null for pending
+            const isColumnBHEmpty = !row.c[59] || row.c[59].v === null || row.c[59].v === ""
 
-            // For pending orders: show rows where BH is not null but BI is empty
-            if (hasColumnBH && isColumnBIEmpty) {
+            // For pending orders: show rows where Planned2 (BG) is not null but Actual2 (BH) is empty
+            if (hasColumnBG && isColumnBHEmpty) {
               const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -274,9 +274,9 @@ export default function CheckInventoryPage() {
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[55] ? row.c[55].v : "",
                 creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
-                inventoryStatus: row.c[62] ? row.c[62].v : null, // Column BK (index 62) - Availability Status
-                inventoryRemarks: row.c[63] ? row.c[63].v : "", // Column BL (index 63) - Remarks
-                processedDate: row.c[60] ? row.c[60].v : "", // Column BI (index 60) - Actual2
+                inventoryStatus: row.c[61] ? row.c[61].v : null, // Column BJ (index 61) - Availability Status
+                inventoryRemarks: row.c[62] ? row.c[62].v : "", // Column BK (index 62) - Remarks
+                processedDate: row.c[59] ? row.c[59].v : "", // Column BH (index 59) - Actual2
                 fullRowData: row.c,
               }
 
@@ -317,12 +317,12 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BH (index 59) and BI (index 60) - both must not be null
+            // Column BG (index 58) and BH (index 59) - both must not be null
+            const hasColumnBG = row.c[58] && row.c[58].v !== null && row.c[58].v !== ""
             const hasColumnBH = row.c[59] && row.c[59].v !== null && row.c[59].v !== ""
-            const hasColumnBI = row.c[60] && row.c[60].v !== null && row.c[60].v !== ""
 
-            // For history orders: show rows where both BH and BI have data
-            if (hasColumnBH && hasColumnBI) {
+            // For history orders: show rows where both Planned2 (BG) and Actual2 (BH) have data
+            if (hasColumnBG && hasColumnBH) {
               const processedOrder = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -382,13 +382,13 @@ export default function CheckInventoryPage() {
                 isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column BD
                 orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column BE
                 remarks: row.c[57] ? row.c[57].v : "", // Column BF
-                // BK, BL columns (indices 62, 63)
-                availabilityStatus: row.c[62] ? row.c[62].v : "", // Column BK (index 62) - Availability Status
-                inventoryRemarks: row.c[63] ? row.c[63].v : "", // Column BL (index 63) - Remarks
+                // BJ, BK columns (indices 61, 62)
+                availabilityStatus: row.c[61] ? row.c[61].v : "", // Column BJ (index 61) - Availability Status
+                inventoryRemarks: row.c[62] ? row.c[62].v : "", // Column BK (index 62) - Remarks
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : "",
                 contactPerson: row.c[4] ? row.c[4].v : "",
-                processedDate: formatGoogleSheetsDate(row.c[60] ? row.c[60].v : ""), // Column BI (index 60) - Actual2
+                processedDate: formatGoogleSheetsDate(row.c[59] ? row.c[59].v : ""), // Column BH (index 59) - Actual2
                 fullRowData: row.c,
               }
 
@@ -553,41 +553,41 @@ export default function CheckInventoryPage() {
       }
 
       // Create a sparse array to update only specific columns
-      const rowData = new Array(71).fill(""); // BH(59) to BS(70)
+      const rowData = new Array(70).fill(""); // BG(58) to BR(69)
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
 
-      // Set processed date (column BI - index 60) - Actual2
-      rowData[60] = formattedDate;
+      // Set processed date (column BH - index 59) - Actual2
+      rowData[59] = formattedDate;
 
-      // Set availability status (column BK - index 62)
-      rowData[62] = inventoryData.availabilityStatus;
+      // Set availability status (column BJ - index 61)
+      rowData[61] = inventoryData.availabilityStatus;
 
-      // Set remarks (column BL - index 63)
-      rowData[63] = inventoryData.remarks || "";
+      // Set remarks (column BK - index 62)
+      rowData[62] = inventoryData.remarks || "";
 
       // For Not Available or Partial status, set additional columns
       if (inventoryData.availabilityStatus === "Not Available" || inventoryData.availabilityStatus === "Partial") {
-        // Customer wants material as (column BM - index 64)
-        rowData[64] = inventoryData.partialDetails?.customerDecision || "";
+        // Customer wants material as (column BL - index 63)
+        rowData[63] = inventoryData.partialDetails?.customerDecision || "";
 
-        // Created by (column BN - index 65) - will be set by the file upload
-        // rowData[65] = inventoryData.partialDetails?.createdBy || "";
+        // Created by (column BM - index 64) - will be set by the file upload
+        // rowData[64] = inventoryData.partialDetails?.createdBy || "";
 
-        // Warehouse location (column BO - index 66)
-        rowData[66] = inventoryData.partialDetails?.warehouseLocation || "";
+        // Warehouse location (column BN - index 65)
+        rowData[65] = inventoryData.partialDetails?.warehouseLocation || "";
 
-        // Create indent if not available (column BP - index 67)
-        rowData[67] = inventoryData.partialDetails?.createIndent ? "File Uploaded" : "";
+        // Create indent if not available (column BO - index 66)
+        rowData[66] = inventoryData.partialDetails?.createIndent ? "File Uploaded" : "";
 
-        // Line item number (column BQ - index 68)
-        rowData[68] = inventoryData.partialDetails?.lineItemNumber || "";
+        // Line item number (column BP - index 67)
+        rowData[67] = inventoryData.partialDetails?.lineItemNumber || "";
 
-        // Total qty (column BR - index 69)
-        rowData[69] = inventoryData.partialDetails?.totalQty || "";
+        // Total qty (column BQ - index 68)
+        rowData[68] = inventoryData.partialDetails?.totalQty || "";
 
-        // Material received lead time (column BS - index 70)
-        rowData[70] = inventoryData.partialDetails?.leadTime || "";
+        // Material received lead time (column BR - index 69)
+        rowData[69] = inventoryData.partialDetails?.leadTime || "";
       }
 
       formData.append("rowData", JSON.stringify(rowData));
@@ -665,28 +665,28 @@ export default function CheckInventoryPage() {
       }
 
       // Prepare row data
-      const rowData = new Array(71).fill(""); // BH(59) to BS(70)
+      const rowData = new Array(70).fill(""); // BG(58) to BR(69)
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
 
-      // Set processed date (column BI - index 60) - Actual2
-      rowData[60] = formattedDate;
+      // Set processed date (column BH - index 59) - Actual2
+      rowData[59] = formattedDate;
 
-      // Set availability status (column BK - index 62)
-      rowData[62] = availabilityStatus;
+      // Set availability status (column BJ - index 61)
+      rowData[61] = availabilityStatus;
 
-      // Set remarks (column BL - index 63)
-      rowData[63] = remarks || "";
+      // Set remarks (column BK - index 62)
+      rowData[62] = remarks || "";
 
       // For Not Available or Partial status
       if (availabilityStatus === "Not Available" || availabilityStatus === "Partial") {
-        rowData[64] = partialDetails.customerDecision || ""; // BM - customer wants material as
-        rowData[65] = partialDetails.createdBy || "";        // BN - Created by
-        rowData[66] = partialDetails.warehouseLocation || ""; // BO - warehouse location
-        rowData[67] = partialDetails.createIndent ? "File Uploaded" : ""; // BP - create indent
-        rowData[68] = partialDetails.lineItemNumber || "";   // BQ - line item number
-        rowData[69] = partialDetails.totalQty || "";         // BR - total qty
-        rowData[70] = partialDetails.leadTime || "";         // BS - Material received lead time
+        rowData[63] = partialDetails.customerDecision || ""; // BL - customer wants material as
+        rowData[64] = partialDetails.createdBy || "";        // BM - Created by
+        rowData[65] = partialDetails.warehouseLocation || ""; // BN - warehouse location
+        rowData[66] = partialDetails.createIndent ? "File Uploaded" : ""; // BO - create indent
+        rowData[67] = partialDetails.lineItemNumber || "";   // BP - line item number
+        rowData[68] = partialDetails.totalQty || "";         // BQ - total qty
+        rowData[69] = partialDetails.leadTime || "";         // BR - Material received lead time
       }
 
       const itemsData = unavailableItems.map(item => ({

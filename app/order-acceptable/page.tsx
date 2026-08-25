@@ -194,14 +194,15 @@ const [creFilter, setCreFilter] = useState("all")
   return dateValue;
 };
 
-  // Fetch data from Google Sheets - condition: column BB (Planned1) is not null and column BC (Actual1) is null
+  // Fetch data from Google Sheets - condition: column BA (Planned1) is not null and column BB (Actual1) is null
   const fetchOrders = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      // Fetch the entire sheet using Google Sheets API directly
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      // Fetch the sheet through our server-side proxy (avoids CORS/login-redirect issues
+      // that happen when the browser calls docs.google.com directly)
+      const sheetUrl = `/api/sheets-proxy?sheetId=${SHEET_ID}&sheetName=${encodeURIComponent(SHEET_NAME)}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -218,11 +219,11 @@ const [creFilter, setCreFilter] = useState("all")
 
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
-            // Condition: column BB (Planned1) is not null and column BC (Actual1) is null
-            const hasColumnBB = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column BB (Planned1)
-            const isColumnBCEmpty = !row.c[54] || row.c[54].v === null || row.c[54].v === "" // Column BC (Actual1)
+            // Condition: column BA (Planned1) is not null and column BB (Actual1) is null
+            const hasColumnBA = row.c[52] && row.c[52].v !== null && row.c[52].v !== "" // Column BA (Planned1)
+            const isColumnBBEmpty = !row.c[53] || row.c[53].v === null || row.c[53].v === "" // Column BB (Actual1)
 
-            if (hasColumnBB && isColumnBCEmpty) {
+            if (hasColumnBA && isColumnBBEmpty) {
               // Calculate correct row index
               const actualRowIndex = index + 7
 
@@ -281,7 +282,7 @@ const [creFilter, setCreFilter] = useState("all")
   dispatchStatus: row.c[49] ? row.c[49].v : "", // Column AX
   dispatchCompleteDate: formatGoogleSheetsDate(row.c[50] ? row.c[50].v : ""), // Column AY
   deliveryCompleteDate: formatGoogleSheetsDate(row.c[51] ? row.c[51].v : ""), // Column AZ
-  status: row.c[54] ? row.c[54].v : "pending",    // for pending, column BB (index 53) not-null condition is required
+  status: row.c[53] ? row.c[53].v : "pending",    // for pending, column BA (index 52) not-null condition is required
   completeDate: row.c[51] ? row.c[51].v : "",
   creName: row.c[81] ? row.c[81].v : "", 
   // Keep the old field names for backward compatibility in dialog
@@ -342,10 +343,10 @@ const [creFilter, setCreFilter] = useState("all")
   //   return dateValue
   // }
 
-  // Fetch processed orders (where both BB (Planned1) and BC (Actual1) have data)
+  // Fetch processed orders (where both BA (Planned1) and BB (Actual1) have data)
   const fetchProcessedOrders = async () => {
     try {
-      const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
+      const sheetUrl = `/api/sheets-proxy?sheetId=${SHEET_ID}&sheetName=${encodeURIComponent(SHEET_NAME)}`
       const response = await fetch(sheetUrl)
       const text = await response.text()
 
@@ -360,11 +361,11 @@ const [creFilter, setCreFilter] = useState("all")
 
         data.table.rows.slice(6).forEach((row, index) => {
           if (row.c) {
-            // Show rows where both column BB (Planned1) and BC (Actual1) have data
-            const hasColumnBB = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column BB (Planned1)
-            const hasColumnBC = row.c[54] && row.c[54].v !== null && row.c[54].v !== "" // Column BC (Actual1)
+            // Show rows where both column BA (Planned1) and BB (Actual1) have data
+            const hasColumnBA = row.c[52] && row.c[52].v !== null && row.c[52].v !== "" // Column BA (Planned1)
+            const hasColumnBB = row.c[53] && row.c[53].v !== null && row.c[53].v !== "" // Column BB (Actual1)
 
-            if (hasColumnBB && hasColumnBC) {
+            if (hasColumnBA && hasColumnBB) {
               const actualRowIndex = index + 7
 
               const processedOrder = {
@@ -425,10 +426,10 @@ const [creFilter, setCreFilter] = useState("all")
                 status: row.c[24] ? row.c[24].v : "",
                 completeDate: formatGoogleSheetsDate(row.c[25] ? row.c[25].v : ""),
                 creName: row.c[81] ? row.c[81].v : "", 
-                // Additional columns BE, BF, BG (indices 56, 57, 58)
-                isOrderAcceptable: row.c[56] ? row.c[56].v : "", // Column BE
-                orderAcceptanceChecklist: row.c[57] ? row.c[57].v : "", // Column BF
-                remarks: row.c[58] ? row.c[58].v : "", // Column BG
+                // Additional columns BD, BE, BF (indices 55, 56, 57)
+                isOrderAcceptable: row.c[55] ? row.c[55].v : "", // Column BD
+                orderAcceptanceChecklist: row.c[56] ? row.c[56].v : "", // Column BE
+                remarks: row.c[57] ? row.c[57].v : "", // Column BF
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : "",
                 fullRowData: row.c,
@@ -640,22 +641,22 @@ const filteredProcessedOrders = useMemo(() => {
       // Create a sparse array to update only specific columns
       const rowData = new Array(82).fill("");
   
-      // Add today's date to column BC/Actual1 (index 54) - this is the key column that needs to be filled
+      // Add today's date to column BB/Actual1 (index 53) - this is the key column that needs to be filled
       const today = new Date();
       const formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()} ${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`;
 
-      rowData[54] = formattedDate; // Column BC (Actual1) - THIS IS CRITICAL
+      rowData[53] = formattedDate; // Column BB (Actual1) - THIS IS CRITICAL
 
-      // Add acceptance status to column BE (index 56)
-      rowData[56] = acceptanceData.isAcceptable;
+      // Add acceptance status to column BD (index 55)
+      rowData[55] = acceptanceData.isAcceptable;
 
       if (acceptanceData.isAcceptable === "Yes") {
         const checklistText = acceptanceData.checklist.join(", ");
-        rowData[57] = checklistText; // Column BF
+        rowData[56] = checklistText; // Column BE
       }
 
-      // Always add remarks to column BG (index 58)
-      rowData[58] = acceptanceData.remarks || "";
+      // Always add remarks to column BF (index 57)
+      rowData[57] = acceptanceData.remarks || "";
   
       formData.append("rowData", JSON.stringify(rowData));
 
@@ -1028,7 +1029,7 @@ const renderCellContent = (order, columnKey) => {
         <div>
           <CardTitle>Order History</CardTitle>
           <CardDescription>
-            Previously processed orders (where both BB and BC columns have data)
+            Previously processed orders (where both BA and BB columns have data)
           </CardDescription>
         </div>
         <DropdownMenu>

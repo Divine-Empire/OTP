@@ -84,7 +84,7 @@ const pendingColumns = [
   { key: "receivedDate", label: "Received Date", searchable: true },
 ]
 
-// Column definitions for History tab (includes CA column)
+// Column definitions for History tab (includes BZ column)
 const historyColumns = [
   ...pendingColumns.filter((col) => col.key !== "actions"),
   { key: "approvedName", label: "Approved Name", searchable: true },
@@ -194,13 +194,13 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BX (index 75) - Planned4
-            const hasColumnBX = row.c[75] && row.c[75].v !== null && row.c[75].v !== ""
-            // Column BY (index 76) - Actual4
-            const isColumnBYEmpty = !row.c[76] || row.c[76].v === null || row.c[76].v === ""
+            // Column BW (index 74) - Planned4
+            const hasColumnBW = row.c[74] && row.c[74].v !== null && row.c[74].v !== ""
+            // Column BX (index 75) - Actual4
+            const isColumnBXEmpty = !row.c[75] || row.c[75].v === null || row.c[75].v === ""
 
-            // For pending orders: show rows where Planned4 (BX) has data but Actual4 (BY) is empty
-            if (hasColumnBX && isColumnBYEmpty) {
+            // For pending orders: show rows where Planned4 (BW) has data but Actual4 (BX) is empty
+            if (hasColumnBW && isColumnBXEmpty) {
               const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -264,15 +264,15 @@ const SHEET_ID = process.env.GOOGLE_OTP_SHEET_ID
                 availabilityStatus: row.c[61] ? row.c[61].v : "", // Column BJ
                 availabilityRemarks: row.c[62] ? row.c[62].v : "", // Column BK
                 creName: row.c[81] ? row.c[81].v : "", // Column CD (index 81) - CRE Name
-                // BO column (index 66)
-                receivedDate: formatGoogleSheetsDate(row.c[73] ? row.c[73].v : ""), // Column BO
+                // BV column (index 73) - Received Date
+                receivedDate: formatGoogleSheetsDate(row.c[73] ? row.c[73].v : ""), // Column BV
                 // Keep the old field names for backward compatibility in dialog
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[40] ? row.c[40].v : "",
-                approvalStatus: row.c[75] ? row.c[75].v : null, // Column BX (Planned4)
-                approvalDate: formatGoogleSheetsDate(row.c[76] ? row.c[76].v : ""), // Column BY (Actual4)
-                approvedBy: row.c[78] ? row.c[78].v : "", // Column CA (Approval Name)
+                approvalStatus: row.c[74] ? row.c[74].v : null, // Column BW (Planned4)
+                approvalDate: formatGoogleSheetsDate(row.c[75] ? row.c[75].v : ""), // Column BX (Actual4)
+                approvedBy: row.c[77] ? row.c[77].v : "", // Column BZ (Approval Name)
                 fullRowData: row.c,
               }
 
@@ -421,13 +421,13 @@ const filteredProcessedOrders = useMemo(() => {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BX (index 75) - Planned4
+            // Column BW (index 74) - Planned4
+            const hasColumnBW = row.c[74] && row.c[74].v !== null && row.c[74].v !== ""
+            // Column BX (index 75) - Actual4
             const hasColumnBX = row.c[75] && row.c[75].v !== null && row.c[75].v !== ""
-            // Column BY (index 76) - Actual4
-            const hasColumnBY = row.c[76] && row.c[76].v !== null && row.c[76].v !== ""
 
-            // For processed orders: show rows where both Planned4 (BX) and Actual4 (BY) have data
-            if (hasColumnBX && hasColumnBY) {
+            // For processed orders: show rows where both Planned4 (BW) and Actual4 (BX) have data
+            if (hasColumnBW && hasColumnBX) {
               const processedOrder = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -491,16 +491,16 @@ const filteredProcessedOrders = useMemo(() => {
                 // BJ, BK columns (indices 61, 62)
                 availabilityStatus: row.c[61] ? row.c[61].v : "", // Column BJ
                 availabilityRemarks: row.c[62] ? row.c[62].v : "", // Column BK
-                // BO column (index 66)
-                receivedDate: formatGoogleSheetsDate(row.c[66] ? row.c[66].v : ""), // Column BO
-                // CA column (index 78) - Approval Name
-                approvedName: row.c[78] ? row.c[78].v : "", // Column CA
+                // BV column (index 73) - Received Date
+                receivedDate: formatGoogleSheetsDate(row.c[73] ? row.c[73].v : ""), // Column BV
+                // BZ column (index 77) - Approval Name
+                approvedName: row.c[77] ? row.c[77].v : "", // Column BZ
                 // Keep old field names for backward compatibility
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[40] ? row.c[40].v : "",
-                approvalStatus: row.c[75] ? row.c[75].v : "", // Column BX (Planned4)
-                approvalDate: formatGoogleSheetsDate(row.c[76] ? row.c[76].v : ""), // Column BY (Actual4)
-                approvedBy: row.c[78] ? row.c[78].v : "", // Column CA (Approval Name)
+                approvalStatus: row.c[74] ? row.c[74].v : "", // Column BW (Planned4)
+                approvalDate: formatGoogleSheetsDate(row.c[75] ? row.c[75].v : ""), // Column BX (Actual4)
+                approvedBy: row.c[77] ? row.c[77].v : "", // Column BZ (Approval Name)
                 fullRowData: row.c,
               }
 
@@ -534,16 +534,16 @@ const filteredProcessedOrders = useMemo(() => {
         `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
 
       // Update columns:
-      // BX (index 75) - Planned4 (keep existing, not written by the app)
-      // BY (index 76) - Actual4 (filling this moves the order from Pending to History)
-      // BZ (index 77) - Delay4 (computed by the sheet, not written here)
-      // CA (index 78) - Approval Name
+      // BW (index 74) - Planned4 (keep existing, not written by the app)
+      // BX (index 75) - Actual4 (filling this moves the order from Pending to History)
+      // BY (index 76) - Delay4 (computed by the sheet, not written here)
+      // BZ (index 77) - Approval Name
 
-      // Set Actual4 date (column BY - index 76) - THIS IS CRITICAL, moves order to History
-      rowData[76] = formattedDate
+      // Set Actual4 date (column BX - index 75) - THIS IS CRITICAL, moves order to History
+      rowData[75] = formattedDate
 
-      // Set approval name (column CA - index 78)
-      rowData[78] = approvalData.approvedBy
+      // Set approval name (column BZ - index 77)
+      rowData[77] = approvalData.approvedBy
 
       formData.append("rowData", JSON.stringify(rowData))
 

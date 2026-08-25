@@ -201,13 +201,13 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BT (index 71) - Planned3
-            const hasColumnBT = row.c[71] && row.c[71].v !== null && row.c[71].v !== ""
-            // Column BU (index 72) - Actual3
-            const isColumnBUEmpty = !row.c[72] || row.c[72].v === null || row.c[72].v === ""
+            // Column BS (index 70) - Planned3
+            const hasColumnBS = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
+            // Column BT (index 71) - Actual3
+            const isColumnBTEmpty = !row.c[71] || row.c[71].v === null || row.c[71].v === ""
 
-            // For pending orders: show rows where Planned3 (BT) has data but Actual3 (BU) is empty
-            if (hasColumnBT && isColumnBUEmpty) {
+            // For pending orders: show rows where Planned3 (BS) has data but Actual3 (BT) is empty
+            if (hasColumnBS && isColumnBTEmpty) {
               const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -275,9 +275,9 @@ export default function CheckInventoryPage() {
                 id: row.c[1] ? row.c[1].v : `ORDER-${actualRowIndex}`,
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 quantity: row.c[40] ? row.c[40].v : "",
-                inventoryStatus: row.c[71] ? row.c[71].v : null, // Column BT (Planned3)
-                inventoryRemarks: row.c[72] ? row.c[72].v : "", // Column BU (Actual3)
-                processedDate: formatGoogleSheetsDate(row.c[72] ? row.c[72].v : ""), // Column BU (Actual3)
+                inventoryStatus: row.c[70] ? row.c[70].v : null, // Column BS (Planned3)
+                inventoryRemarks: row.c[71] ? row.c[71].v : "", // Column BT (Actual3)
+                processedDate: formatGoogleSheetsDate(row.c[71] ? row.c[71].v : ""), // Column BT (Actual3)
                 fullRowData: row.c,
               }
 
@@ -297,7 +297,7 @@ export default function CheckInventoryPage() {
     }
   }
 
-  // Fetch processed orders (where both BT (Planned3) and BU (Actual3) have data)
+  // Fetch processed orders (where both BS (Planned3) and BT (Actual3) have data)
   const fetchProcessedOrders = async () => {
     try {
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
@@ -317,13 +317,13 @@ export default function CheckInventoryPage() {
           if (row.c) {
             const actualRowIndex = index + 7
 
-            // Column BT (index 71) - Planned3
+            // Column BS (index 70) - Planned3
+            const hasColumnBS = row.c[70] && row.c[70].v !== null && row.c[70].v !== ""
+            // Column BT (index 71) - Actual3
             const hasColumnBT = row.c[71] && row.c[71].v !== null && row.c[71].v !== ""
-            // Column BU (index 72) - Actual3
-            const hasColumnBU = row.c[72] && row.c[72].v !== null && row.c[72].v !== ""
 
-            // For processed orders: show rows where both Planned3 (BT) and Actual3 (BU) have data
-            if (hasColumnBT && hasColumnBU) {
+            // For processed orders: show rows where both Planned3 (BS) and Actual3 (BT) have data
+            if (hasColumnBS && hasColumnBT) {
               const processedOrder = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
@@ -387,15 +387,15 @@ export default function CheckInventoryPage() {
                 availabilityStatus: row.c[61] ? row.c[61].v : "", // Column BJ
                 availabilityRemarks: row.c[62] ? row.c[62].v : "", // Column BK
                 creName: row.c[81] ? row.c[81].v : "", // Column DC (index 81) - CRE Name
-                // BW column (index 74) - Received Date
-                receivedDate: formatGoogleSheetsDate(row.c[74] ? row.c[74].v : ""), // Column BW
+                // BV column (index 73) - Received Date
+                receivedDate: formatGoogleSheetsDate(row.c[73] ? row.c[73].v : ""), // Column BV
                 // Keep old field names for backward compatibility
                 id: row.c[1] ? row.c[1].v : "",
                 contactPerson: row.c[4] ? row.c[4].v : "",
                 orderReceivedQty: row.c[11] ? row.c[11].v : "",
-                inventoryStatus: row.c[71] ? row.c[71].v : "", // Column BT (Planned3)
-                inventoryRemarks: row.c[72] ? row.c[72].v : "", // Column BU (Actual3)
-                processedDate: formatGoogleSheetsDate(row.c[72] ? row.c[72].v : ""), // Column BU (Actual3)
+                inventoryStatus: row.c[70] ? row.c[70].v : "", // Column BS (Planned3)
+                inventoryRemarks: row.c[71] ? row.c[71].v : "", // Column BT (Actual3)
+                processedDate: formatGoogleSheetsDate(row.c[71] ? row.c[71].v : ""), // Column BT (Actual3)
                 fullRowData: row.c,
               }
 
@@ -546,16 +546,16 @@ const filteredProcessedOrders = useMemo(() => {
         `${today.getHours()}:${today.getMinutes()}:${today.getSeconds()}`
 
       // Correct column indices for ORDER-DISPATCH sheet:
-      // BT (index 71) - Planned3
-      // BU (index 72) - Actual3 (filling this moves the order from Pending to History)
-      // BV (index 73) - Delay3 (computed by the sheet, not written here)
-      // BW (index 74) - Received Date
+      // BS (index 70) - Planned3
+      // BT (index 71) - Actual3 (filling this moves the order from Pending to History)
+      // BU (index 72) - Delay3 (computed by the sheet, not written here)
+      // BV (index 73) - Received Date
 
-      // Set Actual3 date (column BU - index 72) - THIS IS CRITICAL, moves order to History
-      rowData[72] = formattedDate
+      // Set Actual3 date (column BT - index 71) - THIS IS CRITICAL, moves order to History
+      rowData[71] = formattedDate
 
-      // Set received date (column BW - index 74)
-      rowData[74] = inventoryData.receivedDate
+      // Set received date (column BV - index 73)
+      rowData[73] = inventoryData.receivedDate
 
       // Set remarks if any
       // if (inventoryData.remarks) {
