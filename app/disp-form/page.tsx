@@ -391,8 +391,11 @@ export default function DispFormPage() {
             // Column AU (index 46) - dispatch pending qty
             const dispatchPendingQty = Number(row.c[46] && row.c[46].v !== null ? row.c[46].v : 0) || 0
 
-            // Pending: CF > 0 (dispatch still pending)
-            if (dispatchPendingQty > 0) {
+            // Column BX (index 75) - must not be null
+            const bxValue = row.c[75] && row.c[75].v !== null && row.c[75].v !== ""
+
+            // Pending: dispatchPendingQty > 0 AND column BX is not null/empty
+            if (dispatchPendingQty > 0 && bxValue) {
               const order = {
                 rowIndex: actualRowIndex,
                 timestamp: formatGoogleSheetsDate(row.c[0] ? row.c[0].v : ""),
